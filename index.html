@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>会員サイトの講座一覧 | N8N MARKETING</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ サイドバー ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40"><path d="M8 30V11l12 13V11l12 19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="20" cy="6" r="2.4" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-text"><b>N8N</b> MARKETING</span>
+    </div>
+
+    <nav class="nav">
+      <a class="nav-item" href="#"><i data-icon="home"></i>ダッシュボード</a>
+      <a class="nav-item is-active" href="#" aria-current="page"><i data-icon="book"></i>講座一覧</a>
+      <a class="nav-item" href="#"><i data-icon="play"></i>学習中の講座</a>
+      <a class="nav-item" href="#"><i data-icon="bookmark"></i>ブックマーク</a>
+      <a class="nav-item" href="#"><i data-icon="gift"></i>リソース・特典</a>
+      <a class="nav-item" href="#"><i data-icon="users"></i>コミュニティ<span class="nav-badge">12</span></a>
+      <a class="nav-item" href="#"><i data-icon="life"></i>サポート</a>
+    </nav>
+
+    <div class="side-cards">
+      <section class="side-card">
+        <p class="side-card-label">今月の学習時間</p>
+        <p class="side-card-value">18.6<span>時間</span></p>
+        <p class="side-card-sub">先月比 <span class="up">▲ +32.4%</span></p>
+        <div class="spark">
+          <div class="spark-col"><span style="height:52%"></span><em>W1</em></div>
+          <div class="spark-col"><span style="height:70%"></span><em>W2</em></div>
+          <div class="spark-col"><span class="dim" style="height:44%"></span><em>W3</em></div>
+          <div class="spark-col"><span style="height:88%"></span><em>W4</em></div>
+        </div>
+      </section>
+
+      <section class="side-card">
+        <p class="side-card-label">連続学習日数</p>
+        <p class="side-card-value">14<span>日</span></p>
+        <p class="side-card-sub">ベスト記録 27 日</p>
+      </section>
+    </div>
+  </aside>
+
+  <!-- ============ メイン ============ -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>会員サイトの講座一覧</h1>
+        <p>実践に直結する講座を体系的に学び、成果につなげましょう。</p>
+      </div>
+      <div class="topbar-tools">
+        <label class="search">
+          <i data-icon="search"></i>
+          <input id="search" type="search" placeholder="講座を検索..." autocomplete="off">
+          <kbd>⌘K</kbd>
+        </label>
+        <button class="btn btn-gold" type="button"><i data-icon="history"></i>学習履歴</button>
+        <div class="user">
+          <span class="avatar" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#16233a"/><circle cx="24" cy="19" r="8" fill="#d9b45b" opacity=".85"/><path d="M8 45c2-9 8.5-13 16-13s14 4 16 13z" fill="#d9b45b" opacity=".6"/></svg>
+          </span>
+          <span class="user-text"><b>ANONYMOUS</b><em>マーケティング主宰</em></span>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- 講座一覧 -->
+      <section class="courses">
+        <div class="toolbar">
+          <div class="chips" id="chips" role="tablist" aria-label="カテゴリー"></div>
+          <label class="select">
+            <select id="sort" aria-label="並び替え">
+              <option value="new">新着順</option>
+              <option value="progress">進捗が高い順</option>
+              <option value="remaining">残りが多い順</option>
+              <option value="short">学習時間が短い順</option>
+            </select>
+            <i data-icon="chevron"></i>
+          </label>
+        </div>
+
+        <h2 class="section-title">すべての講座<span id="count">（12）</span></h2>
+
+        <div class="grid" id="grid"></div>
+        <p class="empty" id="empty" hidden>条件に一致する講座が見つかりませんでした。</p>
+
+        <nav class="pagination" id="pagination" aria-label="ページ送り"></nav>
+      </section>
+
+      <!-- 右サイドレール -->
+      <aside class="rail">
+        <section class="panel">
+          <h3 class="panel-title">学習の進捗サマリー</h3>
+          <div class="summary">
+            <div class="donut" style="--value:52">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="donut-track" cx="50" cy="50" r="42"></circle>
+                <circle class="donut-value" cx="50" cy="50" r="42"></circle>
+              </svg>
+            </div>
+            <div class="summary-text">
+              <p class="summary-label">総合進捗</p>
+              <p class="summary-value">52<span>%</span></p>
+            </div>
+          </div>
+          <ul class="stats">
+            <li><i data-icon="check"></i><span>完了講座</span><b>3<em> / 12</em></b></li>
+            <li><i data-icon="play"></i><span>学習中</span><b>5</b></li>
+            <li><i data-icon="clock"></i><span>未着手</span><b>4</b></li>
+          </ul>
+          <button class="btn btn-ghost btn-block" type="button"><i data-icon="edit"></i>学習プランを確認</button>
+        </section>
+
+        <section class="panel">
+          <h3 class="panel-title">学習中の講座</h3>
+          <ul class="mini-list" id="inprogress"></ul>
+          <button class="btn btn-ghost btn-block" type="button"><i data-icon="arrow"></i>すべての学習中講座を見る</button>
+        </section>
+
+        <section class="panel">
+          <h3 class="panel-title">おすすめの次のステップ</h3>
+          <p class="panel-note">次に取り組むのにおすすめの講座です。</p>
+          <div class="next-card" id="next"></div>
+          <button class="btn btn-gold btn-block" type="button"><i data-icon="play"></i>この講座を始める</button>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
