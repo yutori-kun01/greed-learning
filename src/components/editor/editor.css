@@ -1,0 +1,188 @@
+/* ============================================================
+   TipTap Block Editor Styles
+   ============================================================ */
+
+/* Editor content area */
+.tiptap {
+  outline: none;
+  min-height: 400px;
+  padding: 20px 24px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: #e9eef7;
+}
+
+.tiptap p { margin: 0 0 0.75em; }
+.tiptap p:last-child { margin-bottom: 0; }
+
+/* Headings */
+.tiptap h1 {
+  font-size: 1.8em; font-weight: 700; line-height: 1.3;
+  margin: 1.4em 0 0.5em;
+  color: #fff;
+  border-bottom: 2px solid rgba(217,180,91,0.3);
+  padding-bottom: 0.3em;
+}
+.tiptap h2 {
+  font-size: 1.4em; font-weight: 700; line-height: 1.35;
+  margin: 1.3em 0 0.4em;
+  color: #f0f4fa;
+  border-left: 3px solid #d9b45b;
+  padding-left: 12px;
+}
+.tiptap h3 {
+  font-size: 1.15em; font-weight: 700; line-height: 1.4;
+  margin: 1.1em 0 0.35em;
+  color: #e9eef7;
+}
+
+/* Inline styles */
+.tiptap strong { font-weight: 700; color: #fff; }
+.tiptap em { font-style: italic; color: #c8d4e8; }
+.tiptap u { text-decoration: underline; text-underline-offset: 3px; }
+.tiptap s { text-decoration: line-through; opacity: 0.65; }
+.tiptap mark { background: rgba(217,180,91,0.3); color: #f2d992; border-radius: 3px; padding: 0 2px; }
+
+/* Links */
+.tiptap a {
+  color: #f2d992;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(217,180,91,0.4);
+  transition: color 0.15s;
+}
+.tiptap a:hover { color: #fff; text-decoration-color: rgba(255,255,255,0.4); }
+
+/* Lists */
+.tiptap ul, .tiptap ol {
+  margin: 0.5em 0 0.75em 1.4em;
+  padding: 0;
+}
+.tiptap li { margin: 0.2em 0; }
+.tiptap ul li { list-style: disc; }
+.tiptap ol li { list-style: decimal; }
+
+/* Blockquote */
+.tiptap blockquote {
+  margin: 1em 0;
+  padding: 12px 16px;
+  border-left: 3px solid rgba(217,180,91,0.5);
+  background: rgba(217,180,91,0.06);
+  border-radius: 0 8px 8px 0;
+  color: #b6c1d2;
+  font-style: italic;
+}
+
+/* Horizontal rule */
+.tiptap hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin: 1.5em 0;
+}
+
+/* Inline code */
+.tiptap code {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.88em;
+  color: #f2d992;
+}
+
+/* Code block */
+.tiptap pre {
+  background: #060c17;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.tiptap pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: #e9eef7;
+  font-size: 13px;
+}
+
+/* Images */
+.tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+  display: block;
+}
+.tiptap img.ProseMirror-selectednode {
+  outline: 2px solid #d9b45b;
+}
+
+/* Table */
+.tiptap table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1em 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.tiptap td, .tiptap th {
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 10px 14px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  min-width: 80px;
+}
+.tiptap th {
+  background: rgba(217,180,91,0.08);
+  font-weight: 700;
+  color: #f2d992;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+.tiptap td { background: rgba(255,255,255,0.02); }
+.tiptap tr:hover td { background: rgba(255,255,255,0.04); }
+.tiptap .selectedCell::after {
+  background: rgba(217,180,91,0.15);
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+/* YouTube embed */
+.tiptap .youtube-embed {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1em 0;
+}
+.tiptap iframe {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: none;
+  border-radius: 10px;
+}
+
+/* Placeholder */
+.tiptap .is-editor-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #4a5568;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Syntax highlighting (lowlight) */
+.hljs-comment { color: #6b7280; }
+.hljs-string, .hljs-attr { color: #6fd0a0; }
+.hljs-number { color: #f2d992; }
+.hljs-keyword { color: #a78bfa; }
+.hljs-built_in { color: #60a5fa; }
+.hljs-function { color: #f59e0b; }
+.hljs-title { color: #f2d992; }
