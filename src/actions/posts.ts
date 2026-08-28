@@ -61,7 +61,7 @@ export async function getPosts() {
 export async function getPublishedPosts() {
   try {
     const all = await db().select().from(blogPosts).orderBy(blogPosts.createdAt);
-    return all.filter(p => p.status !== 'DRAFT');
+    return all.filter((p: any) => p.status !== 'DRAFT');
   } catch (e) {
     return [];
   }

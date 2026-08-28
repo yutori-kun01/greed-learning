@@ -26,7 +26,7 @@ export default async function MemberPostsPage() {
           <div style={{ color: 'var(--muted)', fontSize: 13, gridColumn: '1 / -1' }}>
             公開されている記事がありません。
           </div>
-        ) : posts.map(post => (
+        ) : posts.map((post: any) => (
           <Link href={`/posts/${post.slug}`} key={post.id}>
             <article className="card" style={{ height: '100%', cursor: 'pointer' }}>
               <div className="thumb" style={{ aspectRatio: '1.9/1', background: '#101d31' }}>

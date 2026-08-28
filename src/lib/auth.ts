@@ -6,6 +6,8 @@ export function getAuth(d1: D1Database) {
   const db = getDb(d1);
   const auth = betterAuth({
     database: drizzleAdapter(db, { provider: "sqlite" }),
+    secret: process.env.BETTER_AUTH_SECRET,
+    baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
     session: {
       expiresIn: 60 * 60 * 24 * 90, // 90 days
       updateAge: 60 * 60 * 24,      // 1 day
@@ -22,7 +24,8 @@ export function getAuth(d1: D1Database) {
   });
 
   // DEV ONLY: Bypass auth for easy local testing
-  if (process.env.NODE_ENV === 'development') {
+  // (Uncomment this and set ENABLE_DEV_BYPASS=true in .env if you need to test without logging in)
+  if (process.env.NODE_ENV === 'development' && process.env.ENABLE_DEV_BYPASS === 'true') {
     const originalGetSession = auth.api.getSession;
     // @ts-ignore - Dev only override
     auth.api.getSession = async (opts: any) => {

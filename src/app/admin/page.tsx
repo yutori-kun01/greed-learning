@@ -1,28 +1,45 @@
-import React from 'react'
+import React from 'react';
+import { getDb } from '@/db';
+import { user, courses, purchases } from '@/db/schema';
+import { desc, count, sum } from 'drizzle-orm';
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const db = getDb(process.env.DB as unknown as D1Database);
+  
+  // Real stats
+  const usersResult = await db.select({ value: count() }).from(user);
+  const totalUsers = usersResult[0].value;
+  
+  const coursesResult = await db.select({ value: count() }).from(courses);
+  const totalCourses = coursesResult[0].value;
+  
+  const purchasesResult = await db.select({ value: sum(purchases.amount) }).from(purchases);
+  const totalRevenue = purchasesResult[0].value || 0;
+
+  const recentUsers = await db.select().from(user).orderBy(desc(user.createdAt)).limit(5);
+
   const badgeStyle = { background: 'rgba(111,208,160,.15)', color: '#6fd0a0', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
   
   return (
     <div>
-      <h1 className="section-title">管理ダッシュボード</h1>
+      <h1 className="section-title">管理者ダッシュボード</h1>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         <div className="panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>総会員数</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>142</div>
+          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>{totalUsers}</div>
         </div>
         <div className="panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>今月の新規登録</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>18</div>
+          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>--</div>
         </div>
         <div className="panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>総講座数</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>12</div>
+          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>{totalCourses}</div>
         </div>
         <div className="panel" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>月間収益</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>¥284,000</div>
+          <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>総収益</div>
+          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>¥{totalRevenue.toLocaleString()}</div>
         </div>
       </div>
 
@@ -38,19 +55,13 @@ export default function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {[
-              { name: '山田 太郎', email: 'yamada@example.com', date: '2023-10-25', status: 'ACTIVE' },
-              { name: '佐藤 花子', email: 'sato@example.com', date: '2023-10-24', status: 'ACTIVE' },
-              { name: '鈴木 一郎', email: 'suzuki@example.com', date: '2023-10-22', status: 'ACTIVE' },
-              { name: '田中 美咲', email: 'tanaka@example.com', date: '2023-10-20', status: 'ACTIVE' },
-              { name: '伊藤 健太', email: 'ito@example.com', date: '2023-10-18', status: 'ACTIVE' }
-            ].map((user, i) => (
+            {recentUsers.map((u: any, i: number) => (
               <tr key={i}>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{user.name}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{user.email}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{user.date}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{u.name}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{u.email}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>
-                  <span style={badgeStyle}>{user.status}</span>
+                  <span style={badgeStyle}>ACTIVE</span>
                 </td>
               </tr>
             ))}

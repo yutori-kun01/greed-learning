@@ -33,7 +33,7 @@ export default async function AdminCoursesPage() {
               <tr>
                 <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#7d8b9f', fontSize: '13px' }}>講座がありません</td>
               </tr>
-            ) : courses.map((course) => (
+            ) : courses.map((course: any) => (
               <tr key={course.id}>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{course.number}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px', fontWeight: 600, color: '#e9eef7' }}>{course.title}</td>

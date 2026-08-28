@@ -19,8 +19,6 @@ export default async function proxy(request: NextRequest) {
                       pathname.startsWith("/admin");
 
   if (isProtected) {
-    // [開発用] 一時的にすべてのリダイレクトを無効化
-    /*
     if (!session || !session.session) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
@@ -31,7 +29,6 @@ export default async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     }
-    */
   }
 
   // Redirect authenticated users away from login/signup

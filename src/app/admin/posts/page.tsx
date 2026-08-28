@@ -35,7 +35,7 @@ export default async function AdminPostsPage() {
               <tr>
                 <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: '#7d8b9f', fontSize: '13px' }}>記事がありません</td>
               </tr>
-            ) : posts.map((post) => (
+            ) : posts.map((post: any) => (
               <tr key={post.id}>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px', fontWeight: 600, color: '#e9eef7' }}>{post.title}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>

@@ -60,7 +60,7 @@ export default async function DashboardPage() {
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
           {activeCourses.length === 0 ? (
             <div style={{ color: '#7d8b9f', fontSize: 13 }}>現在学習中のコースはありません。</div>
-          ) : activeCourses.map((c, i) => (
+          ) : activeCourses.map((c: any, i: number) => (
             <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
               <div className="thumb" style={{ aspectRatio: '2.2/1', background: '#101d31' }}>
                 {c.badge && <span className={`badge badge-gold`}>{c.badge}</span>}

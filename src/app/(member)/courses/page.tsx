@@ -8,7 +8,7 @@ export default async function CoursesPage() {
   const allCourses = await db().select().from(courses).orderBy(courses.createdAt);
 
   // Formatting for the client UI
-  const formattedCourses = allCourses.map(c => ({
+  const formattedCourses = allCourses.map((c: any) => ({
     id: c.id,
     number: c.number,
     title: c.title,
