@@ -7,6 +7,7 @@ import { getDb } from '@/db';
 import { purchases } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createCheckoutSession } from '@/actions/stripe';
+import XShareLink from '@/components/XShareLink';
 
 export default async function PostDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -116,11 +117,30 @@ export default async function PostDetailPage({ params }: { params: Promise<{ slu
           {post.status === 'PAID' && <span style={{ color: 'var(--gold)', fontWeight: 600, padding: '2px 8px', background: 'rgba(217,180,91,0.1)', borderRadius: 4 }}>有料記事</span>}
           {post.status === 'MEMBERS_ONLY' && <span style={{ color: '#6495ed', fontWeight: 600, padding: '2px 8px', background: 'rgba(100,149,237,0.1)', borderRadius: 4 }}>会員限定</span>}
         </div>
+
+        {(post.status === 'PUBLISHED' || post.status === 'PAID') && (
+          <div style={{ marginTop: 20 }}>
+            <XShareLink
+              text={post.title}
+              url={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/posts/${post.slug}`}
+            />
+          </div>
+        )}
       </div>
       
       <div style={{ color: 'var(--text)' }}>
         {renderContent()}
       </div>
+
+      {(post.status === 'PUBLISHED' || post.status === 'PAID') && (
+        <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--line)', textAlign: 'center' }}>
+          <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>この記事が参考になったらシェアしてください</p>
+          <XShareLink
+            text={post.title}
+            url={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/posts/${post.slug}`}
+          />
+        </div>
+      )}
     </div>
   );
 }
