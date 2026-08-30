@@ -10,10 +10,9 @@ const BINARY_EXTENSIONS = [
 ]
 
 function trackedFiles(): string[] {
-  return execFileSync('git', ['ls-files', '-z'], { encoding: 'buffer' })
-    .toString('utf8')
-    .split('\0')
-    .filter(Boolean)
+  // -z so paths with spaces or non-ASCII survive intact.
+  const out = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' })
+  return out.split('\0').filter(Boolean)
 }
 
 describe('repository hygiene', () => {
@@ -52,9 +51,8 @@ describe('repository hygiene', () => {
   // the runner has already spent minutes installing and building.
   it('pins a Node version the runner can actually resolve', () => {
     for (const file of ['.node-version', '.nvmrc']) {
-      const raw = readFileSync(file)
-      expect(raw.includes(0), `${file} is not UTF-8`).toBe(false)
-      expect(raw.toString('utf8').trim()).toMatch(/^\d+(\.\d+)*$/)
+      expect(readFileSync(file).includes(0), `${file} is not UTF-8`).toBe(false)
+      expect(readFileSync(file, 'utf8').trim()).toMatch(/^\d+(\.\d+)*$/)
     }
   })
 })
