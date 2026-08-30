@@ -17,7 +17,8 @@ const ICONS: Record<string, string> = {
   arrow: '<path d="M4 10h11m-4-4 4 4-4 4"/>',
   lesson: '<rect x="3.5" y="4.5" width="13" height="11" rx="1.6"/><path d="M3.5 8h13M8 8v7.5"/>',
   prev: '<path d="m12 5-5 5 5 5"/>',
-  next: '<path d="m8 5 5 5-5 5"/>'
+  next: '<path d="m8 5 5 5-5 5"/>',
+  trash: '<path d="M4.5 6h11"/><path d="M8 6V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6"/><path d="M6 6l.6 9.2a1 1 0 0 0 1 .8h4.8a1 1 0 0 0 1-.8L14 6"/><path d="M8.5 9v4M11.5 9v4"/>'
 };
 
 export default function Icon({ name, className = '' }: { name: string; className?: string }) {

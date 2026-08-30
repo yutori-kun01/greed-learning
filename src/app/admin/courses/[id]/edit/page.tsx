@@ -4,9 +4,9 @@ import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { courses, lessons } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
-import Icon from '@/components/Icon';
 import LessonForm from './LessonForm';
 import LessonList from './LessonList';
+import CourseInfoForm from './CourseInfoForm';
 
 export default async function AdminCourseEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,15 +31,17 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         <div className="panel">
           <h2 className="panel-title">基本情報</h2>
-          {/* Note: Full update form omitted for brevity, focusing on read-only + lessons here */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#b6c1d2', fontSize: '13px' }}>タイトル</label>
-            <input type="text" defaultValue={course.title} readOnly style={{ width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,0.07)', color: '#e9eef7', padding: '10px', borderRadius: '6px' }} />
-          </div>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#b6c1d2', fontSize: '13px' }}>説明</label>
-            <textarea defaultValue={course.description || ''} readOnly rows={4} style={{ width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,0.07)', color: '#e9eef7', padding: '10px', borderRadius: '6px' }} />
-          </div>
+          <CourseInfoForm
+            course={{
+              id: course.id,
+              number: course.number,
+              title: course.title,
+              description: course.description,
+              categoryId: course.categoryId,
+              status: course.status,
+              badge: course.badge,
+            }}
+          />
         </div>
 
         <div>

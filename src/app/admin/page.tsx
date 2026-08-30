@@ -1,18 +1,24 @@
 import React from 'react';
 import { getDb } from '@/db';
 import { user, courses, purchases } from '@/db/schema';
-import { desc, count, sum } from 'drizzle-orm';
+import { desc, count, sum, gte } from 'drizzle-orm';
 
 export default async function AdminDashboard() {
   const db = getDb(process.env.DB as unknown as D1Database);
-  
+
   // Real stats
   const usersResult = await db.select({ value: count() }).from(user);
   const totalUsers = usersResult[0].value;
-  
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const newUsersResult = await db.select({ value: count() }).from(user).where(gte(user.createdAt, startOfMonth));
+  const newUsersThisMonth = newUsersResult[0].value;
+
   const coursesResult = await db.select({ value: count() }).from(courses);
   const totalCourses = coursesResult[0].value;
-  
+
   const purchasesResult = await db.select({ value: sum(purchases.amount) }).from(purchases);
   const totalRevenue = purchasesResult[0].value || 0;
 
@@ -31,7 +37,7 @@ export default async function AdminDashboard() {
         </div>
         <div className="panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>今月の新規登録</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>--</div>
+          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>{newUsersThisMonth}</div>
         </div>
         <div className="panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>総講座数</div>

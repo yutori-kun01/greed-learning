@@ -50,6 +50,47 @@ export async function createPost(formData: FormData) {
   return { success: true, postId: id };
 }
 
+export async function updatePost(id: string, formData: FormData) {
+  const reqHeaders = await headers();
+  const auth = getAuth(process.env.DB as unknown as D1Database);
+  const session = await auth.api.getSession({
+    headers: reqHeaders,
+  });
+
+  if (!session || (session.user as any).role !== 'ADMIN') {
+    throw new Error('Unauthorized');
+  }
+
+  const title = formData.get('title') as string;
+  const slug = formData.get('slug') as string;
+
+  if (!title || !slug) {
+    throw new Error('タイトルとスラッグは必須です');
+  }
+  const content = formData.get('content') as string;
+  const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "MEMBERS_ONLY" | "PAID";
+  const price = formData.get('price') ? parseInt(formData.get('price') as string, 10) : 0;
+
+  const existing = await db().select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
+  const now = new Date().toISOString();
+
+  await db().update(blogPosts)
+    .set({
+      title,
+      slug,
+      content,
+      status: status || 'DRAFT',
+      price,
+      updatedAt: now,
+      publishedAt: existing[0]?.publishedAt || (status !== 'DRAFT' ? now : null),
+    })
+    .where(eq(blogPosts.id, id));
+
+  revalidatePath('/admin/posts');
+  revalidatePath(`/posts/${slug}`);
+  return { success: true };
+}
+
 export async function getPosts() {
   try {
     return await db().select().from(blogPosts).orderBy(blogPosts.createdAt);
