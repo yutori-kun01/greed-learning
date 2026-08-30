@@ -16,6 +16,9 @@ export default async function MemberLayout({ children }: { children: React.React
   if (!session) {
     redirect('/login');
   }
+  if ((session.user as any).status === 'SUSPENDED') {
+    redirect('/login?suspended=1');
+  }
   return (
     <div className="app">
       <Sidebar />

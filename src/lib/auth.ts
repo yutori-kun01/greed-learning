@@ -21,6 +21,26 @@ export function getAuth(d1: D1Database) {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
       },
     },
+    user: {
+      additionalFields: {
+        // Fields the app reads directly off session.user (access control,
+        // gating) must be declared here or Better Auth strips them from
+        // every getSession() response, even though they exist in the DB.
+        role: { type: "string", input: false, defaultValue: "MEMBER" },
+        status: { type: "string", input: false, defaultValue: "ACTIVE" },
+        currentStreak: { type: "number", input: false, defaultValue: 0 },
+        longestStreak: { type: "number", input: false, defaultValue: 0 },
+        lastActivityDate: { type: "string", required: false, input: false },
+        stripeCustomerId: { type: "string", required: false, input: false },
+        noteId: { type: "string", required: false, input: true },
+        xId: { type: "string", required: false, input: true },
+        themePreference: { type: "string", input: false, defaultValue: "dark" },
+        planId: { type: "string", required: false, input: false },
+        stripeSubscriptionId: { type: "string", required: false, input: false },
+        subscriptionStatus: { type: "string", input: false, defaultValue: "NONE" },
+        currentPeriodEnd: { type: "date", required: false, input: false },
+      },
+    },
   });
 
   // DEV ONLY: Bypass auth for easy local testing
