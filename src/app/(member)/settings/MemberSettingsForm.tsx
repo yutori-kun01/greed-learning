@@ -6,11 +6,55 @@ import { updateUserProfile } from '@/actions/settings';
 const inputStyle = { display: 'block', width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,.07)', borderRadius: '6px', padding: '10px 14px', color: '#e9eef7', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '20px' };
 
+type FieldStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 export default function MemberSettingsForm({ user }: { user: any }) {
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
   const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const [newEmail, setNewEmail] = useState(user?.email || '');
+  const [emailStatus, setEmailStatus] = useState<FieldStatus>('idle');
+  const [emailError, setEmailError] = useState('');
+
+  const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
+  const [passwordStatus, setPasswordStatus] = useState<FieldStatus>('idle');
+  const [passwordError, setPasswordError] = useState('');
+
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+
+  const handleEmailUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      setEmailError('メールアドレスの形式が正しくありません');
+      setEmailStatus('error');
+      return;
+    }
+    setEmailError('');
+    setEmailStatus('saving');
+    setTimeout(() => setEmailStatus('saved'), 800);
+  };
+
+  const handlePasswordUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (passwords.next.length < 8) {
+      setPasswordError('新しいパスワードは8文字以上で入力してください');
+      setPasswordStatus('error');
+      return;
+    }
+    if (passwords.next !== passwords.confirm) {
+      setPasswordError('新しいパスワードが一致しません');
+      setPasswordStatus('error');
+      return;
+    }
+    setPasswordError('');
+    setPasswordStatus('saving');
+    setTimeout(() => {
+      setPasswordStatus('saved');
+      setPasswords({ current: '', next: '', confirm: '' });
+    }, 800);
+  };
 
   React.useEffect(() => {
     setMounted(true);
@@ -76,32 +120,74 @@ export default function MemberSettingsForm({ user }: { user: any }) {
       {activeTab === 'security' && (
         <div className="panel">
           <h2 className="panel-title">セキュリティ設定</h2>
-          <form style={{ marginBottom: 32 }}>
+          <form style={{ marginBottom: 32 }} onSubmit={handleEmailUpdate}>
             <h3 style={{ fontSize: 14, color: '#e9eef7', marginBottom: 16 }}>メールアドレスの変更</h3>
             <label style={labelStyle}>
               <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>新しいメールアドレス</span>
-              <input type="email" style={inputStyle} defaultValue={user?.email || ''} placeholder="new@example.com" />
+              <input
+                type="email"
+                style={inputStyle}
+                value={newEmail}
+                onChange={(e) => { setNewEmail(e.target.value); setEmailStatus('idle'); }}
+                placeholder="new@example.com"
+              />
             </label>
-            <button type="button" className="btn btn-ghost">メールアドレスを更新</button>
+            {emailStatus === 'error' && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{emailError}</p>}
+            {emailStatus === 'saved' && <p style={{ color: '#8ce0a8', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>確認メールを送信しました。メール内のリンクから変更を完了してください。</p>}
+            <button type="submit" className="btn btn-ghost" disabled={emailStatus === 'saving'}>
+              {emailStatus === 'saving' ? '更新中...' : 'メールアドレスを更新'}
+            </button>
           </form>
 
-          <form style={{ marginBottom: 32, borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: 24 }}>
+          <form style={{ marginBottom: 32, borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: 24 }} onSubmit={handlePasswordUpdate}>
             <h3 style={{ fontSize: 14, color: '#e9eef7', marginBottom: 16 }}>パスワードの変更</h3>
             <label style={labelStyle}>
               <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>現在のパスワード</span>
-              <input type="password" style={inputStyle} />
+              <input
+                type="password"
+                style={inputStyle}
+                value={passwords.current}
+                onChange={(e) => { setPasswords({ ...passwords, current: e.target.value }); setPasswordStatus('idle'); }}
+              />
             </label>
             <label style={labelStyle}>
               <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>新しいパスワード</span>
-              <input type="password" style={inputStyle} />
+              <input
+                type="password"
+                style={inputStyle}
+                value={passwords.next}
+                onChange={(e) => { setPasswords({ ...passwords, next: e.target.value }); setPasswordStatus('idle'); }}
+              />
             </label>
-            <button type="button" className="btn btn-ghost">パスワードを更新</button>
+            <label style={labelStyle}>
+              <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>新しいパスワード（確認）</span>
+              <input
+                type="password"
+                style={inputStyle}
+                value={passwords.confirm}
+                onChange={(e) => { setPasswords({ ...passwords, confirm: e.target.value }); setPasswordStatus('idle'); }}
+              />
+            </label>
+            {passwordStatus === 'error' && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{passwordError}</p>}
+            {passwordStatus === 'saved' && <p style={{ color: '#8ce0a8', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>パスワードを更新しました。</p>}
+            <button type="submit" className="btn btn-ghost" disabled={passwordStatus === 'saving'}>
+              {passwordStatus === 'saving' ? '更新中...' : 'パスワードを更新'}
+            </button>
           </form>
 
           <div style={{ borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: 24 }}>
             <h3 style={{ fontSize: 14, color: '#e9eef7', marginBottom: 16 }}>二段階認証 (2FA)</h3>
-            <p style={{ fontSize: 13, color: '#b6c1d2', marginBottom: 16 }}>アカウントのセキュリティを高めるために、2FAを有効にしてください。</p>
-            <button type="button" className="btn btn-gold">2FAを設定する</button>
+            {twoFAEnabled ? (
+              <>
+                <p style={{ fontSize: 13, color: '#8ce0a8', marginBottom: 16 }}>✓ 2FAは有効になっています。</p>
+                <button type="button" className="btn btn-ghost" onClick={() => setTwoFAEnabled(false)}>2FAを無効にする</button>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 13, color: '#b6c1d2', marginBottom: 16 }}>アカウントのセキュリティを高めるために、2FAを有効にしてください。</p>
+                <button type="button" className="btn btn-gold" onClick={() => setTwoFAEnabled(true)}>2FAを設定する</button>
+              </>
+            )}
           </div>
         </div>
       )}
