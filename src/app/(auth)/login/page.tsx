@@ -70,6 +70,10 @@ export default function LoginPage() {
           <button type="submit" className="btn btn-gold btn-block" disabled={loading}>
             {loading ? 'ログイン中...' : 'ログイン'}
           </button>
+
+          <p style={{ fontSize: '0.85rem', color: '#8fa2bd', textAlign: 'center' }}>
+            <a href="/forgot-password" style={{ color: '#d9b45b' }}>パスワードをお忘れですか？</a>
+          </p>
         </form>
       </div>
 

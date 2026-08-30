@@ -53,6 +53,8 @@ npx wrangler secret put BETTER_AUTH_SECRET   # openssl rand -base64 32 の出力
 npx wrangler secret put BETTER_AUTH_URL      # 例: https://your-domain.workers.dev
 npx wrangler secret put STRIPE_SECRET_KEY
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
+npx wrangler secret put RESEND_API_KEY       # https://resend.com で取得。未設定の場合、パスワード再設定メール等は送信されずログ出力のみになります
+npx wrangler secret put RESEND_FROM_EMAIL    # 例: no-reply@your-domain.com（Resend側でドメイン認証が必要）
 ```
 
 `NEXT_PUBLIC_APP_URL` はビルド時に埋め込まれる値なので、`wrangler.toml` の `[vars]` に追加するか、デプロイ前に環境変数として設定してビルドしてください。

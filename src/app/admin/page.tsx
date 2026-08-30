@@ -44,10 +44,13 @@ export default async function AdminDashboard() {
   const totalPlans = plansResult[0].value;
   const stripeConnected = await checkStripeConnection();
 
+  const emailConfigured = !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
+
   const checklist = [
     { label: 'サイト名・ブランドを設定する', done: !!settings, href: '/admin/settings' },
     { label: '特定商取引法に基づく表記（事業者情報）を入力する', done: !!(settings?.operatorName && settings?.operatorEmail), href: '/admin/settings' },
     { label: 'Stripeを接続する', done: stripeConnected, href: 'https://dashboard.stripe.com/apikeys' },
+    { label: 'メール送信（パスワード再設定等）を設定する', done: emailConfigured, href: 'https://resend.com/api-keys' },
     { label: '会員プランを作成する', done: totalPlans > 0, href: '/admin/plans' },
     { label: '講座を作成する', done: totalCourses > 0, href: '/admin/courses' },
   ];

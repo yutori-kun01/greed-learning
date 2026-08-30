@@ -3,6 +3,7 @@ import React, { useState, useTransition } from 'react';
 import { useTheme } from 'next-themes';
 import { updateUserProfile } from '@/actions/settings';
 import { createSubscriptionCheckoutSession, createBillingPortalSession } from '@/actions/subscription';
+import { changeEmail, changePassword } from '@/lib/auth-client';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '20px' };
@@ -45,7 +46,7 @@ export default function MemberSettingsForm({
 
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
 
-  const handleEmailUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEmailUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
       setEmailError('メールアドレスの形式が正しくありません');
@@ -54,10 +55,17 @@ export default function MemberSettingsForm({
     }
     setEmailError('');
     setEmailStatus('saving');
-    setTimeout(() => setEmailStatus('saved'), 800);
+
+    const res = await changeEmail({ newEmail, callbackURL: '/settings' });
+    if (res.error) {
+      setEmailError(res.error.message || 'エラーが発生しました');
+      setEmailStatus('error');
+    } else {
+      setEmailStatus('saved');
+    }
   };
 
-  const handlePasswordUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (passwords.next.length < 8) {
       setPasswordError('新しいパスワードは8文字以上で入力してください');
@@ -71,10 +79,20 @@ export default function MemberSettingsForm({
     }
     setPasswordError('');
     setPasswordStatus('saving');
-    setTimeout(() => {
+
+    const res = await changePassword({
+      currentPassword: passwords.current,
+      newPassword: passwords.next,
+      revokeOtherSessions: false,
+    });
+
+    if (res.error) {
+      setPasswordError(res.error.message || 'エラーが発生しました');
+      setPasswordStatus('error');
+    } else {
       setPasswordStatus('saved');
       setPasswords({ current: '', next: '', confirm: '' });
-    }, 800);
+    }
   };
 
   React.useEffect(() => {

@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db";
 import { user as userTable } from "@/db/schema";
 import { count } from "drizzle-orm";
+import { sendEmail } from "@/lib/email";
 
 export function getAuth(d1: D1Database) {
   const db = getDb(d1);
@@ -16,6 +17,22 @@ export function getAuth(d1: D1Database) {
     },
     emailAndPassword: {
       enabled: true,
+      sendResetPassword: async ({ user, url }) => {
+        await sendEmail({
+          to: user.email,
+          subject: "パスワード再設定のご案内",
+          html: `<p>${user.name || ''} 様</p><p>パスワードを再設定するには、以下のリンクをクリックしてください（このリンクは1時間有効です）。</p><p><a href="${url}">${url}</a></p><p>心当たりがない場合は、このメールを破棄してください。</p>`,
+        });
+      },
+    },
+    emailVerification: {
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendEmail({
+          to: user.email,
+          subject: "メールアドレスの確認",
+          html: `<p>${user.name || ''} 様</p><p>以下のリンクからメールアドレスを確認してください。</p><p><a href="${url}">${url}</a></p>`,
+        });
+      },
     },
     rateLimit: {
       enabled: true,
@@ -30,6 +47,22 @@ export function getAuth(d1: D1Database) {
       },
     },
     user: {
+      changeEmail: {
+        enabled: true,
+        // This app doesn't require email verification at signup (emailVerified
+        // is always false), so gating email changes on a verified-email check
+        // would lock every user out of ever changing their address. Apply the
+        // change immediately and, when sendVerificationEmail below is
+        // configured, follow up with a "verify your new address" email.
+        updateEmailWithoutVerification: true,
+        sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+          await sendEmail({
+            to: user.email,
+            subject: "メールアドレス変更のご確認",
+            html: `<p>${user.name || ''} 様</p><p>メールアドレスを ${newEmail} に変更するリクエストを受け付けました。変更を確定するには、以下のリンクをクリックしてください。</p><p><a href="${url}">${url}</a></p><p>心当たりがない場合は、このメールを破棄してください。</p>`,
+          });
+        },
+      },
       additionalFields: {
         // Fields the app reads directly off session.user (access control,
         // gating) must be declared here or Better Auth strips them from
