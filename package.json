@@ -46,7 +46,6 @@
         "stripe": "^22.6.0"
     },
     "devDependencies": {
-        "@cloudflare/next-on-pages": "^1.13.16",
         "@cloudflare/workers-types": "^5.20260826.1",
         "@opennextjs/cloudflare": "^1.20.3",
         "@tailwindcss/postcss": "^4",
@@ -56,6 +55,7 @@
         "@types/react-dom": "^19",
         "@vitest/coverage-v8": "^4.1.11",
         "drizzle-kit": "^0.31.10",
+        "esbuild": "^0.28.1",
         "eslint": "^9",
         "eslint-config-next": "16.3.3",
         "tailwindcss": "^4",
