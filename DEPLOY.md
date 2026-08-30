@@ -24,18 +24,14 @@ npx wrangler d1 create greed-learning-db
 npx wrangler r2 bucket create greed-learning-assets
 ```
 
-`wrangler d1 create` の出力に表示される `database_id` を、`wrangler.toml` の該当箇所に書き換えてください。
+`wrangler d1 create` の出力に表示される `database_id` を、`wrangler.toml` の `[[d1_databases]]` の該当行に貼り替えてください（**この1行だけ**を書き換えます。`main` や `[assets]` など他の項目はビルド成果物の場所を指しているので、そのままにしてください）。
 
 ```toml
 [[d1_databases]]
 binding = "DB"
 database_name = "greed-learning-db"
-database_id = "ここに出力されたIDを貼る"
+database_id = "ここに出力されたIDを貼る"   # ← ここだけ書き換える
 migrations_dir = "./src/db/migrations"
-
-[[r2_buckets]]
-binding = "R2_ASSETS"
-bucket_name = "greed-learning-assets"
 ```
 
 ## 3. マイグレーションを本番DBに適用
@@ -80,9 +76,15 @@ Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 
 | 名前 | 内容 |
 | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | 本番URL（例: `https://your-domain.workers.dev`） |
+| `NEXT_PUBLIC_APP_URL` | 本番URL。独自ドメイン未設定なら `https://greed-learning.<アカウントのサブドメイン>.workers.dev`（サブドメインは Cloudflareダッシュボード → Workers & Pages → 右側の「Your subdomain」で確認できます） |
 
-登録後、`main`（デフォルトブランチ）にpushすると Actions タブでビルド〜デプロイの進行状況を確認できます。手動で今すぐ実行したい場合は Actions タブから `Deploy to Cloudflare` ワークフローを選び「Run workflow」でも起動できます。
+登録後、デフォルトブランチにpushすると Actions タブでビルド〜デプロイの進行状況を確認できます。手動で今すぐ実行したい場合は Actions タブから `Deploy to Cloudflare` ワークフローを選び「Run workflow」でも起動できます。
+
+ワークフローは最初に **Preflight** で必須設定の有無を確認し、足りなければビルド前に分かりやすいエラーで停止します。また `Ensure Cloudflare resources exist` で、D1データベースの存在確認（無ければエラー）とR2バケットの自動作成を行います。
+
+> **先に「2. D1データベースとR2バケットを作成」を必ず済ませてください。** D1だけは自動作成しません。`database_id` がアカウントごとに変わり、`wrangler.toml` と食い違ったまま自動作成すると、アプリが空のDBを向いたまま「デプロイは成功しているのに何も動かない」状態になるためです。
+
+`NEXT_PUBLIC_APP_URL` は未設定でもデプロイ自体は成功しますが、認証コールバックやStripeのリダイレクト先が不安定になるため設定を推奨します。初回デプロイでURLが確定してから設定し、もう一度ワークフローを流す形でも問題ありません（その場合 `BETTER_AUTH_URL` シークレットを設定すれば認証だけは即座に正しくなります）。
 
 ※ このGitHub Actionsのトークンは**デプロイ専用**です。Stripe/Resendなどアプリ実行時に使うシークレットは、次のステップの通り引き続き `wrangler secret put` で別途登録してください（GitHub Secretsとは別物です）。
 
