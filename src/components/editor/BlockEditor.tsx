@@ -44,11 +44,11 @@ function ToolbarBtn({
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 30, height: 30, borderRadius: 6, border: 'none', cursor: disabled ? 'default' : 'pointer',
         background: active ? 'rgba(217,180,91,0.2)' : 'transparent',
-        color: active ? '#f2d992' : '#b6c1d2',
+        color: active ? 'var(--gold-2)' : 'var(--text-2)',
         fontSize: 13, fontWeight: 600, transition: 'background 0.15s, color 0.15s',
         opacity: disabled ? 0.35 : 1,
       }}
-      onMouseEnter={e => { if (!active && !disabled) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; }}
+      onMouseEnter={e => { if (!active && !disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--line-2)'; }}
       onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = active ? 'rgba(217,180,91,0.2)' : 'transparent'; }}
     >
       {children}
@@ -57,7 +57,7 @@ function ToolbarBtn({
 }
 
 function Divider() {
-  return <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />;
+  return <div style={{ width: 1, height: 20, background: 'var(--line-2)', margin: '0 4px' }} />;
 }
 
 // ============================================================
@@ -76,20 +76,20 @@ function TableOfContents({ content }: { content: string }) {
 
   return (
     <div style={{
-      background: '#101d31', border: '1px solid rgba(255,255,255,0.07)',
+      background: 'var(--panel-2)', border: '1px solid var(--line)',
       borderRadius: 10, padding: '14px 16px', marginBottom: 16,
     }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#7d8b9f', marginBottom: 10, letterSpacing: '0.05em' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', marginBottom: 10, letterSpacing: '0.05em' }}>
         📋 目次
       </div>
       {headings.map((h, i) => (
         <div key={i} style={{
           paddingLeft: (h.level - 1) * 12,
-          fontSize: 12, color: '#b6c1d2', lineHeight: 1.8,
+          fontSize: 12, color: 'var(--text-2)', lineHeight: 1.8,
           borderLeft: h.level === 1 ? '2px solid rgba(217,180,91,0.5)' : 'none',
           paddingTop: 1, paddingBottom: 1,
         }}>
-          {h.level > 1 && <span style={{ color: '#7d8b9f', marginRight: 4 }}>└</span>}
+          {h.level > 1 && <span style={{ color: 'var(--muted)', marginRight: 4 }}>└</span>}
           {h.text}
         </div>
       ))}
@@ -131,7 +131,7 @@ export default function BlockEditor({ value, onChange }: BlockEditorProps) {
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: {
-        style: 'min-height:400px; outline:none; padding:20px; font-size:14px; line-height:1.8; color:#e9eef7;',
+        style: 'min-height:400px; outline:none; padding:20px; font-size:14px; line-height:1.8; color:var(--text);',
       },
     },
   });
@@ -176,12 +176,12 @@ export default function BlockEditor({ value, onChange }: BlockEditorProps) {
   if (!editor) return null;
 
   return (
-    <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, overflow: 'hidden', background: '#0c1526' }}>
+    <div style={{ border: '1px solid var(--line-2)', borderRadius: 12, overflow: 'hidden', background: 'var(--panel)' }}>
 
       {/* ===== TOOLBAR ===== */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2, padding: '8px 12px',
-        borderBottom: '1px solid rgba(255,255,255,0.07)', background: '#101d31',
+        borderBottom: '1px solid var(--line)', background: 'var(--panel-2)',
       }}>
 
         {/* Heading */}
@@ -258,20 +258,20 @@ export default function BlockEditor({ value, onChange }: BlockEditorProps) {
 
       {/* ===== TABLE OF CONTENTS ===== */}
       {showToc && (
-        <div style={{ padding: '12px 16px 0', background: '#0c1526' }}>
+        <div style={{ padding: '12px 16px 0', background: 'var(--panel)' }}>
           <TableOfContents content={editor.getHTML()} />
         </div>
       )}
 
       {/* ===== EDITOR BODY ===== */}
-      <div style={{ background: '#0c1526' }}>
+      <div style={{ background: 'var(--panel)' }}>
         <EditorContent editor={editor} />
       </div>
 
       {/* ===== WORD COUNT ===== */}
       <div style={{
-        padding: '6px 16px', borderTop: '1px solid rgba(255,255,255,0.05)',
-        fontSize: 11, color: '#7d8b9f', background: '#0a1220',
+        padding: '6px 16px', borderTop: '1px solid var(--line)',
+        fontSize: 11, color: 'var(--muted)', background: '#0a1220',
         display: 'flex', justifyContent: 'flex-end',
       }}>
         {editor.getText().length.toLocaleString()} 文字

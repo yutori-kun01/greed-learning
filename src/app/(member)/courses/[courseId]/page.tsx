@@ -48,32 +48,32 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
       </div>
 
       <div className="panel" style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', marginBottom: '8px', color: '#e9eef7' }}>{course.title}</h1>
-        <p style={{ color: '#7d8b9f', marginBottom: '24px', lineHeight: 1.6 }}>
+        <h1 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--text)' }}>{course.title}</h1>
+        <p style={{ color: 'var(--muted)', marginBottom: '24px', lineHeight: 1.6 }}>
           {course.description || "説明はありません。"}
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-              <span style={{ color: '#7d8b9f' }}>進捗状況</span>
-              <span style={{ color: '#d9b45b', fontWeight: 'bold' }}>{progressPercent}%</span>
+              <span style={{ color: 'var(--muted)' }}>進捗状況</span>
+              <span style={{ color: 'var(--gold)', fontWeight: 'bold' }}>{progressPercent}%</span>
             </div>
             <div className="progress">
               <div className="bar"><span style={{ width: `${progressPercent}%` }}></span></div>
             </div>
           </div>
-          <div style={{ fontSize: '14px', color: '#b6c1d2', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
             {completedCount} / {totalLessons} レッスン完了
           </div>
         </div>
       </div>
 
-      <h2 style={{ fontSize: '18px', marginBottom: '16px', color: '#e9eef7', marginTop: '32px' }}>カリキュラム</h2>
+      <h2 style={{ fontSize: '18px', marginBottom: '16px', color: 'var(--text)', marginTop: '32px' }}>カリキュラム</h2>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {courseLessons.length === 0 ? (
-          <div className="panel" style={{ textAlign: 'center', padding: '40px 20px', color: '#7d8b9f' }}>
+          <div className="panel" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted)' }}>
             まだレッスンが登録されていません。
           </div>
         ) : (
@@ -96,8 +96,8 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
                   <div style={{ 
                     width: '32px', height: '32px', 
                     borderRadius: '50%', 
-                    background: isCompleted ? '#d9b45b' : 'rgba(255,255,255,0.05)',
-                    color: isCompleted ? '#060c17' : '#7d8b9f',
+                    background: isCompleted ? 'var(--gold)' : 'var(--line)',
+                    color: isCompleted ? 'var(--bg)' : 'var(--muted)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 'bold', fontSize: '14px',
                     marginRight: '16px'
@@ -106,17 +106,17 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
                   </div>
                   
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '15px', color: isCompleted ? '#e9eef7' : '#b6c1d2', fontWeight: 500, marginBottom: '4px' }}>
+                    <div style={{ fontSize: '15px', color: isCompleted ? 'var(--text)' : 'var(--text-2)', fontWeight: 500, marginBottom: '4px' }}>
                       {lesson.title}
                     </div>
                     {lesson.duration > 0 && (
-                      <div style={{ fontSize: '12px', color: '#7d8b9f', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Icon name="clock" /> {Math.floor(lesson.duration / 60)}分
                       </div>
                     )}
                   </div>
                   
-                  <div style={{ color: '#d9b45b', opacity: 0.7 }}>
+                  <div style={{ color: 'var(--gold)', opacity: 0.7 }}>
                     <Icon name="chevron-right" />
                   </div>
                 </div>

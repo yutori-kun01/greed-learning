@@ -20,7 +20,7 @@ export default function LessonForm({ courseId }: { courseId: string }) {
     }
   };
 
-  const inputStyle = { width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,0.07)', color: '#e9eef7', padding: '10px', borderRadius: '6px', marginBottom: '12px' };
+  const inputStyle = { width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', color: 'var(--text)', padding: '10px', borderRadius: '6px', marginBottom: '12px' };
 
   return (
     <form onSubmit={handleSubmit}>

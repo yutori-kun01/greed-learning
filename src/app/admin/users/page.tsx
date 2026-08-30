@@ -23,11 +23,11 @@ const INITIAL_USERS: MockUser[] = [
   { name: '渡辺 結衣', email: 'watanabe@example.com', role: 'MEMBER', registered: '2023-10-15', lastLogin: '2023-10-16', status: 'ACTIVE', coursesCompleted: 2, noteId: '' },
 ]
 
-const inputStyle = { display: 'block', width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,.07)', borderRadius: '6px', padding: '10px 14px', color: '#e9eef7', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const }
+const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const }
 
 const badges = {
-  ADMIN: { background: 'rgba(217,180,91,.15)', color: '#f2d992', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
-  MEMBER: { background: 'rgba(255,255,255,.08)', color: '#b6c1d2', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
+  ADMIN: { background: 'rgba(217,180,91,.15)', color: 'var(--gold-2)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
+  MEMBER: { background: 'var(--line-2)', color: 'var(--text-2)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
 }
 
 const statusBadges = {
@@ -72,30 +72,30 @@ export default function AdminUsersPage() {
       <div className="panel" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>名前</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>メール</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>ロール</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>ステータス</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>登録日</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>最終ログイン</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>操作</th>
+            <tr style={{ borderBottom: '1px solid var(--line)' }}>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>名前</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>メール</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>ロール</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>ステータス</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>登録日</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>最終ログイン</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>操作</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((u) => (
               <tr key={u.email}>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px', fontWeight: 600, color: '#e9eef7' }}>{u.name}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{u.email}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{u.name}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{u.email}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <span style={badges[u.role]}>{u.role}</span>
                 </td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <span style={statusBadges[u.status]}>{u.status === 'ACTIVE' ? 'ACTIVE' : '停止中'}</span>
                 </td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{u.registered}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{u.lastLogin}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{u.registered}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{u.lastLogin}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: '12px' }} onClick={() => setDetailUser(u)}>詳細</button>
                     {u.role !== 'ADMIN' && (
@@ -117,7 +117,7 @@ export default function AdminUsersPage() {
           </tbody>
         </table>
         {filteredUsers.length === 0 && (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#7d8b9f', fontSize: '13px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
             見つかりませんでした。
           </div>
         )}
@@ -137,24 +137,24 @@ export default function AdminUsersPage() {
               <h2 className="panel-title" style={{ margin: 0 }}>ユーザー詳細</h2>
               <button
                 onClick={() => setDetailUser(null)}
-                style={{ background: 'transparent', border: 'none', color: '#7d8b9f', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
                 aria-label="閉じる"
               >
                 ×
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}>
-              <div><span style={{ color: '#7d8b9f' }}>名前：</span><span style={{ color: '#e9eef7' }}>{detailUser.name}</span></div>
-              <div><span style={{ color: '#7d8b9f' }}>メール：</span><span style={{ color: '#e9eef7' }}>{detailUser.email}</span></div>
-              <div><span style={{ color: '#7d8b9f' }}>ロール：</span><span style={badges[detailUser.role]}>{detailUser.role}</span></div>
-              <div><span style={{ color: '#7d8b9f' }}>ステータス：</span><span style={statusBadges[detailUser.status]}>{detailUser.status === 'ACTIVE' ? 'ACTIVE' : '停止中'}</span></div>
-              <div><span style={{ color: '#7d8b9f' }}>note ID：</span><span style={{ color: '#e9eef7' }}>{detailUser.noteId || '未設定'}</span></div>
-              <div><span style={{ color: '#7d8b9f' }}>登録日：</span><span style={{ color: '#e9eef7' }}>{detailUser.registered}</span></div>
-              <div><span style={{ color: '#7d8b9f' }}>最終ログイン：</span><span style={{ color: '#e9eef7' }}>{detailUser.lastLogin}</span></div>
-              <div><span style={{ color: '#7d8b9f' }}>完了講座数：</span><span style={{ color: '#e9eef7' }}>{detailUser.coursesCompleted}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>名前：</span><span style={{ color: 'var(--text)' }}>{detailUser.name}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>メール：</span><span style={{ color: 'var(--text)' }}>{detailUser.email}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>ロール：</span><span style={badges[detailUser.role]}>{detailUser.role}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>ステータス：</span><span style={statusBadges[detailUser.status]}>{detailUser.status === 'ACTIVE' ? 'ACTIVE' : '停止中'}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>note ID：</span><span style={{ color: 'var(--text)' }}>{detailUser.noteId || '未設定'}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>登録日：</span><span style={{ color: 'var(--text)' }}>{detailUser.registered}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>最終ログイン：</span><span style={{ color: 'var(--text)' }}>{detailUser.lastLogin}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>完了講座数：</span><span style={{ color: 'var(--text)' }}>{detailUser.coursesCompleted}</span></div>
             </div>
             {detailUser.role !== 'ADMIN' && (
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,.07)' }}>
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
                 <button
                   style={{ color: detailUser.status === 'ACTIVE' ? '#ef4444' : '#6fd0a0', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontSize: '13px', fontWeight: 600 }}
                   onClick={() => {

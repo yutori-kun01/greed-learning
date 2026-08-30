@@ -3,7 +3,7 @@ import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateCourse } from '@/actions/courses';
 
-const inputStyle: React.CSSProperties = { display: 'block', width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,.07)', borderRadius: '6px', padding: '10px 14px', color: '#e9eef7', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' };
+const inputStyle: React.CSSProperties = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' };
 const labelStyle: React.CSSProperties = { display: 'block', marginBottom: '16px' };
 
 type Course = {
@@ -39,22 +39,22 @@ export default function CourseInfoForm({ course }: { course: Course }) {
   return (
     <form onSubmit={handleSubmit}>
       <label style={labelStyle}>
-        <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>講座番号</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>講座番号</span>
         <input type="text" name="number" required style={inputStyle} defaultValue={course.number} />
       </label>
 
       <label style={labelStyle}>
-        <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>タイトル</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>タイトル</span>
         <input type="text" name="title" required style={inputStyle} defaultValue={course.title} />
       </label>
 
       <label style={labelStyle}>
-        <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>説明</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>説明</span>
         <textarea name="description" rows={4} style={{ ...inputStyle, resize: 'vertical' }} defaultValue={course.description || ''} />
       </label>
 
       <label style={labelStyle}>
-        <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>カテゴリ</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>カテゴリ</span>
         <select name="categoryId" style={inputStyle} defaultValue={course.categoryId || 'strategy'}>
           <option value="strategy">strategy</option>
           <option value="traffic">traffic</option>
@@ -63,7 +63,7 @@ export default function CourseInfoForm({ course }: { course: Course }) {
       </label>
 
       <label style={labelStyle}>
-        <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>ステータス</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>ステータス</span>
         <select name="status" style={inputStyle} defaultValue={course.status}>
           <option value="DRAFT">DRAFT (下書き)</option>
           <option value="PUBLISHED">PUBLISHED (公開)</option>
@@ -72,7 +72,7 @@ export default function CourseInfoForm({ course }: { course: Course }) {
       </label>
 
       <label style={labelStyle}>
-        <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>バッジ (任意)</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>バッジ (任意)</span>
         <input type="text" name="badge" style={inputStyle} defaultValue={course.badge || ''} placeholder="例: NEW, 人気" />
       </label>
 

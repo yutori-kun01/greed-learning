@@ -113,7 +113,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ slu
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: 'var(--muted)', fontSize: 13 }}>
           <span>{new Date(post.publishedAt || post.createdAt).toLocaleDateString('ja-JP')}</span>
-          {post.status === 'PAID' && <span style={{ color: '#d9b45b', fontWeight: 600, padding: '2px 8px', background: 'rgba(217,180,91,0.1)', borderRadius: 4 }}>有料記事</span>}
+          {post.status === 'PAID' && <span style={{ color: 'var(--gold)', fontWeight: 600, padding: '2px 8px', background: 'rgba(217,180,91,0.1)', borderRadius: 4 }}>有料記事</span>}
           {post.status === 'MEMBERS_ONLY' && <span style={{ color: '#6495ed', fontWeight: 600, padding: '2px 8px', background: 'rgba(100,149,237,0.1)', borderRadius: 4 }}>会員限定</span>}
         </div>
       </div>

@@ -8,7 +8,7 @@ export default function AdminNewCoursePage() {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const inputStyle = { display: 'block', width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,.07)', borderRadius: '6px', padding: '10px 14px', color: '#e9eef7', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const }
+  const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const }
   const labelStyle = { display: 'block', marginBottom: '16px' }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -32,22 +32,22 @@ export default function AdminNewCoursePage() {
       <div className="panel">
         <form onSubmit={handleSubmit}>
           <label style={labelStyle}>
-            <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>講座番号</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>講座番号</span>
             <input type="text" name="number" required style={inputStyle} placeholder="例: 01" />
           </label>
           
           <label style={labelStyle}>
-            <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>タイトル</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>タイトル</span>
             <input type="text" name="title" required style={inputStyle} placeholder="講座のタイトル" />
           </label>
           
           <label style={labelStyle}>
-            <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>説明</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>説明</span>
             <textarea name="description" rows={4} required style={{ ...inputStyle, resize: 'vertical' }} placeholder="講座の詳細説明" />
           </label>
           
           <label style={labelStyle}>
-            <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>カテゴリ</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>カテゴリ</span>
             <select name="categoryId" style={inputStyle}>
               <option value="strategy">strategy</option>
               <option value="traffic">traffic</option>
@@ -56,7 +56,7 @@ export default function AdminNewCoursePage() {
           </label>
           
           <label style={labelStyle}>
-            <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>ステータス</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>ステータス</span>
             <select name="status" style={inputStyle}>
               <option value="DRAFT">DRAFT (下書き)</option>
               <option value="PUBLISHED">PUBLISHED (公開)</option>
@@ -64,7 +64,7 @@ export default function AdminNewCoursePage() {
           </label>
           
           <label style={labelStyle}>
-            <span style={{ fontSize: '13px', color: '#b6c1d2', fontWeight: 600 }}>バッジ (任意)</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>バッジ (任意)</span>
             <input type="text" name="badge" style={inputStyle} placeholder="例: NEW, 人気" />
           </label>
 

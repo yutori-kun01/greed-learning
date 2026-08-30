@@ -37,7 +37,7 @@ export default function Sidebar() {
         </Link>
         <a href="https://discord.gg/INVITE_CODE" target="_blank" rel="noopener noreferrer" className="nav-item">
           <Icon name="users" />Discord コミュニティ
-          <span style={{ marginLeft: 'auto', fontSize: '10px', color: '#7d8b9f' }}>↗</span>
+          <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--muted)' }}>↗</span>
         </a>
         <Link href="/support" className="nav-item">
           <Icon name="life" />サポート
@@ -46,7 +46,7 @@ export default function Sidebar() {
           <Icon name="settings" />設定
         </Link>
         {session?.user && (session.user as any).role === 'ADMIN' && (
-          <Link href="/admin" className="nav-item" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <Link href="/admin" className="nav-item" style={{ marginTop: 'auto', borderTop: '1px solid var(--line)' }}>
             <Icon name="lock" />管理者ダッシュボード
           </Link>
         )}

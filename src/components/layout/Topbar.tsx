@@ -35,14 +35,14 @@ export default function Topbar() {
           <div className="user" style={{ position: 'relative', cursor: 'pointer' }} onClick={() => {
             if(window.confirm('ログアウトしますか？')) handleLogout();
           }}>
-            <span className="avatar" aria-hidden="true" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#16233a', borderRadius: '50%' }}>
+            <span className="avatar" aria-hidden="true" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--panel-3)', borderRadius: '50%' }}>
               {session.user.image ? (
                 <img src={session.user.image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <svg viewBox="0 0 48 48">
-                  <circle cx="24" cy="24" r="24" fill="#16233a"/>
-                  <circle cx="24" cy="19" r="8" fill="#d9b45b" opacity=".85"/>
-                  <path d="M8 45c2-9 8.5-13 16-13s14 4 16 13z" fill="#d9b45b" opacity=".6"/>
+                  <circle cx="24" cy="24" r="24" fill="var(--panel-3)"/>
+                  <circle cx="24" cy="19" r="8" fill="var(--gold)" opacity=".85"/>
+                  <path d="M8 45c2-9 8.5-13 16-13s14 4 16 13z" fill="var(--gold)" opacity=".6"/>
                 </svg>
               )}
             </span>

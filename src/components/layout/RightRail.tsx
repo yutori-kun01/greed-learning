@@ -47,7 +47,7 @@ export default function RightRail() {
           {IN_PROGRESS.map(c => (
             <li key={c.id}>
               <Link href={`/courses/${c.id}`} className="mini">
-                <span className="mini-thumb" style={{ background: '#1d2a3f', display: 'block' }} />
+                <span className="mini-thumb" style={{ background: 'var(--panel-3)', display: 'block' }} />
                 <div>
                   <p className="mini-title">{c.title}</p>
                   <span className="progress">
@@ -68,7 +68,7 @@ export default function RightRail() {
         <h3 className="panel-title">おすすめの次のステップ</h3>
         <p className="panel-note">次に取り組むのにおすすめの講座です。</p>
         <Link href={`/courses/${NEXT_UP.id}`} className="next-card" id="next" style={{ textDecoration: 'none' }}>
-          <span className="next-thumb" style={{ background: '#1d2a3f', display: 'block' }} />
+          <span className="next-thumb" style={{ background: 'var(--panel-3)', display: 'block' }} />
           <div>
             <p className="next-title">{NEXT_UP.title}</p>
             <p className="next-desc">{NEXT_UP.desc}</p>

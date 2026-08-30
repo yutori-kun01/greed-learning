@@ -32,20 +32,20 @@ export default async function AdminDashboard() {
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         <div className="panel" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>総会員数</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>{totalUsers}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>総会員数</div>
+          <div style={{ fontSize: '32px', color: 'var(--gold)', fontWeight: 'bold' }}>{totalUsers}</div>
         </div>
         <div className="panel" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>今月の新規登録</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>{newUsersThisMonth}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>今月の新規登録</div>
+          <div style={{ fontSize: '32px', color: 'var(--gold)', fontWeight: 'bold' }}>{newUsersThisMonth}</div>
         </div>
         <div className="panel" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>総講座数</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>{totalCourses}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>総講座数</div>
+          <div style={{ fontSize: '32px', color: 'var(--gold)', fontWeight: 'bold' }}>{totalCourses}</div>
         </div>
         <div className="panel" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '8px' }}>総収益</div>
-          <div style={{ fontSize: '32px', color: '#d9b45b', fontWeight: 'bold' }}>¥{totalRevenue.toLocaleString()}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>総収益</div>
+          <div style={{ fontSize: '32px', color: 'var(--gold)', fontWeight: 'bold' }}>¥{totalRevenue.toLocaleString()}</div>
         </div>
       </div>
 
@@ -53,20 +53,20 @@ export default async function AdminDashboard() {
       <div className="panel" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>名前</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>メール</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>登録日</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#7d8b9f', fontWeight: 600 }}>ステータス</th>
+            <tr style={{ borderBottom: '1px solid var(--line)' }}>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>名前</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>メール</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>登録日</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>ステータス</th>
             </tr>
           </thead>
           <tbody>
             {recentUsers.map((u: any, i: number) => (
               <tr key={i}>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{u.name}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{u.email}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: '13px' }}>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{u.name}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{u.email}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <span style={badgeStyle}>ACTIVE</span>
                 </td>
               </tr>

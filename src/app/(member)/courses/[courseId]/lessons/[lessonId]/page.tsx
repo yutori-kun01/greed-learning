@@ -47,7 +47,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
     <div style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 64 }}>
       {/* Breadcrumb / Top info */}
       <div style={{ marginBottom: 24 }}>
-        <p style={{ fontSize: 13, color: 'var(--gold2)', fontWeight: 600, marginBottom: 8 }}>
+        <p style={{ fontSize: 13, color: 'var(--gold-2)', fontWeight: 600, marginBottom: 8 }}>
           {course.number}. {course.title}
         </p>
         <h1 className="section-title" style={{ fontSize: 24, marginBottom: 0 }}>
@@ -66,7 +66,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
               allowFullScreen
             />
           ) : (
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7d8b9f' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
               動画が設定されていません
             </div>
           )}

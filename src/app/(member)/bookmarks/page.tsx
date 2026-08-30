@@ -23,7 +23,7 @@ export default function BookmarksPage() {
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {bookmarks.map(b => (
           <div key={b.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-            <div className="thumb" style={{ aspectRatio: '2.2/1', background: '#101d31', position: 'relative' }}>
+            <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)', position: 'relative' }}>
               <button
                 onClick={() => removeBookmark(b.id)}
                 style={{
@@ -49,7 +49,7 @@ export default function BookmarksPage() {
             </div>
             <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
               <h3 className="card-title" style={{ marginBottom: '16px' }}>{b.title}</h3>
-              <div style={{ fontSize: '12px', color: '#7d8b9f', marginBottom: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '16px' }}>
                 {b.desc}
               </div>
               <Link href={`/courses/${b.id}`} className="btn btn-ghost btn-block" style={{ marginTop: 'auto', textAlign: 'center', textDecoration: 'none' }}>
@@ -59,7 +59,7 @@ export default function BookmarksPage() {
           </div>
         ))}
         {bookmarks.length === 0 && (
-          <div style={{ color: '#7d8b9f', fontSize: '14px', gridColumn: '1 / -1' }}>
+          <div style={{ color: 'var(--muted)', fontSize: '14px', gridColumn: '1 / -1' }}>
             ブックマークはありません。
           </div>
         )}

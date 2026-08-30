@@ -7,20 +7,20 @@ import '@/components/editor/editor.css';
 
 // Dynamic import to avoid SSR issues with TipTap
 const BlockEditor = dynamic(() => import('@/components/editor/BlockEditor'), { ssr: false, loading: () => (
-  <div style={{ minHeight: 400, background: '#0c1526', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7d8b9f', fontSize: 13 }}>
+  <div style={{ minHeight: 400, background: 'var(--panel)', borderRadius: 12, border: '1px solid var(--line-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 13 }}>
     エディタを読み込み中...
   </div>
 ) });
 
 const inputStyle: React.CSSProperties = {
-  display: 'block', width: '100%', background: '#101d31',
-  border: '1px solid rgba(255,255,255,.07)', borderRadius: '6px',
-  padding: '10px 14px', color: '#e9eef7', fontSize: '13px',
+  display: 'block', width: '100%', background: 'var(--panel-2)',
+  border: '1px solid var(--line)', borderRadius: '6px',
+  padding: '10px 14px', color: 'var(--text)', fontSize: '13px',
   outline: 'none', marginTop: '6px', boxSizing: 'border-box',
 };
 const labelStyle: React.CSSProperties = { display: 'block', marginBottom: '20px' };
-const labelTextStyle: React.CSSProperties = { fontSize: '13px', color: '#b6c1d2', fontWeight: 600 };
-const hintStyle: React.CSSProperties = { fontSize: '11px', color: '#7d8b9f', marginTop: 4 };
+const labelTextStyle: React.CSSProperties = { fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 };
+const hintStyle: React.CSSProperties = { fontSize: '11px', color: 'var(--muted)', marginTop: 4 };
 
 export default function AdminNewPostPage() {
   const [status, setStatus] = useState('DRAFT');
@@ -72,10 +72,10 @@ export default function AdminNewPostPage() {
   }, [title, slug, content, status, price, router]);
 
   const statusOptions = [
-    { value: 'DRAFT', label: 'DRAFT — 下書き（非公開）', color: '#7d8b9f' },
+    { value: 'DRAFT', label: 'DRAFT — 下書き（非公開）', color: 'var(--muted)' },
     { value: 'PUBLISHED', label: 'PUBLISHED — 一般公開', color: '#6fd0a0' },
     { value: 'MEMBERS_ONLY', label: 'MEMBERS_ONLY — 無料会員以上', color: '#6495ed' },
-    { value: 'PAID', label: 'PAID — 有料販売', color: '#f2d992' },
+    { value: 'PAID', label: 'PAID — 有料販売', color: 'var(--gold-2)' },
   ];
 
   const currentStatus = statusOptions.find(s => s.value === status);
@@ -114,7 +114,7 @@ export default function AdminNewPostPage() {
           <label style={labelStyle}>
             <span style={labelTextStyle}>スラッグ (URL)</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-              <span style={{ fontSize: 12, color: '#7d8b9f', whiteSpace: 'nowrap' }}>/posts/</span>
+              <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>/posts/</span>
               <input
                 type="text" style={{ ...inputStyle, marginTop: 0, flex: 1 }}
                 placeholder="my-article-title"
@@ -142,7 +142,7 @@ export default function AdminNewPostPage() {
             <label style={labelStyle}>
               <span style={labelTextStyle}>価格 (円) <span style={{ color: '#ef4444' }}>*</span></span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                <span style={{ fontSize: 13, color: '#7d8b9f' }}>¥</span>
+                <span style={{ fontSize: 13, color: 'var(--muted)' }}>¥</span>
                 <input type="number" style={{ ...inputStyle, marginTop: 0, flex: 1 }} placeholder="例: 1980" value={price} onChange={e => setPrice(e.target.value)} min={0} step={100} />
               </div>
               <div style={hintStyle}>Stripeと連携後、実際の決済が有効になります。</div>
@@ -152,7 +152,7 @@ export default function AdminNewPostPage() {
 
         {/* PAID info banner */}
         {status === 'PAID' && (
-          <div style={{ background: 'rgba(217,180,91,0.08)', border: '1px solid rgba(217,180,91,0.2)', borderRadius: 8, padding: '10px 14px', marginTop: -8, marginBottom: 4, fontSize: 12, color: '#f2d992' }}>
+          <div style={{ background: 'rgba(217,180,91,0.08)', border: '1px solid rgba(217,180,91,0.2)', borderRadius: 8, padding: '10px 14px', marginTop: -8, marginBottom: 4, fontSize: 12, color: 'var(--gold-2)' }}>
             💡 エディタ内で「💰有料」ボタンをクリックすると、無料公開範囲と有料範囲の境界ラインを挿入できます。
           </div>
         )}
@@ -160,9 +160,9 @@ export default function AdminNewPostPage() {
 
       {/* Block Editor */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: '#b6c1d2', fontWeight: 600, marginBottom: 8 }}>
+        <div style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600, marginBottom: 8 }}>
           本文
-          <span style={{ fontSize: 11, color: '#7d8b9f', fontWeight: 400, marginLeft: 8 }}>
+          <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 400, marginLeft: 8 }}>
             ツールバーまたはテキスト選択で書式設定
           </span>
         </div>

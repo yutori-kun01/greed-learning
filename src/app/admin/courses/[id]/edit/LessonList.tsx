@@ -6,7 +6,7 @@ import Icon from '@/components/Icon';
 
 export default function LessonList({ lessons, courseId }: { lessons: any[], courseId: string }) {
   if (lessons.length === 0) {
-    return <div className="panel" style={{ textAlign: 'center', padding: '24px', color: '#7d8b9f' }}>まだレッスンがありません。</div>;
+    return <div className="panel" style={{ textAlign: 'center', padding: '24px', color: 'var(--muted)' }}>まだレッスンがありません。</div>;
   }
 
   return (
@@ -14,8 +14,8 @@ export default function LessonList({ lessons, courseId }: { lessons: any[], cour
       {lessons.map((lesson) => (
         <div key={lesson.id} className="panel" style={{ display: 'flex', alignItems: 'center', padding: '12px 16px' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 'bold', color: '#e9eef7' }}>{lesson.title}</div>
-            <div style={{ fontSize: '12px', color: '#7d8b9f' }}>順序: {lesson.sortOrder}</div>
+            <div style={{ fontWeight: 'bold', color: 'var(--text)' }}>{lesson.title}</div>
+            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>順序: {lesson.sortOrder}</div>
           </div>
           <button 
             onClick={async () => {

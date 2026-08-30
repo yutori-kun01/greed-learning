@@ -64,7 +64,7 @@ export default function CoursesClientUI({ courses }: { courses: Course[] }) {
             <article className="card" tabIndex={0} style={{ height: '100%' }}>
               <div className="thumb">
                 {c.badge && <span className={`badge ${c.badge === 'NEW' ? 'badge-blue' : 'badge-gold'}`}>{c.badge}</span>}
-                <div style={{ width: '100%', height: '100%', background: '#1d2a3f' }}></div>
+                <div style={{ width: '100%', height: '100%', background: 'var(--panel-3)' }}></div>
               </div>
               <div className="card-body">
                 <h3 className="card-title">{c.number}. {c.title}</h3>

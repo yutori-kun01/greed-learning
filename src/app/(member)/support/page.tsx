@@ -21,11 +21,11 @@ export default function SupportPage() {
   const inputStyle = {
     display: 'block',
     width: '100%',
-    background: '#101d31',
-    border: '1px solid rgba(255,255,255,.07)',
+    background: 'var(--panel-2)',
+    border: '1px solid var(--line)',
     borderRadius: '6px',
     padding: '10px 14px',
-    color: '#e9eef7',
+    color: 'var(--text)',
     fontSize: '13px',
     outline: 'none',
     marginTop: '6px',
@@ -43,11 +43,11 @@ export default function SupportPage() {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
               >
-                <span style={{ fontWeight: 'bold', color: '#e9eef7' }}>{faq.q}</span>
-                <span style={{ color: '#7d8b9f', fontSize: '12px' }}>{openIndex === i ? '▲' : '▼'}</span>
+                <span style={{ fontWeight: 'bold', color: 'var(--text)' }}>{faq.q}</span>
+                <span style={{ color: 'var(--muted)', fontSize: '12px' }}>{openIndex === i ? '▲' : '▼'}</span>
               </div>
               {openIndex === i && (
-                <div style={{ color: '#7d8b9f', fontSize: '14px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,.07)' }}>
+                <div style={{ color: 'var(--muted)', fontSize: '14px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--line)' }}>
                   {faq.a}
                 </div>
               )}
@@ -81,7 +81,7 @@ export default function SupportPage() {
             }}
           >
             <div>
-              <label style={{ fontSize: '13px', color: '#b6c1d2' }}>お名前</label>
+              <label style={{ fontSize: '13px', color: 'var(--text-2)' }}>お名前</label>
               <input
                 type="text"
                 style={inputStyle}
@@ -92,7 +92,7 @@ export default function SupportPage() {
               {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.name}</p>}
             </div>
             <div>
-              <label style={{ fontSize: '13px', color: '#b6c1d2' }}>メールアドレス</label>
+              <label style={{ fontSize: '13px', color: 'var(--text-2)' }}>メールアドレス</label>
               <input
                 type="email"
                 style={inputStyle}
@@ -103,7 +103,7 @@ export default function SupportPage() {
               {errors.email && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.email}</p>}
             </div>
             <div>
-              <label style={{ fontSize: '13px', color: '#b6c1d2' }}>お問い合わせ内容</label>
+              <label style={{ fontSize: '13px', color: 'var(--text-2)' }}>お問い合わせ内容</label>
               <textarea
                 style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }}
                 placeholder="こちらにご記入ください..."

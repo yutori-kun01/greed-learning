@@ -34,7 +34,7 @@ export default function ResourcesPage() {
             <div key={i} className="panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               <div style={{ fontSize: '2rem', marginBottom: '16px' }}>{res.icon}</div>
               <h3 className="panel-title" style={{ marginBottom: '8px' }}>{res.title}</h3>
-              <p style={{ color: '#7d8b9f', fontSize: '13px', marginBottom: '24px', flexGrow: 1 }}>{res.desc}</p>
+              <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '24px', flexGrow: 1 }}>{res.desc}</p>
               <button
                 className={`btn ${s === 'done' ? 'btn-ghost' : 'btn-gold'}`}
                 style={{ width: '100%' }}

@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#060c17', color: '#e9eef7', fontFamily: 'inherit' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }}>
       <AdminSidebar />
       <div style={{ flex: 1, overflowX: 'auto' }}>
         <div style={{ padding: '32px 36px' }}>
