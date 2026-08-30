@@ -1,9 +1,9 @@
 import React from 'react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { blogPosts } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import EditPostForm from './EditPostForm';
 
 export default async function AdminPostEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,20 +14,15 @@ export default async function AdminPostEditPage({ params }: { params: Promise<{ 
   const post = postList[0];
 
   return (
-    <div>
-      <div className="section-title">
-        <Link href="/admin/posts" style={{ color: 'inherit', textDecoration: 'none', marginRight: '8px' }}>
-          ← 戻る
-        </Link>
-        <span style={{ opacity: 0.5 }}>/</span>
-        <span style={{ marginLeft: '8px' }}>記事の編集</span>
-      </div>
-
-      <div className="panel" style={{ textAlign: 'center', padding: '40px', color: '#7d8b9f' }}>
-        <h2 style={{ color: '#e9eef7', marginBottom: '16px' }}>{post.title}</h2>
-        <p>記事の編集UIは近日公開予定です。</p>
-        <p>（新規作成時と同様のTipTapエディタをここに実装します）</p>
-      </div>
-    </div>
+    <EditPostForm
+      post={{
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        content: post.content,
+        status: post.status,
+        price: post.price,
+      }}
+    />
   );
 }

@@ -32,7 +32,7 @@ export default async function LearningPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <h1 className="section-title">学習中の講座</h1>
       {startedCourses.length === 0 ? (
-        <div className="panel" style={{ textAlign: 'center', padding: '40px', color: '#7d8b9f' }}>
+        <div className="panel" style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
           まだ学習中の講座はありません。
         </div>
       ) : (
@@ -45,7 +45,7 @@ export default async function LearningPage() {
             
             return (
               <div key={course.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                <div className="thumb" style={{ aspectRatio: '2.2/1', background: '#101d31' }}>
+                <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
                   {course.badge && <span className="badge">{course.badge}</span>}
                 </div>
                 <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -53,7 +53,7 @@ export default async function LearningPage() {
                   <div className="progress">
                     <div className="bar"><span style={{ width: `${progressPercent}%` }}></span></div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#7d8b9f', marginTop: '8px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', marginBottom: '16px' }}>
                     進捗: {progressPercent}%
                   </div>
                   <Link href={`/courses/${course.id}`} className="btn btn-gold btn-block" style={{ marginTop: 'auto', textAlign: 'center', textDecoration: 'none' }}>詳細を見る</Link>

@@ -28,6 +28,7 @@
 
   --bg-gradient-1: rgba(217, 180, 91, .07);
   --bg-gradient-2: rgba(50, 90, 160, .10);
+  --topbar-bg: rgba(6, 12, 23, .82);
 }
 
 .light {
@@ -49,6 +50,7 @@
 
   --bg-gradient-1: rgba(184, 144, 50, .04);
   --bg-gradient-2: rgba(50, 90, 160, .05);
+  --topbar-bg: rgba(243, 245, 248, .82);
 }
 
 * { box-sizing: border-box; }
@@ -100,7 +102,7 @@ button, select, input { font: inherit; color: inherit; }
   flex-direction: column;
   gap: 18px;
   padding: 20px 14px;
-  background: linear-gradient(180deg, #0a1220, #070e19);
+  background: var(--panel);
   border-right: 1px solid var(--line);
 }
 
@@ -137,7 +139,7 @@ button, select, input { font: inherit; color: inherit; }
   border: 1px solid transparent;
   transition: background .15s, color .15s, border-color .15s;
 }
-.nav-item:hover { background: rgba(255, 255, 255, .04); color: var(--text); }
+.nav-item:hover { background: var(--line-2); color: var(--text); }
 .nav-item.is-active {
   background: linear-gradient(90deg, rgba(217, 180, 91, .16), rgba(217, 180, 91, .04));
   border-color: rgba(217, 180, 91, .22);
@@ -157,7 +159,7 @@ button, select, input { font: inherit; color: inherit; }
 
 .side-cards { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
 .side-card {
-  background: var(--panel);
+  background: var(--panel-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
@@ -181,7 +183,7 @@ button, select, input { font: inherit; color: inherit; }
   border-radius: 3px 3px 2px 2px;
   background: linear-gradient(180deg, var(--gold-2), rgba(217, 180, 91, .45));
 }
-.spark-col span.dim { background: rgba(255, 255, 255, .16); }
+.spark-col span.dim { background: var(--line-2); }
 .spark-col em { font-style: normal; font-size: 10px; color: var(--muted); }
 
 /* ---------- トップバー ---------- */
@@ -195,7 +197,7 @@ button, select, input { font: inherit; color: inherit; }
   flex-wrap: wrap;
   padding: 18px 28px;
   border-bottom: 1px solid var(--line);
-  background: rgba(6, 12, 23, .82);
+  background: var(--topbar-bg);
   backdrop-filter: blur(10px);
 }
 .topbar-title h1 { font-size: 21px; font-weight: 700; letter-spacing: .02em; }
@@ -261,7 +263,7 @@ button, select, input { font: inherit; color: inherit; }
 }
 .btn-gold:hover { box-shadow: 0 8px 22px rgba(217, 180, 91, .34); }
 .btn-ghost {
-  background: rgba(255, 255, 255, .03);
+  background: var(--line);
   border-color: var(--line-2);
   color: var(--text-2);
 }
@@ -375,7 +377,7 @@ button, select, input { font: inherit; color: inherit; }
 .card-desc { font-size: 11.5px; color: var(--muted); line-height: 1.55; }
 
 .progress { display: flex; align-items: center; gap: 10px; margin-top: auto; }
-.bar { flex: 1; height: 4px; border-radius: 999px; background: rgba(255, 255, 255, .09); overflow: hidden; }
+.bar { flex: 1; height: 4px; border-radius: 999px; background: var(--line-2); overflow: hidden; }
 .bar > span {
   display: block; height: 100%;
   border-radius: 999px;
@@ -445,7 +447,7 @@ button, select, input { font: inherit; color: inherit; }
 .donut { width: 84px; height: 84px; flex: none; }
 .donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .donut circle { fill: none; stroke-width: 9; stroke-linecap: round; }
-.donut-track { stroke: rgba(255, 255, 255, .08); }
+.donut-track { stroke: var(--line-2); }
 .donut-value {
   stroke: var(--gold);
   stroke-dasharray: calc(var(--value) * 2.639) 264;

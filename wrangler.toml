@@ -1,6 +1,23 @@
 name = "greed-learning"
-compatibility_date = "2024-04-05"
+
+# Entry point produced by `opennextjs-cloudflare build` (npm run build:worker).
+# Without `main` / `[assets]`, `wrangler deploy` aborts with
+# "Missing entry-point to Worker script or to assets directory".
+main = ".open-next/worker.js"
+
+# nodejs_compat behaves as v2 only from 2024-09-23 onward; Next.js 16 and
+# better-auth need the v2 surface, so keep this date recent.
+compatibility_date = "2025-03-25"
 compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# Workers Logs — lets `npx wrangler tail` and the dashboard show runtime
+# errors, which is the only way to debug a deployed Worker.
+[observability]
+enabled = true
 
 [[d1_databases]]
 binding = "DB"

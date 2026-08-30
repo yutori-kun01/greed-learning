@@ -26,7 +26,7 @@ export function ThemeToggle() {
         width: 32,
         height: 32,
         borderRadius: '50%',
-        background: 'rgba(255, 255, 255, 0.05)',
+        background: 'var(--line)',
         border: '1px solid var(--line)',
         color: 'var(--text-2)',
         cursor: 'pointer',

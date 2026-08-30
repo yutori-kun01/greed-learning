@@ -29,6 +29,7 @@ export async function createCourse(formData: FormData) {
   const categoryId = formData.get('categoryId') as string;
   const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "ARCHIVED";
   const badge = formData.get('badge') as string;
+  const requiredPlanId = (formData.get('requiredPlanId') as string) || null;
 
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -41,6 +42,7 @@ export async function createCourse(formData: FormData) {
     categoryId,
     status: status || 'DRAFT',
     badge,
+    requiredPlanId,
     createdAt: now,
     updatedAt: now,
   });
@@ -66,6 +68,7 @@ export async function updateCourse(id: string, formData: FormData) {
   const categoryId = formData.get('categoryId') as string;
   const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "ARCHIVED";
   const badge = formData.get('badge') as string;
+  const requiredPlanId = (formData.get('requiredPlanId') as string) || null;
 
   const now = new Date().toISOString();
 
@@ -77,6 +80,7 @@ export async function updateCourse(id: string, formData: FormData) {
       categoryId,
       status,
       badge,
+      requiredPlanId,
       updatedAt: now,
     })
     .where(eq(courses.id, id));

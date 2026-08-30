@@ -35,23 +35,23 @@ export default async function DashboardPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div className="panel">
         <h1 className="panel-title">ようこそ、{currentUser?.name || session.user.name}さん</h1>
-        <p style={{ color: '#7d8b9f', fontSize: '14px', marginTop: '8px' }}>
+        <p style={{ color: 'var(--muted)', fontSize: '14px', marginTop: '8px' }}>
           本日の学習目標に向かって頑張りましょう。
         </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: '#f2d992', fontWeight: 'bold' }}>{totalCompleted}</div>
-          <div style={{ fontSize: '12px', color: '#7d8b9f', marginTop: '4px' }}>完了したレッスン</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{totalCompleted}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>完了したレッスン</div>
         </div>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: '#f2d992', fontWeight: 'bold' }}>{currentUser?.currentStreak || 0}</div>
-          <div style={{ fontSize: '12px', color: '#7d8b9f', marginTop: '4px' }}>連続学習日数</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{currentUser?.currentStreak || 0}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>連続学習日数</div>
         </div>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: '#f2d992', fontWeight: 'bold' }}>0</div>
-          <div style={{ fontSize: '12px', color: '#7d8b9f', marginTop: '4px' }}>獲得ポイント</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>0</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>獲得ポイント</div>
         </div>
       </div>
 
@@ -59,10 +59,10 @@ export default async function DashboardPage() {
         <h2 className="section-title">学習中のコース</h2>
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
           {activeCourses.length === 0 ? (
-            <div style={{ color: '#7d8b9f', fontSize: 13 }}>現在学習中のコースはありません。</div>
+            <div style={{ color: 'var(--muted)', fontSize: 13 }}>現在学習中のコースはありません。</div>
           ) : activeCourses.map((c: any, i: number) => (
             <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-              <div className="thumb" style={{ aspectRatio: '2.2/1', background: '#101d31' }}>
+              <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
                 {c.badge && <span className={`badge badge-gold`}>{c.badge}</span>}
               </div>
               <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
                 <div className="progress">
                   <div className="bar"><span style={{ width: `0%` }}></span></div>
                 </div>
-                <div style={{ fontSize: '12px', color: '#7d8b9f', marginTop: '8px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', marginBottom: '16px' }}>
                   進捗: 0%
                 </div>
                 <Link href={`/courses/${c.id}`} className="btn btn-gold btn-block" style={{ marginTop: 'auto', textAlign: 'center' }}>

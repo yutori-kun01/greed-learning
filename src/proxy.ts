@@ -22,7 +22,11 @@ export default async function proxy(request: NextRequest) {
     if (!session || !session.session) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
-    
+
+    if (session.user?.status === "SUSPENDED") {
+      return NextResponse.redirect(new URL("/login?suspended=1", request.url));
+    }
+
     // Check admin role
     if (pathname.startsWith("/admin")) {
       if (session.user?.role !== "ADMIN") {

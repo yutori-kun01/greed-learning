@@ -4,19 +4,23 @@ import Link from 'next/link';
 import Icon from '../Icon';
 import { useSession } from '@/lib/auth-client';
 
-export default function Sidebar() {
+export default function Sidebar({ siteName = 'N8N MARKETING', logoUrl }: { siteName?: string; logoUrl?: string | null }) {
   const { data: session } = useSession();
 
   return (
     <aside className="sidebar">
       <div className="brand">
         <span className="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 40 40">
-            <path d="M8 30V11l12 13V11l12 19" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/>
-            <circle cx="20" cy="6" r="2.4" fill="currentColor"/>
-          </svg>
+          {logoUrl ? (
+            <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          ) : (
+            <svg viewBox="0 0 40 40">
+              <path d="M8 30V11l12 13V11l12 19" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/>
+              <circle cx="20" cy="6" r="2.4" fill="currentColor"/>
+            </svg>
+          )}
         </span>
-        <span className="brand-text"><b>N8N</b> MARKETING</span>
+        <span className="brand-text">{siteName}</span>
       </div>
 
       <nav className="nav">
@@ -37,7 +41,7 @@ export default function Sidebar() {
         </Link>
         <a href="https://discord.gg/INVITE_CODE" target="_blank" rel="noopener noreferrer" className="nav-item">
           <Icon name="users" />Discord コミュニティ
-          <span style={{ marginLeft: 'auto', fontSize: '10px', color: '#7d8b9f' }}>↗</span>
+          <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--muted)' }}>↗</span>
         </a>
         <Link href="/support" className="nav-item">
           <Icon name="life" />サポート
@@ -46,7 +50,7 @@ export default function Sidebar() {
           <Icon name="settings" />設定
         </Link>
         {session?.user && (session.user as any).role === 'ADMIN' && (
-          <Link href="/admin" className="nav-item" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <Link href="/admin" className="nav-item" style={{ marginTop: 'auto', borderTop: '1px solid var(--line)' }}>
             <Icon name="lock" />管理者ダッシュボード
           </Link>
         )}

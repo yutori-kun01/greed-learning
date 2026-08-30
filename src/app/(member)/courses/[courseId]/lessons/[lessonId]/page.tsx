@@ -2,9 +2,10 @@ import React from 'react';
 import { getDb } from '@/db';
 import { courses, lessons, lessonProgress } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
+import { canAccessCourse } from '@/lib/access';
 import LessonClientUI from './LessonClientUI';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -26,23 +27,17 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
   const courseData = await db().select().from(courses).where(eq(courses.id, courseId)).limit(1);
   const lessonData = await db().select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
 
-  // For development/preview: if no lesson in DB, use mock data
-  const course = courseData[0] || {
-    id: courseId,
-    title: 'リード獲得の全体設計',
-    number: '01'
-  };
+  if (courseData.length === 0 || lessonData.length === 0 || lessonData[0].courseId !== courseId) {
+    notFound();
+  }
 
-  const lesson = lessonData[0] || {
-    id: lessonId,
-    courseId: courseId,
-    title: '1. コンセプトメイクの重要性',
-    description: 'なぜコンセプトが最も重要なのか、具体的な事例を交えて解説します。',
-    content: '<p>ここはエディタで作成された本文コンテンツが入ります。</p>',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Dummy video
-    number: 1,
-    duration: 15
-  };
+  const course = courseData[0];
+  const lesson = lessonData[0];
+
+  const hasAccess = await canAccessCourse(process.env.DB as unknown as D1Database, session.user.id, course);
+  if (!hasAccess) {
+    redirect(`/courses/${courseId}`);
+  }
 
   // Fetch progress
   const progressData = await db().select().from(lessonProgress).where(
@@ -58,7 +53,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
     <div style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 64 }}>
       {/* Breadcrumb / Top info */}
       <div style={{ marginBottom: 24 }}>
-        <p style={{ fontSize: 13, color: 'var(--gold2)', fontWeight: 600, marginBottom: 8 }}>
+        <p style={{ fontSize: 13, color: 'var(--gold-2)', fontWeight: 600, marginBottom: 8 }}>
           {course.number}. {course.title}
         </p>
         <h1 className="section-title" style={{ fontSize: 24, marginBottom: 0 }}>
@@ -77,7 +72,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
               allowFullScreen
             />
           ) : (
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7d8b9f' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
               動画が設定されていません
             </div>
           )}

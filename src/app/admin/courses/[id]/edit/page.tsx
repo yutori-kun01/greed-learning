@@ -4,9 +4,13 @@ import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { courses, lessons } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
-import Icon from '@/components/Icon';
 import LessonForm from './LessonForm';
 import LessonList from './LessonList';
+import CourseInfoForm from './CourseInfoForm';
+import ResourceForm from './ResourceForm';
+import ResourceList from './ResourceList';
+import { getPlans } from '@/actions/plans';
+import { getCourseResources } from '@/actions/resources';
 
 export default async function AdminCourseEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,6 +21,8 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
   const course = courseList[0];
 
   const courseLessons = await db.select().from(lessons).where(eq(lessons.courseId, id)).orderBy(asc(lessons.sortOrder));
+  const plans = await getPlans();
+  const resources = await getCourseResources(id);
 
   return (
     <div>
@@ -31,15 +37,19 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         <div className="panel">
           <h2 className="panel-title">基本情報</h2>
-          {/* Note: Full update form omitted for brevity, focusing on read-only + lessons here */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#b6c1d2', fontSize: '13px' }}>タイトル</label>
-            <input type="text" defaultValue={course.title} readOnly style={{ width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,0.07)', color: '#e9eef7', padding: '10px', borderRadius: '6px' }} />
-          </div>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#b6c1d2', fontSize: '13px' }}>説明</label>
-            <textarea defaultValue={course.description || ''} readOnly rows={4} style={{ width: '100%', background: '#101d31', border: '1px solid rgba(255,255,255,0.07)', color: '#e9eef7', padding: '10px', borderRadius: '6px' }} />
-          </div>
+          <CourseInfoForm
+            course={{
+              id: course.id,
+              number: course.number,
+              title: course.title,
+              description: course.description,
+              categoryId: course.categoryId,
+              status: course.status,
+              badge: course.badge,
+              requiredPlanId: course.requiredPlanId,
+            }}
+            plans={plans}
+          />
         </div>
 
         <div>
@@ -50,6 +60,18 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
           <div className="panel" style={{ marginTop: '24px' }}>
             <h2 className="panel-title">新規レッスン追加</h2>
             <LessonForm courseId={id} />
+          </div>
+
+          <h2 className="section-title" style={{ marginTop: 32 }}>コース特典・リソース</h2>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -8, marginBottom: 16 }}>
+            この講座にアクセスできる会員だけが「リソース・特典」ページで閲覧できます。
+          </p>
+
+          <ResourceList resources={resources} courseId={id} />
+
+          <div className="panel" style={{ marginTop: '24px' }}>
+            <h2 className="panel-title">新規リソース追加</h2>
+            <ResourceForm courseId={id} />
           </div>
         </div>
       </div>

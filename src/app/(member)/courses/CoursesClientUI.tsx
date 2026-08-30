@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Icon from '@/components/Icon';
 import Link from 'next/link';
+import BookmarkButton from '@/components/BookmarkButton';
 
 const CATEGORIES = [
   { id: 'all', label: 'すべて' },
@@ -20,6 +21,8 @@ type Course = {
   minutes: number;
   cat: string;
   badge: string | null;
+  locked?: boolean;
+  bookmarked?: boolean;
 };
 
 export default function CoursesClientUI({ courses }: { courses: Course[] }) {
@@ -64,7 +67,18 @@ export default function CoursesClientUI({ courses }: { courses: Course[] }) {
             <article className="card" tabIndex={0} style={{ height: '100%' }}>
               <div className="thumb">
                 {c.badge && <span className={`badge ${c.badge === 'NEW' ? 'badge-blue' : 'badge-gold'}`}>{c.badge}</span>}
-                <div style={{ width: '100%', height: '100%', background: '#1d2a3f' }}></div>
+                {c.locked && (
+                  <span
+                    className="badge"
+                    style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,.55)', color: '#fff' }}
+                  >
+                    🔒 会員限定
+                  </span>
+                )}
+                <div style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 3 }}>
+                  <BookmarkButton courseId={c.id} initialBookmarked={!!c.bookmarked} size={28} />
+                </div>
+                <div style={{ width: '100%', height: '100%', background: 'var(--panel-3)' }}></div>
               </div>
               <div className="card-body">
                 <h3 className="card-title">{c.number}. {c.title}</h3>

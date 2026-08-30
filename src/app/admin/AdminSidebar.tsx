@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ siteName = 'N8N MARKETING' }: { siteName?: string }) {
   const pathname = usePathname()
 
   const links = [
@@ -11,14 +11,15 @@ export default function AdminSidebar() {
     { href: '/admin/courses', label: '講座管理' },
     { href: '/admin/posts', label: '記事管理' },
     { href: '/admin/users', label: 'ユーザー管理' },
+    { href: '/admin/plans', label: 'プラン管理' },
   ]
 
   return (
-    <div style={{ width: 220, flexShrink: 0, background: '#0c1526', borderRight: '1px solid rgba(255,255,255,.07)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ color: '#f2d992', fontWeight: 'bold', fontSize: '18px' }}>
-          N8N MARKETING
-          <span style={{ fontSize: '12px', marginLeft: '8px', color: '#7d8b9f', fontWeight: 'normal' }}>管理</span>
+    <div style={{ width: 220, flexShrink: 0, background: 'var(--panel)', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ color: 'var(--gold-2)', fontWeight: 'bold', fontSize: '18px' }}>
+          {siteName}
+          <span style={{ fontSize: '12px', marginLeft: '8px', color: 'var(--muted)', fontWeight: 'normal' }}>管理</span>
         </div>
       </div>
       <nav style={{ padding: '16px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -31,7 +32,7 @@ export default function AdminSidebar() {
               style={{ 
                 display: 'block', 
                 padding: '10px 16px', 
-                color: isActive ? '#f2d992' : '#b6c1d2', 
+                color: isActive ? 'var(--gold-2)' : 'var(--text-2)', 
                 background: isActive ? 'rgba(217,180,91,.1)' : 'transparent', 
                 borderRadius: '8px', 
                 margin: '2px 8px',
@@ -49,10 +50,10 @@ export default function AdminSidebar() {
         <Link 
           href="/admin/settings"
           style={{ 
-            display: 'block', padding: '10px 16px', color: pathname.startsWith('/admin/settings') ? '#f2d992' : '#b6c1d2', 
+            display: 'block', padding: '10px 16px', color: pathname.startsWith('/admin/settings') ? 'var(--gold-2)' : 'var(--text-2)', 
             background: pathname.startsWith('/admin/settings') ? 'rgba(217,180,91,.1)' : 'transparent', 
             borderRadius: '8px', margin: '2px 8px', textDecoration: 'none', fontSize: '14px',
-            borderTop: '1px solid rgba(255,255,255,.07)'
+            borderTop: '1px solid var(--line)'
           }}
         >
           ⚙️ サイト・アカウント設定

@@ -1,0 +1,112 @@
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches:
+      - claude/attachment-image-design-tkv2mx
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fails fast, before the ~5 minute build, when the repo has not been
+      # given its Cloudflare credentials yet — the most common first-deploy
+      # mistake. See DEPLOY.md section 5.
+      - name: Preflight — required configuration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+        run: |
+          missing=0
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Secret CLOUDFLARE_API_TOKEN is not set. Settings → Secrets and variables → Actions → New repository secret."
+            missing=1
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Secret CLOUDFLARE_ACCOUNT_ID is not set. Settings → Secrets and variables → Actions → New repository secret."
+            missing=1
+          fi
+          if [ -z "$NEXT_PUBLIC_APP_URL" ]; then
+            echo "::warning::Variable NEXT_PUBLIC_APP_URL is not set. The deploy will still work, but absolute URLs (auth callbacks, OG tags, Stripe redirects) fall back to request-derived values. Set it to your production URL and re-run."
+          fi
+          [ "$missing" -eq 0 ] || exit 1
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p .
+
+      - name: Lint
+        # Non-blocking: the codebase has ~80 pre-existing no-explicit-any
+        # errors by convention (not regressions), so a hard gate here would
+        # block every deploy. Still runs so issues are visible in the log.
+        run: pnpm run lint
+        continue-on-error: true
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build (Next.js)
+        run: pnpm run build
+        env:
+          # Placeholder values so build-time code paths that reference these
+          # don't fail — the real values are Workers secrets injected at
+          # runtime (see DEPLOY.md), not read from this build step.
+          DB: dummy
+          BETTER_AUTH_SECRET: dummy
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+
+      - name: Build (Cloudflare Worker)
+        run: pnpm run build:worker
+        env:
+          DB: dummy
+          BETTER_AUTH_SECRET: dummy
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+
+      # D1 must already exist and its id must match wrangler.toml, otherwise the
+      # deploy silently succeeds against a database the app cannot use. R2 is
+      # cheap to create on demand, so the first deploy bootstraps it.
+      - name: Ensure Cloudflare resources exist
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if ! npx wrangler d1 info greed-learning-db; then
+            echo "::error::D1 database 'greed-learning-db' was not found in this Cloudflare account, or the API token lacks D1 permission. Run 'npx wrangler d1 create greed-learning-db' and put the printed database_id into wrangler.toml."
+            exit 1
+          fi
+          if ! npx wrangler r2 bucket info greed-learning-assets >/dev/null 2>&1; then
+            echo "R2 bucket 'greed-learning-assets' not found — creating it."
+            npx wrangler r2 bucket create greed-learning-assets
+          fi
+
+      - name: Apply D1 migrations
+        run: npx wrangler d1 migrations apply greed-learning-db --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

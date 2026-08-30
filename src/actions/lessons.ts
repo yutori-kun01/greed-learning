@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
@@ -22,7 +23,7 @@ export async function createLesson(courseId: string, formData: FormData) {
   if (!title) throw new Error('タイトルは必須です');
   
   const videoUrl = formData.get('videoUrl') as string;
-  const content = formData.get('content') as string;
+  const content = sanitizeHtml(formData.get('content') as string);
   const sortOrder = parseInt(formData.get('orderIndex') as string) || 0;
   const duration = parseInt(formData.get('duration') as string) || 0;
 

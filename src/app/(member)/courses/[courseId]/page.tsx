@@ -2,11 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
-import { courses, lessons, lessonProgress } from '@/db/schema';
+import { courses, lessons, lessonProgress, plans } from '@/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import Icon from '@/components/Icon';
+import { canAccessCourse } from '@/lib/access';
+import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
+import BookmarkButton from '@/components/BookmarkButton';
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = await params;
@@ -25,6 +28,35 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   if (courseList.length === 0) return notFound();
   const course = courseList[0];
 
+  const hasAccess = await canAccessCourse(process.env.DB as unknown as D1Database, userId, course);
+  if (!hasAccess) {
+    const planResult = course.requiredPlanId
+      ? await db.select().from(plans).where(eq(plans.id, course.requiredPlanId)).limit(1)
+      : [];
+    const requiredPlan = planResult[0];
+
+    return (
+      <div>
+        <div className="section-title">
+          <Link href="/courses" style={{ color: 'inherit', textDecoration: 'none', marginRight: '8px' }}>
+            ← 戻る
+          </Link>
+          <span style={{ opacity: 0.5 }}>/</span>
+          <span style={{ marginLeft: '8px' }}>{course.title}</span>
+        </div>
+
+        <div className="panel" style={{ textAlign: 'center', padding: '48px 24px' }}>
+          <div style={{ fontSize: 32, marginBottom: 16 }}>🔒</div>
+          <h1 style={{ fontSize: 20, marginBottom: 8, color: 'var(--text)' }}>{course.title}</h1>
+          <p style={{ color: 'var(--muted)', marginBottom: 24 }}>
+            {requiredPlan ? `この講座は「${requiredPlan.name}」会員限定です。` : 'この講座は現在のプランではご視聴いただけません。'}
+          </p>
+          <Link href="/settings?tab=plan" className="btn btn-gold">プランを確認する</Link>
+        </div>
+      </div>
+    );
+  }
+
   // Get lessons
   const courseLessons = await db.select().from(lessons).where(eq(lessons.courseId, courseId)).orderBy(asc(lessons.sortOrder));
   
@@ -37,6 +69,8 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   const completedCount = [...completedLessonIds].filter(id => courseLessonIds.has(id)).length;
   const progressPercent = totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100);
 
+  const bookmarkedIds = await getMyBookmarkedCourseIds();
+
   return (
     <div>
       <div className="section-title">
@@ -48,32 +82,35 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
       </div>
 
       <div className="panel" style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', marginBottom: '8px', color: '#e9eef7' }}>{course.title}</h1>
-        <p style={{ color: '#7d8b9f', marginBottom: '24px', lineHeight: 1.6 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <h1 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--text)' }}>{course.title}</h1>
+          <BookmarkButton courseId={courseId} initialBookmarked={bookmarkedIds.has(courseId)} size={36} variant="plain" />
+        </div>
+        <p style={{ color: 'var(--muted)', marginBottom: '24px', lineHeight: 1.6 }}>
           {course.description || "説明はありません。"}
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-              <span style={{ color: '#7d8b9f' }}>進捗状況</span>
-              <span style={{ color: '#d9b45b', fontWeight: 'bold' }}>{progressPercent}%</span>
+              <span style={{ color: 'var(--muted)' }}>進捗状況</span>
+              <span style={{ color: 'var(--gold)', fontWeight: 'bold' }}>{progressPercent}%</span>
             </div>
             <div className="progress">
               <div className="bar"><span style={{ width: `${progressPercent}%` }}></span></div>
             </div>
           </div>
-          <div style={{ fontSize: '14px', color: '#b6c1d2', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
             {completedCount} / {totalLessons} レッスン完了
           </div>
         </div>
       </div>
 
-      <h2 style={{ fontSize: '18px', marginBottom: '16px', color: '#e9eef7', marginTop: '32px' }}>カリキュラム</h2>
+      <h2 style={{ fontSize: '18px', marginBottom: '16px', color: 'var(--text)', marginTop: '32px' }}>カリキュラム</h2>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {courseLessons.length === 0 ? (
-          <div className="panel" style={{ textAlign: 'center', padding: '40px 20px', color: '#7d8b9f' }}>
+          <div className="panel" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted)' }}>
             まだレッスンが登録されていません。
           </div>
         ) : (
@@ -96,8 +133,8 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
                   <div style={{ 
                     width: '32px', height: '32px', 
                     borderRadius: '50%', 
-                    background: isCompleted ? '#d9b45b' : 'rgba(255,255,255,0.05)',
-                    color: isCompleted ? '#060c17' : '#7d8b9f',
+                    background: isCompleted ? 'var(--gold)' : 'var(--line)',
+                    color: isCompleted ? 'var(--bg)' : 'var(--muted)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 'bold', fontSize: '14px',
                     marginRight: '16px'
@@ -106,17 +143,17 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
                   </div>
                   
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '15px', color: isCompleted ? '#e9eef7' : '#b6c1d2', fontWeight: 500, marginBottom: '4px' }}>
+                    <div style={{ fontSize: '15px', color: isCompleted ? 'var(--text)' : 'var(--text-2)', fontWeight: 500, marginBottom: '4px' }}>
                       {lesson.title}
                     </div>
                     {lesson.duration > 0 && (
-                      <div style={{ fontSize: '12px', color: '#7d8b9f', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Icon name="clock" /> {Math.floor(lesson.duration / 60)}分
                       </div>
                     )}
                   </div>
                   
-                  <div style={{ color: '#d9b45b', opacity: 0.7 }}>
+                  <div style={{ color: 'var(--gold)', opacity: 0.7 }}>
                     <Icon name="chevron-right" />
                   </div>
                 </div>

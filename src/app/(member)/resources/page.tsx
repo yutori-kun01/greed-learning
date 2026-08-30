@@ -1,26 +1,25 @@
-export default function ResourcesPage() {
-  const resources = [
-    { icon: '📄', title: 'PDFテンプレート', desc: '業務効率化のための標準フォーマット' },
-    { icon: '✅', title: 'チェックリスト', desc: '自動化フロー公開前の確認リスト' },
-    { icon: '🎬', title: 'ボーナス動画', desc: '特別ウェビナーのアーカイブ録画' },
-    { icon: '📁', title: 'スワイプファイル集', desc: '高コンバージョンを記録したLPの構造' },
-    { icon: '🔑', title: 'キーワードリスト', desc: 'SEO対策向けの厳選キーワード' },
-    { icon: '✉️', title: 'メールテンプレート', desc: 'ステップメールに使える雛形' }
-  ];
+import { getDb } from '@/db';
+import { courses } from '@/db/schema';
+import { getAuth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { getAccessibleCourseIds } from '@/lib/access';
+import { getResourcesForCourses } from '@/actions/resources';
+import ResourcesClientUI from './ResourcesClientUI';
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <h1 className="section-title">リソース・特典</h1>
-      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-        {resources.map((res, i) => (
-          <div key={i} className="panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '16px' }}>{res.icon}</div>
-            <h3 className="panel-title" style={{ marginBottom: '8px' }}>{res.title}</h3>
-            <p style={{ color: '#7d8b9f', fontSize: '13px', marginBottom: '24px', flexGrow: 1 }}>{res.desc}</p>
-            <button className="btn btn-gold" style={{ width: '100%' }}>ダウンロード</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+export default async function ResourcesPage() {
+  const reqHeaders = await headers();
+  const auth = getAuth(process.env.DB as unknown as D1Database);
+  const session = await auth.api.getSession({ headers: reqHeaders });
+  const userId = session?.user?.id;
+
+  const db = getDb(process.env.DB as unknown as D1Database);
+  const allCourses = await db.select().from(courses);
+
+  const accessibleIds = userId
+    ? await getAccessibleCourseIds(process.env.DB as unknown as D1Database, userId, allCourses)
+    : new Set<string>();
+
+  const resources = await getResourcesForCourses([...accessibleIds]);
+
+  return <ResourcesClientUI resources={resources} />;
 }
