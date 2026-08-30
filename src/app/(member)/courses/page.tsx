@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { getAccessibleCourseIds } from '@/lib/access';
+import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
 import CoursesClientUI from './CoursesClientUI';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -26,6 +27,7 @@ export default async function CoursesPage() {
   const accessibleIds = userId
     ? await getAccessibleCourseIds(process.env.DB as unknown as D1Database, userId, allCourses)
     : new Set<string>();
+  const bookmarkedIds = await getMyBookmarkedCourseIds();
 
   // Formatting for the client UI
   const formattedCourses = allCourses.map((c: any) => {
@@ -44,6 +46,7 @@ export default async function CoursesPage() {
       cat: c.categoryId || 'strategy',
       badge: c.badge || null,
       locked: !accessibleIds.has(c.id),
+      bookmarked: bookmarkedIds.has(c.id),
     };
   });
 

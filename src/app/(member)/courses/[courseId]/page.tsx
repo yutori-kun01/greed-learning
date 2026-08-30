@@ -8,6 +8,8 @@ import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import Icon from '@/components/Icon';
 import { canAccessCourse } from '@/lib/access';
+import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
+import BookmarkButton from '@/components/BookmarkButton';
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = await params;
@@ -67,6 +69,8 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   const completedCount = [...completedLessonIds].filter(id => courseLessonIds.has(id)).length;
   const progressPercent = totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100);
 
+  const bookmarkedIds = await getMyBookmarkedCourseIds();
+
   return (
     <div>
       <div className="section-title">
@@ -78,7 +82,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
       </div>
 
       <div className="panel" style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--text)' }}>{course.title}</h1>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <h1 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--text)' }}>{course.title}</h1>
+          <BookmarkButton courseId={courseId} initialBookmarked={bookmarkedIds.has(courseId)} size={36} variant="plain" />
+        </div>
         <p style={{ color: 'var(--muted)', marginBottom: '24px', lineHeight: 1.6 }}>
           {course.description || "説明はありません。"}
         </p>
