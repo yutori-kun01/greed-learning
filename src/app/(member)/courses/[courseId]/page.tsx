@@ -2,11 +2,12 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
-import { courses, lessons, lessonProgress } from '@/db/schema';
+import { courses, lessons, lessonProgress, plans } from '@/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import Icon from '@/components/Icon';
+import { canAccessCourse } from '@/lib/access';
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = await params;
@@ -24,6 +25,35 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   const courseList = await db.select().from(courses).where(eq(courses.id, courseId)).limit(1);
   if (courseList.length === 0) return notFound();
   const course = courseList[0];
+
+  const hasAccess = await canAccessCourse(process.env.DB as unknown as D1Database, userId, course);
+  if (!hasAccess) {
+    const planResult = course.requiredPlanId
+      ? await db.select().from(plans).where(eq(plans.id, course.requiredPlanId)).limit(1)
+      : [];
+    const requiredPlan = planResult[0];
+
+    return (
+      <div>
+        <div className="section-title">
+          <Link href="/courses" style={{ color: 'inherit', textDecoration: 'none', marginRight: '8px' }}>
+            ← 戻る
+          </Link>
+          <span style={{ opacity: 0.5 }}>/</span>
+          <span style={{ marginLeft: '8px' }}>{course.title}</span>
+        </div>
+
+        <div className="panel" style={{ textAlign: 'center', padding: '48px 24px' }}>
+          <div style={{ fontSize: 32, marginBottom: 16 }}>🔒</div>
+          <h1 style={{ fontSize: 20, marginBottom: 8, color: 'var(--text)' }}>{course.title}</h1>
+          <p style={{ color: 'var(--muted)', marginBottom: 24 }}>
+            {requiredPlan ? `この講座は「${requiredPlan.name}」会員限定です。` : 'この講座は現在のプランではご視聴いただけません。'}
+          </p>
+          <Link href="/settings?tab=plan" className="btn btn-gold">プランを確認する</Link>
+        </div>
+      </div>
+    );
+  }
 
   // Get lessons
   const courseLessons = await db.select().from(lessons).where(eq(lessons.courseId, courseId)).orderBy(asc(lessons.sortOrder));

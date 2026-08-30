@@ -14,9 +14,12 @@ type Course = {
   categoryId: string | null;
   status: string;
   badge: string | null;
+  requiredPlanId: string | null;
 };
 
-export default function CourseInfoForm({ course }: { course: Course }) {
+type Plan = { id: string; name: string };
+
+export default function CourseInfoForm({ course, plans = [] }: { course: Course; plans?: Plan[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -74,6 +77,16 @@ export default function CourseInfoForm({ course }: { course: Course }) {
       <label style={labelStyle}>
         <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>バッジ (任意)</span>
         <input type="text" name="badge" style={inputStyle} defaultValue={course.badge || ''} placeholder="例: NEW, 人気" />
+      </label>
+
+      <label style={labelStyle}>
+        <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>公開範囲</span>
+        <select name="requiredPlanId" style={inputStyle} defaultValue={course.requiredPlanId || ''}>
+          <option value="">全ての有料会員に公開</option>
+          {plans.map(plan => (
+            <option key={plan.id} value={plan.id}>{plan.name} 会員限定</option>
+          ))}
+        </select>
       </label>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

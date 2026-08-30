@@ -2,15 +2,36 @@
 import React, { useState, useTransition } from 'react';
 import { useTheme } from 'next-themes';
 import { updateUserProfile } from '@/actions/settings';
+import { createSubscriptionCheckoutSession, createBillingPortalSession } from '@/actions/subscription';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '20px' };
 
 type FieldStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-export default function MemberSettingsForm({ user }: { user: any }) {
+type Plan = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  interval: string;
+};
+
+export default function MemberSettingsForm({
+  user,
+  plans = [],
+  currentPlan = null,
+  subscriptionStatus = 'NONE',
+  initialTab = 'profile',
+}: {
+  user: any;
+  plans?: Plan[];
+  currentPlan?: Plan | null;
+  subscriptionStatus?: string;
+  initialTab?: string;
+}) {
   const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -83,6 +104,7 @@ export default function MemberSettingsForm({ user }: { user: any }) {
         <button className={`btn ${activeTab === 'profile' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('profile')}>プロフィール</button>
         <button className={`btn ${activeTab === 'security' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('security')}>セキュリティ・2FA</button>
         <button className={`btn ${activeTab === 'preferences' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('preferences')}>表示設定</button>
+        <button className={`btn ${activeTab === 'plan' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('plan')}>会員プラン</button>
       </div>
 
       {activeTab === 'profile' && (
@@ -215,6 +237,60 @@ export default function MemberSettingsForm({ user }: { user: any }) {
             </div>
             <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 12 }}>※この設定はお使いの端末に保存され、ログインごとに適用されます。</p>
           </label>
+        </div>
+      )}
+
+      {activeTab === 'plan' && (
+        <div className="panel">
+          <h2 className="panel-title">会員プラン</h2>
+
+          {currentPlan && subscriptionStatus === 'ACTIVE' ? (
+            <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'var(--gold-dim)', border: '1px solid rgba(217,180,91,.3)' }}>
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>現在のプラン</p>
+              <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--gold-2)' }}>{currentPlan.name}</p>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>
+                ¥{currentPlan.price.toLocaleString()} / {currentPlan.interval === 'year' ? '年' : '月'}
+              </p>
+              <form action={createBillingPortalSession} style={{ marginTop: 12 }}>
+                <button type="submit" className="btn btn-ghost">お支払い方法・解約の管理</button>
+              </form>
+            </div>
+          ) : subscriptionStatus === 'PAST_DUE' ? (
+            <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)' }}>
+              <p style={{ fontSize: 13, color: '#ef4444', fontWeight: 600 }}>お支払いに問題が発生しています。お支払い方法をご確認ください。</p>
+              <form action={createBillingPortalSession} style={{ marginTop: 12 }}>
+                <button type="submit" className="btn btn-gold">お支払い方法を更新</button>
+              </form>
+            </div>
+          ) : (
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>現在ご契約中のプランはありません。以下から選択してください。</p>
+          )}
+
+          {plans.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--muted)' }}>現在ご利用可能なプランはありません。</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+              {plans.map(plan => {
+                const isCurrent = currentPlan?.id === plan.id && subscriptionStatus === 'ACTIVE';
+                return (
+                  <div key={plan.id} className="panel" style={{ border: isCurrent ? '1px solid var(--gold)' : undefined }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{plan.name}</h3>
+                    {plan.description && <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>{plan.description}</p>}
+                    <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--gold-2)', marginBottom: 16 }}>
+                      ¥{plan.price.toLocaleString()}<span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400 }}> / {plan.interval === 'year' ? '年' : '月'}</span>
+                    </p>
+                    {isCurrent ? (
+                      <button type="button" className="btn btn-ghost btn-block" disabled>契約中</button>
+                    ) : (
+                      <form action={createSubscriptionCheckoutSession.bind(null, plan.id)}>
+                        <button type="submit" className="btn btn-gold btn-block">このプランに登録</button>
+                      </form>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

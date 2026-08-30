@@ -3,6 +3,7 @@ import { courses, lessons, lessonProgress } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { getAccessibleCourseIds } from '@/lib/access';
 import CoursesClientUI from './CoursesClientUI';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -22,6 +23,10 @@ export default async function CoursesPage() {
     userProgress.filter((p: any) => p.isCompleted).map((p: any) => p.lessonId)
   );
 
+  const accessibleIds = userId
+    ? await getAccessibleCourseIds(process.env.DB as unknown as D1Database, userId, allCourses)
+    : new Set<string>();
+
   // Formatting for the client UI
   const formattedCourses = allCourses.map((c: any) => {
     const courseLessons = allLessons.filter((l: any) => l.courseId === c.id);
@@ -38,6 +43,7 @@ export default async function CoursesPage() {
       minutes: c.totalDuration || 0,
       cat: c.categoryId || 'strategy',
       badge: c.badge || null,
+      locked: !accessibleIds.has(c.id),
     };
   });
 
