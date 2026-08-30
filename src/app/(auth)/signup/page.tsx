@@ -75,6 +75,10 @@ export default function SignupPage() {
           <button type="submit" className="btn btn-gold btn-block" disabled={loading}>
             {loading ? '登録中...' : 'アカウントを作成'}
           </button>
+
+          <p style={{ fontSize: '0.75rem', color: '#8fa2bd', textAlign: 'center', marginTop: '0.5rem' }}>
+            登録することで<a href="/legal/terms" style={{ color: '#d9b45b' }}>利用規約</a>および<a href="/legal/privacy" style={{ color: '#d9b45b' }}>プライバシーポリシー</a>に同意したものとみなされます。
+          </p>
         </form>
       </div>
 

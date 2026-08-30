@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db";
+import { user as userTable } from "@/db/schema";
+import { count } from "drizzle-orm";
 
 export function getAuth(d1: D1Database) {
   const db = getDb(d1);
@@ -14,6 +16,12 @@ export function getAuth(d1: D1Database) {
     },
     emailAndPassword: {
       enabled: true,
+    },
+    rateLimit: {
+      enabled: true,
+      // Memory storage doesn't survive across Workers isolates; back it
+      // with D1 so limits actually hold under real traffic.
+      storage: "database",
     },
     socialProviders: {
       google: {
@@ -39,6 +47,21 @@ export function getAuth(d1: D1Database) {
         stripeSubscriptionId: { type: "string", required: false, input: false },
         subscriptionStatus: { type: "string", input: false, defaultValue: "NONE" },
         currentPeriodEnd: { type: "date", required: false, input: false },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          // Self-hosted deployments have no seed data — the very first
+          // account to sign up becomes the admin so the operator can
+          // reach /admin without touching the database by hand.
+          before: async (user) => {
+            const result = await db.select({ value: count() }).from(userTable);
+            if (result[0]?.value === 0) {
+              return { data: { ...user, role: "ADMIN" } };
+            }
+          },
+        },
       },
     },
   });

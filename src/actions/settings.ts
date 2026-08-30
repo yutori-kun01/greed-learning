@@ -24,24 +24,42 @@ export async function updateSiteSettings(formData: FormData) {
   const siteName = formData.get('siteName') as string;
   const accentColor = formData.get('accentColor') as string;
   const bgPattern = formData.get('bgPattern') as string;
+  const logoUrl = (formData.get('logoUrl') as string) || null;
 
-  await db().insert(siteSettings).values({
-    id: '1',
+  const operatorName = (formData.get('operatorName') as string) || null;
+  const operatorRepresentative = (formData.get('operatorRepresentative') as string) || null;
+  const operatorAddress = (formData.get('operatorAddress') as string) || null;
+  const operatorPhone = (formData.get('operatorPhone') as string) || null;
+  const operatorEmail = (formData.get('operatorEmail') as string) || null;
+  const tokushohoExtra = (formData.get('tokushohoExtra') as string) || null;
+  const termsContent = (formData.get('termsContent') as string) || null;
+  const privacyContent = (formData.get('privacyContent') as string) || null;
+
+  const values = {
     siteName,
     accentColor,
     bgPattern,
+    logoUrl,
+    operatorName,
+    operatorRepresentative,
+    operatorAddress,
+    operatorPhone,
+    operatorEmail,
+    tokushohoExtra,
+    termsContent,
+    privacyContent,
     updatedAt: new Date().toISOString(),
-  }).onConflictDoUpdate({
+  };
+
+  await db().insert(siteSettings).values({ id: '1', ...values }).onConflictDoUpdate({
     target: siteSettings.id,
-    set: {
-      siteName,
-      accentColor,
-      bgPattern,
-      updatedAt: new Date().toISOString(),
-    }
+    set: values,
   });
 
   revalidatePath('/', 'layout');
+  revalidatePath('/legal/tokushoho');
+  revalidatePath('/legal/terms');
+  revalidatePath('/legal/privacy');
   return { success: true };
 }
 

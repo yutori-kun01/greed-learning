@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
@@ -26,7 +27,7 @@ export async function createPost(formData: FormData) {
   if (!title || !slug) {
     throw new Error('タイトルとスラッグは必須です');
   }
-  const content = formData.get('content') as string;
+  const content = sanitizeHtml(formData.get('content') as string);
   const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "MEMBERS_ONLY" | "PAID";
   const price = formData.get('price') ? parseInt(formData.get('price') as string, 10) : 0;
 
@@ -67,7 +68,7 @@ export async function updatePost(id: string, formData: FormData) {
   if (!title || !slug) {
     throw new Error('タイトルとスラッグは必須です');
   }
-  const content = formData.get('content') as string;
+  const content = sanitizeHtml(formData.get('content') as string);
   const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "MEMBERS_ONLY" | "PAID";
   const price = formData.get('price') ? parseInt(formData.get('price') as string, 10) : 0;
 

@@ -68,6 +68,15 @@ export const verification = sqliteTable("verification", {
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
 });
 
+// Persistent storage for better-auth's rate limiter. Memory storage (the
+// default) doesn't survive across Workers isolates, so this backs it with D1.
+export const rateLimit = sqliteTable("rateLimit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull(),
+  count: integer("count").notNull(),
+  lastRequest: integer("lastRequest").notNull(),
+});
+
 // ========================
 //  Courses & Learning
 // ========================
@@ -209,6 +218,18 @@ export const siteSettings = sqliteTable('siteSettings', {
   logoUrl: text('logoUrl'),
   accentColor: text('accentColor').default('gold').notNull(),
   bgPattern: text('bgPattern').default('pattern1').notNull(),
+
+  // Legal / operator info — backs the auto-generated 特定商取引法に基づく表記,
+  // and the editable 利用規約 / プライバシーポリシー pages.
+  operatorName: text('operatorName'),
+  operatorRepresentative: text('operatorRepresentative'),
+  operatorAddress: text('operatorAddress'),
+  operatorPhone: text('operatorPhone'),
+  operatorEmail: text('operatorEmail'),
+  tokushohoExtra: text('tokushohoExtra'),
+  termsContent: text('termsContent'),
+  privacyContent: text('privacyContent'),
+
   updatedAt: text('updatedAt').notNull(),
 });
 

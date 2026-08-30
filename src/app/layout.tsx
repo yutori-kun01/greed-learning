@@ -1,13 +1,17 @@
 import type { Metadata } from 'next'
 import './globals.css'
 
-export const metadata: Metadata = {
-  title: 'N8N MARKETING',
-  description: '実践に直結する講座を体系的に学びましょう。',
-}
-
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { getSiteSettingsQuery } from '@/actions/settings'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettingsQuery();
+  const siteName = settings?.siteName || 'N8N MARKETING';
+  return {
+    title: siteName,
+    description: '実践に直結する講座を体系的に学びましょう。',
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -25,14 +29,11 @@ export default async function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          {settings && (
-            <style dangerouslySetInnerHTML={{__html: `
-              :root {
-                ${settings.accentColor ? `--gold: ${settings.accentColor}; --gold2: ${settings.accentColor};` : ''}
-              }
-              body {
-                background-image: ${settings.bgPattern === 'pattern2' ? 'url("/noise.png")' : 'none'};
-                /* Implement other patterns as needed */
+          {settings?.accentColor && (
+            <style dangerouslySetInnerHTML={{ __html: `
+              :root, .light {
+                --gold: ${settings.accentColor};
+                --gold-2: ${settings.accentColor};
               }
             `}} />
           )}

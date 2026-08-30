@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ siteName = 'N8N MARKETING' }: { siteName?: string }) {
   const pathname = usePathname()
 
   const links = [
@@ -18,7 +18,7 @@ export default function AdminSidebar() {
     <div style={{ width: 220, flexShrink: 0, background: 'var(--panel)', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ color: 'var(--gold-2)', fontWeight: 'bold', fontSize: '18px' }}>
-          N8N MARKETING
+          {siteName}
           <span style={{ fontSize: '12px', marginLeft: '8px', color: 'var(--muted)', fontWeight: 'normal' }}>管理</span>
         </div>
       </div>
