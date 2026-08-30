@@ -5,6 +5,7 @@ import { user, courses, purchases, plans } from '@/db/schema';
 import { desc, count, sum, gte } from 'drizzle-orm';
 import { getSiteSettingsQuery } from '@/actions/settings';
 import Stripe from 'stripe';
+import CommandLine from '@/components/CommandLine';
 
 async function checkStripeConnection() {
   if (!process.env.STRIPE_SECRET_KEY) return false;
@@ -45,12 +46,34 @@ export default async function AdminDashboard() {
   const stripeConnected = await checkStripeConnection();
 
   const emailConfigured = !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://<your-domain>';
 
-  const checklist = [
+  const checklist: {
+    label: string;
+    done: boolean;
+    href?: string;
+    commands?: { command: string; note?: string }[];
+  }[] = [
     { label: 'サイト名・ブランドを設定する', done: !!settings, href: '/admin/settings' },
     { label: '特定商取引法に基づく表記（事業者情報）を入力する', done: !!(settings?.operatorName && settings?.operatorEmail), href: '/admin/settings' },
-    { label: 'Stripeを接続する', done: stripeConnected, href: 'https://dashboard.stripe.com/apikeys' },
-    { label: 'メール送信（パスワード再設定等）を設定する', done: emailConfigured, href: 'https://resend.com/api-keys' },
+    {
+      label: 'Stripeを接続する',
+      done: stripeConnected,
+      href: 'https://dashboard.stripe.com/apikeys',
+      commands: [
+        { command: 'npx wrangler secret put STRIPE_SECRET_KEY', note: 'Stripeダッシュボード → 開発者 → APIキー の「シークレットキー」を貼り付けてください（本番運用時は制限付きキーの利用も検討してください）' },
+        { command: 'npx wrangler secret put STRIPE_WEBHOOK_SECRET', note: `Stripeダッシュボード → 開発者 → Webhook でエンドポイントを追加した際に発行される署名シークレットを貼り付けてください。エンドポイントURL: ${appUrl}/api/webhooks/stripe` },
+      ],
+    },
+    {
+      label: 'メール送信（パスワード再設定等）を設定する',
+      done: emailConfigured,
+      href: 'https://resend.com/api-keys',
+      commands: [
+        { command: 'npx wrangler secret put RESEND_API_KEY', note: 'https://resend.com/api-keys で発行したAPIキーを貼り付けてください' },
+        { command: 'npx wrangler secret put RESEND_FROM_EMAIL', note: '例: no-reply@your-domain.com （Resend側で送信ドメインの認証が必要です）' },
+      ],
+    },
     { label: '会員プランを作成する', done: totalPlans > 0, href: '/admin/plans' },
     { label: '講座を作成する', done: totalCourses > 0, href: '/admin/courses' },
   ];
@@ -66,14 +89,8 @@ export default async function AdminDashboard() {
         <div className="panel" style={{ marginBottom: '24px', border: '1px solid rgba(217,180,91,.3)' }}>
           <h2 className="panel-title">セットアップガイド（残り{remaining.length}項目）</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {checklist.map(item => (
-              <Link
-                key={item.label}
-                href={item.href}
-                target={item.href.startsWith('http') ? '_blank' : undefined}
-                rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: item.done ? 'var(--muted)' : 'var(--text)', fontSize: 14 }}
-              >
+            {checklist.map(item => {
+              const checkIcon = (
                 <span style={{
                   width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
@@ -82,9 +99,43 @@ export default async function AdminDashboard() {
                 }}>
                   {item.done ? '✓' : ''}
                 </span>
-                <span style={{ textDecoration: item.done ? 'line-through' : 'none' }}>{item.label}</span>
-              </Link>
-            ))}
+              );
+
+              if (!item.done && item.commands) {
+                return (
+                  <details key={item.label}>
+                    <summary style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: 'var(--text)', fontSize: 14, listStyle: 'none' }}>
+                      {checkIcon}
+                      <span>{item.label}</span>
+                      <span style={{ fontSize: 11, color: 'var(--gold-2)', marginLeft: 4 }}>（コマンドを表示）</span>
+                    </summary>
+                    <div style={{ marginTop: 10, marginLeft: 28, paddingLeft: 12, borderLeft: '2px solid var(--line)' }}>
+                      {item.href && (
+                        <Link href={item.href} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--gold-2)', display: 'block', marginBottom: 10 }}>
+                          → まず{item.label.includes('Stripe') ? 'Stripeダッシュボード' : 'Resend'}でキーを発行する
+                        </Link>
+                      )}
+                      {item.commands.map(c => (
+                        <CommandLine key={c.command} command={c.command} note={c.note} />
+                      ))}
+                    </div>
+                  </details>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href || '#'}
+                  target={item.href?.startsWith('http') ? '_blank' : undefined}
+                  rel={item.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: item.done ? 'var(--muted)' : 'var(--text)', fontSize: 14 }}
+                >
+                  {checkIcon}
+                  <span style={{ textDecoration: item.done ? 'line-through' : 'none' }}>{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
