@@ -26,23 +26,12 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
   const courseData = await db().select().from(courses).where(eq(courses.id, courseId)).limit(1);
   const lessonData = await db().select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
 
-  // For development/preview: if no lesson in DB, use mock data
-  const course = courseData[0] || {
-    id: courseId,
-    title: 'リード獲得の全体設計',
-    number: '01'
-  };
+  if (courseData.length === 0 || lessonData.length === 0 || lessonData[0].courseId !== courseId) {
+    notFound();
+  }
 
-  const lesson = lessonData[0] || {
-    id: lessonId,
-    courseId: courseId,
-    title: '1. コンセプトメイクの重要性',
-    description: 'なぜコンセプトが最も重要なのか、具体的な事例を交えて解説します。',
-    content: '<p>ここはエディタで作成された本文コンテンツが入ります。</p>',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Dummy video
-    number: 1,
-    duration: 15
-  };
+  const course = courseData[0];
+  const lesson = lessonData[0];
 
   // Fetch progress
   const progressData = await db().select().from(lessonProgress).where(
