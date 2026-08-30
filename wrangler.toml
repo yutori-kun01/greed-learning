@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "greed-learning-db"
-database_id = "REPLACE_WITH_ACTUAL_ID"
+database_id = "295a88a0-9e37-4368-99d3-dae38dac6100"
 migrations_dir = "./src/db/migrations"
 
 [[r2_buckets]]

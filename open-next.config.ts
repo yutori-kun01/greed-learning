@@ -11,7 +11,7 @@ const config = {
   },
   edgeExternals: ["node:crypto"],
   middleware: {
-    external: false,
+    external: true,
     override: {
       wrapper: "cloudflare-edge",
       converter: "edge",
