@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // A globalIgnores() call replaces the flat-config defaults entirely, so
+    // these — normally implicit — need to be listed explicitly too, or a
+    // local/CI build (which generates all three) makes `npm run lint`
+    // report tens of thousands of problems from bundled/vendored output.
+    "node_modules/**",
+    ".wrangler/**",
+    ".open-next/**",
   ]),
 ]);
 

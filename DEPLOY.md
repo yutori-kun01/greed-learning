@@ -63,11 +63,36 @@ Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 
 ## 5. ビルド＆デプロイ
 
+### 方法A: GitHub Actionsで自動デプロイ（推奨）
+
+`.github/workflows/deploy.yml` が同梱されており、リポジトリの **デフォルトブランチにpush（≒このPRがマージされたタイミング）** で自動的にビルド・マイグレーション適用・デプロイまで実行されます。
+
+セットアップは以下だけです（GitHubリポジトリの Settings → Secrets and variables → Actions で登録）。
+
+**Secrets（暗号化され、誰にも見えません）:**
+
+| 名前 | 内容 |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Cloudflareダッシュボード → My Profile → API Tokens → Create Token。「Edit Cloudflare Workers」テンプレート、または Workers Scripts / D1 / R2 の編集権限を持つカスタムトークンを発行してください |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflareダッシュボードの右サイドバーに表示されるアカウントID |
+
+**Variables（暗号化されない、ビルドに埋め込まれる値）:**
+
+| 名前 | 内容 |
+| --- | --- |
+| `NEXT_PUBLIC_APP_URL` | 本番URL（例: `https://your-domain.workers.dev`） |
+
+登録後、`main`（デフォルトブランチ）にpushすると Actions タブでビルド〜デプロイの進行状況を確認できます。手動で今すぐ実行したい場合は Actions タブから `Deploy to Cloudflare` ワークフローを選び「Run workflow」でも起動できます。
+
+※ このGitHub Actionsのトークンは**デプロイ専用**です。Stripe/Resendなどアプリ実行時に使うシークレットは、次のステップの通り引き続き `wrangler secret put` で別途登録してください（GitHub Secretsとは別物です）。
+
+### 方法B: 手動デプロイ
+
 ```bash
 npm run deploy
 ```
 
-初回デプロイ後に表示されるURLにアクセスできれば成功です。
+いずれの方法でも、初回デプロイ後に表示されるURLにアクセスできれば成功です。
 
 ## 6. Stripe Webhookの登録
 
@@ -93,4 +118,4 @@ https://<your-domain>/api/webhooks/stripe
 
 ## 補足：Cloudflareへの自動デプロイについて
 
-稼働中のアプリ自身が「設定画面のボタン一つで自分自身を再デプロイする」ことはプラットフォームの制約上できません（デプロイはビルド＋Wrangler CLIによる別プロセスのため）。上記の手順が実質的な最短ルートです。GitHubに接続してのCI/CD自動デプロイ（`wrangler-action`等）を組みたい場合は、Cloudflare API TokenをGitHub Secretsに登録した上でGitHub Actionsワークフローを追加してください。
+稼働中のアプリ自身が「設定画面のボタン一つで自分自身を再デプロイする」ことはプラットフォームの制約上できません（デプロイはビルド＋Wrangler CLIによる別プロセスのため）。そのため上記の「方法A: GitHub Actions」が、pushだけで完結する実質的な最短ルートです。
