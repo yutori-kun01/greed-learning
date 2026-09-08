@@ -53,10 +53,8 @@ export async function toggleLessonComplete(lessonId: string, isCompleted: boolea
     lastActivityDate: now
   }).where(eq(user.id, userId));
 
-  revalidatePath('/courses');
+  revalidatePath('/courses', 'layout');
   revalidatePath('/dashboard');
   revalidatePath('/learning');
-  revalidatePath(`/courses/[courseId]/lessons/${lessonId}`, 'page');
-  
   return { success: true, isCompleted };
 }

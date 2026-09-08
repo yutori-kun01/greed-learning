@@ -2,10 +2,16 @@
 import React from 'react';
 import Link from 'next/link';
 import Icon from '../Icon';
+import { usePathname } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 
 export default function Sidebar() {
   const { data: session } = useSession();
+  const pathname = usePathname();
+
+  const getNavClass = (path: string) => {
+    return pathname.startsWith(path) ? 'nav-item is-active' : 'nav-item';
+  };
 
   return (
     <aside className="sidebar">
@@ -20,32 +26,35 @@ export default function Sidebar() {
       </div>
 
       <nav className="nav">
-        <Link href="/dashboard" className="nav-item">
+        <Link href="/dashboard" className={getNavClass('/dashboard')}>
           <Icon name="home" />ダッシュボード
         </Link>
-        <Link href="/courses" className="nav-item is-active" aria-current="page">
+        <Link href="/courses" className={getNavClass('/courses')} aria-current={pathname.startsWith('/courses') ? "page" : undefined}>
           <Icon name="book" />講座一覧
         </Link>
-        <Link href="/learning" className="nav-item">
+        <Link href="/posts" className={getNavClass('/posts')} aria-current={pathname.startsWith('/posts') ? "page" : undefined}>
+          <Icon name="edit" />ブログ記事
+        </Link>
+        <Link href="/learning" className={getNavClass('/learning')}>
           <Icon name="play" />学習中の講座
         </Link>
-        <Link href="/bookmarks" className="nav-item">
+        <Link href="/bookmarks" className={getNavClass('/bookmarks')}>
           <Icon name="bookmark" />ブックマーク
         </Link>
-        <Link href="/resources" className="nav-item">
+        <Link href="/resources" className={getNavClass('/resources')}>
           <Icon name="gift" />リソース・特典
         </Link>
         <a href="https://discord.gg/INVITE_CODE" target="_blank" rel="noopener noreferrer" className="nav-item">
           <Icon name="users" />Discord コミュニティ
           <span style={{ marginLeft: 'auto', fontSize: '10px', color: '#7d8b9f' }}>↗</span>
         </a>
-        <Link href="/support" className="nav-item">
+        <Link href="/support" className={getNavClass('/support')}>
           <Icon name="life" />サポート
         </Link>
-        <Link href="/settings" className="nav-item">
+        <Link href="/settings" className={getNavClass('/settings')}>
           <Icon name="settings" />設定
         </Link>
-        {session?.user && (session.user as any).role === 'ADMIN' && (
+        {session?.user && session.user.role === 'ADMIN' && (
           <Link href="/admin" className="nav-item" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
             <Icon name="lock" />管理者ダッシュボード
           </Link>

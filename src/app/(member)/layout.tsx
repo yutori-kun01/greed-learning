@@ -13,9 +13,7 @@ export default async function MemberLayout({ children }: { children: React.React
     headers: reqHeaders,
   });
 
-  if (!session) {
-    redirect('/login');
-  }
+  // Authentication guard is now handled by src/middleware.ts
   return (
     <div className="app">
       <Sidebar />

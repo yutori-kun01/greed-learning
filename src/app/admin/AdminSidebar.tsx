@@ -9,7 +9,10 @@ export default function AdminSidebar() {
   const links = [
     { href: '/admin', label: 'ダッシュボード' },
     { href: '/admin/courses', label: '講座管理' },
-    { href: '/admin/posts', label: '記事管理' },
+    { href: '/admin/categories', label: 'カテゴリ管理' },
+    { href: '/admin/posts', label: 'ブログ記事管理' },
+    { href: '/admin/resources', label: 'リソース特典管理' },
+    { href: '/admin/plans', label: 'プラン・権限管理' },
     { href: '/admin/users', label: 'ユーザー管理' },
   ]
 

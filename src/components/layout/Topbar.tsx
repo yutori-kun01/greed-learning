@@ -48,7 +48,7 @@ export default function Topbar() {
             </span>
             <span className="user-text">
               <b>{session.user.name.toUpperCase()}</b>
-              <em>{(session.user as any).role === 'ADMIN' ? '管理者' : 'メンバー'}</em>
+              <em>{session.user.role === 'ADMIN' ? '管理者' : 'メンバー'}</em>
             </span>
           </div>
         ) : (

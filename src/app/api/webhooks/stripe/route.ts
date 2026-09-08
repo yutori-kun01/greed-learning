@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getDb } from '@/db';
 import { purchases } from '@/db/schema';
+import { Resend } from 'resend';
 
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -46,6 +47,28 @@ export async function POST(req: Request) {
           purchasedAt: new Date().toISOString(),
         });
         console.log(`✅ Granted access to post ${postId} for user ${userId}`);
+
+        // メール送信 (Resend)
+        if (process.env.RESEND_API_KEY) {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          
+          // ユーザーのメールアドレスと記事情報を取得（簡易）
+          // Webhook session に customer_details.email があればそれを使う
+          const customerEmail = session.customer_details?.email;
+          if (customerEmail) {
+            await resend.emails.send({
+              from: 'Greed Learning <noreply@greed-learning.com>',
+              to: customerEmail,
+              subject: '【Greed Learning】ご購入ありがとうございます！',
+              html: `
+                <h2>ご購入ありがとうございます</h2>
+                <p>記事/コンテンツの決済が正常に完了しました。</p>
+                <p>以下のURLからログインし、コンテンツをお楽しみください。</p>
+                <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="display:inline-block;padding:10px 20px;background:#d9b45b;color:#101d31;text-decoration:none;border-radius:6px;font-weight:bold;">ダッシュボードへ</a></p>
+              `,
+            });
+          }
+        }
       } catch (insertError: any) {
         // If UNIQUE constraint fails, it means we already processed this session
         if (insertError.message?.includes('UNIQUE constraint failed')) {

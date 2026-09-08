@@ -247,8 +247,7 @@ async function handleCdnCgiImageRequest(requestURL, env) {
 }
 function parseCdnCgiImageRequest(pathname) {
   const match = pathname.match(/^\/cdn-cgi\/image\/(?<options>[^/]+)\/(?<url>.+)$/);
-  if (match === null || // Valid URLs have at least one option
-  !match.groups?.options || !match.groups?.url) {
+  if (match === null || !match.groups?.options || !match.groups?.url) {
     return { ok: false, message: "Invalid /cdn-cgi/image/ URL format" };
   }
   const imageUrl = match.groups.url;

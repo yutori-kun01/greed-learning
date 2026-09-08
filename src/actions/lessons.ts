@@ -14,7 +14,7 @@ export async function createLesson(courseId: string, formData: FormData) {
   const auth = getAuth(process.env.DB as unknown as D1Database);
   const session = await auth.api.getSession({ headers: reqHeaders });
 
-  if (!session || (session.user as any).role !== 'ADMIN') {
+  if (!session || session.user.role !== 'ADMIN') {
     throw new Error('Unauthorized');
   }
 
@@ -51,7 +51,7 @@ export async function deleteLesson(id: string, courseId: string) {
   const auth = getAuth(process.env.DB as unknown as D1Database);
   const session = await auth.api.getSession({ headers: reqHeaders });
 
-  if (!session || (session.user as any).role !== 'ADMIN') {
+  if (!session || session.user.role !== 'ADMIN') {
     throw new Error('Unauthorized');
   }
 

@@ -16,7 +16,7 @@ export async function createCourse(formData: FormData) {
     headers: reqHeaders,
   });
 
-  if (!session || (session.user as any).role !== 'ADMIN') {
+  if (!session || session.user.role !== 'ADMIN') {
     throw new Error('Unauthorized');
   }
 
@@ -56,7 +56,7 @@ export async function updateCourse(id: string, formData: FormData) {
     headers: reqHeaders,
   });
 
-  if (!session || (session.user as any).role !== 'ADMIN') {
+  if (!session || session.user.role !== 'ADMIN') {
     throw new Error('Unauthorized');
   }
 
@@ -86,14 +86,6 @@ export async function updateCourse(id: string, formData: FormData) {
   return { success: true };
 }
 
-export async function getCourses() {
-  try {
-    return await db().select().from(courses).orderBy(courses.createdAt);
-  } catch (e) {
-    return [];
-  }
-}
-
 export async function deleteCourse(id: string) {
   const reqHeaders = await headers();
   const auth = getAuth(process.env.DB as unknown as D1Database);
@@ -101,7 +93,7 @@ export async function deleteCourse(id: string) {
     headers: reqHeaders,
   });
 
-  if (!session || (session.user as any).role !== 'ADMIN') {
+  if (!session || session.user.role !== 'ADMIN') {
     throw new Error('Unauthorized');
   }
 

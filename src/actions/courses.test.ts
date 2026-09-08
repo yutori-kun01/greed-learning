@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createCourse, deleteCourse, getCourses } from './courses'
+import { createCourse, deleteCourse } from './courses'
+import { getCourses } from '@/lib/queries/courses'
 import { getDb } from '@/db'
 
 vi.mock('next/cache', () => ({

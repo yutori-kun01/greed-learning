@@ -3,8 +3,8 @@
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { getDb } from '@/db';
-import { blogPosts, user } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { blogPosts, user, purchases } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import Stripe from 'stripe';
 import { redirect } from 'next/navigation';
 
@@ -27,6 +27,14 @@ export async function createCheckoutSession(postId: string) {
 
   if (!post || post.status !== 'PAID') {
     throw new Error('Invalid post');
+  }
+
+  // Double purchase prevention
+  const existingPurchase = await db.select().from(purchases)
+    .where(and(eq(purchases.userId, session.user.id), eq(purchases.postId, postId)))
+    .limit(1);
+  if (existingPurchase.length > 0) {
+    redirect(`/posts/${post.slug}?already_purchased=true`);
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

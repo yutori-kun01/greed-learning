@@ -12,10 +12,10 @@ export default async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Protect strictly member/admin routes
   const isProtected = pathname.startsWith("/dashboard") || 
                       pathname.startsWith("/learning") || 
                       pathname.startsWith("/bookmarks") || 
+                      pathname.startsWith("/settings") || 
                       pathname.startsWith("/admin");
 
   if (isProtected) {

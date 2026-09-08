@@ -24,6 +24,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 });
     }
 
+    const ALLOWED_MIME_TYPES = {
+      image: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+      adminOnly: ['video/mp4', 'video/webm', 'application/pdf'],
+    };
+
+    const isImageOnly = ALLOWED_MIME_TYPES.image.includes(contentType);
+    const isAdminOnly = ALLOWED_MIME_TYPES.adminOnly.includes(contentType);
+
+    if (!isImageOnly && !isAdminOnly) {
+      return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
+    }
+
+    if (isAdminOnly && session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden: Admin access required for this file type' }, { status: 403 });
+    }
+
     // Configure aws4fetch
     const r2AccountId = process.env.R2_ACCOUNT_ID;
     const r2AccessKey = process.env.R2_ACCESS_KEY_ID;

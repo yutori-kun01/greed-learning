@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, blob } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, blob, index } from "drizzle-orm/sqlite-core";
 
 // ========================
 //  Better Auth Required
@@ -61,6 +61,27 @@ export const verification = sqliteTable("verification", {
 });
 
 // ========================
+//  Categories & Resources
+// ========================
+
+export const courseCategories = sqliteTable("courseCategories", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  sortOrder: integer("sortOrder").default(0).notNull(),
+});
+
+export const resources = sqliteTable("resources", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("imageUrl"),
+  fileUrl: text("fileUrl"),
+  sortOrder: integer("sortOrder").default(0).notNull(),
+  courseId: text("courseId").references(() => courses.id, { onDelete: "cascade" }), // nullable, if null it's a global resource
+});
+
+// ========================
 //  Courses & Learning
 // ========================
 
@@ -70,16 +91,20 @@ export const courses = sqliteTable("courses", {
   title: text("title").notNull(),
   description: text("description"),
   thumbnailUrl: text("thumbnailUrl"),
-  categoryId: text("categoryId"),
+  categoryId: text("categoryId").references(() => courseCategories.id), // updated reference
   
   status: text("status", { enum: ["DRAFT", "PUBLISHED", "ARCHIVED"] }).default("DRAFT").notNull(),
   badge: text("badge"),
   totalDuration: integer("totalDuration").default(0).notNull(),
   lessonCount: integer("lessonCount").default(0).notNull(),
   
+  isFreeForMembers: integer("isFreeForMembers", { mode: "boolean" }).default(false).notNull(), // New field
+  
   createdAt: text("createdAt").notNull(),
   updatedAt: text("updatedAt").notNull(),
-});
+}, (t) => [
+  index("courses_status_idx").on(t.status)
+]);
 
 export const lessons = sqliteTable("lessons", {
   id: text("id").primaryKey(),
@@ -88,6 +113,7 @@ export const lessons = sqliteTable("lessons", {
   title: text("title").notNull(),
   description: text("description"),
   videoUrl: text("videoUrl"),
+  thumbnailUrl: text("thumbnailUrl"), // New field
   content: text("content"),
   duration: integer("duration").default(0),
   sortOrder: integer("sortOrder").default(0).notNull(),
@@ -110,7 +136,40 @@ export const lessonProgress = sqliteTable("lessonProgress", {
   isCompleted: integer("isCompleted", { mode: "boolean" }).default(false).notNull(),
   watchedSeconds: integer("watchedSeconds").default(0).notNull(),
   completedAt: text("completedAt"),
+}, (t) => [
+  index("lessonProgress_userId_lessonId_idx").on(t.userId, t.lessonId)
+]);
+
+// ========================
+//  Plans & Access Grants (New)
+// ========================
+
+export const plans = sqliteTable("plans", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: integer("price").default(0).notNull(),
+  stripeProductId: text("stripeProductId"),
+  createdAt: text("createdAt").notNull(),
+  updatedAt: text("updatedAt").notNull(),
 });
+
+export const planCourses = sqliteTable("planCourses", {
+  planId: text("planId").references(() => plans.id, { onDelete: "cascade" }).notNull(),
+  courseId: text("courseId").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+}, (t) => [
+  index("planCourses_idx").on(t.planId, t.courseId)
+]);
+
+export const userAccessGrants = sqliteTable("userAccessGrants", {
+  id: text("id").primaryKey(),
+  userId: text("userId").references(() => user.id, { onDelete: "cascade" }).notNull(),
+  courseId: text("courseId").references(() => courses.id, { onDelete: "cascade" }), // if null, check planId
+  planId: text("planId").references(() => plans.id, { onDelete: "cascade" }), // if null, check courseId
+  grantedAt: text("grantedAt").notNull(),
+}, (t) => [
+  index("userAccessGrants_user_idx").on(t.userId)
+]);
 
 // ========================
 //  Blog & Content
@@ -132,13 +191,16 @@ export const blogPosts = sqliteTable("blogPosts", {
   publishedAt: text("publishedAt"),
   createdAt: text("createdAt").notNull(),
   updatedAt: text("updatedAt").notNull(),
-});
+}, (t) => [
+  index("blogPosts_status_idx").on(t.status),
+  index("blogPosts_slug_idx").on(t.slug)
+]);
 
 export const purchases = sqliteTable('purchases', {
   id: text('id').primaryKey(),
   userId: text('userId').references(() => user.id, { onDelete: 'cascade' }).notNull(),
   postId: text('postId').references(() => blogPosts.id, { onDelete: 'cascade' }).notNull(),
-  stripeSessionId: text('stripeSessionId').notNull(),
+  stripeSessionId: text('stripeSessionId').notNull().unique(),
   amount: integer('amount').notNull(),
   purchasedAt: text('purchasedAt').notNull(),
 });

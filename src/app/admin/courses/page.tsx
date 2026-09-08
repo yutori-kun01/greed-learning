@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import React from 'react'
-import { getCourses } from '@/actions/courses'
+import { deleteCourse } from '@/actions/courses';
+import { getCourses } from '@/lib/queries/courses';
 import DeleteCourseButton from './DeleteCourseButton'
 
 export default async function AdminCoursesPage() {

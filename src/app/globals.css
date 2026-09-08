@@ -135,15 +135,24 @@ button, select, input { font: inherit; color: inherit; }
   color: var(--text-2);
   font-size: 13.5px;
   border: 1px solid transparent;
-  transition: background .15s, color .15s, border-color .15s;
+  border-left: 3px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.nav-item:hover { background: rgba(255, 255, 255, .04); color: var(--text); }
+.nav-item:hover { 
+  background: rgba(255, 255, 255, .04); 
+  color: var(--text); 
+  transform: translateX(2px);
+}
 .nav-item.is-active {
   background: linear-gradient(90deg, rgba(217, 180, 91, .16), rgba(217, 180, 91, .04));
   border-color: rgba(217, 180, 91, .22);
+  border-left: 3px solid var(--gold);
   color: var(--gold-2);
+  font-weight: 500;
+  transform: translateX(4px);
 }
-.nav-item i { width: 17px; height: 17px; flex: none; opacity: .9; }
+.nav-item i { width: 17px; height: 17px; flex: none; opacity: .9; transition: transform 0.2s; }
+.nav-item:hover i, .nav-item.is-active i { transform: scale(1.1); color: var(--gold); opacity: 1; }
 .nav-badge {
   margin-left: auto;
   min-width: 22px;

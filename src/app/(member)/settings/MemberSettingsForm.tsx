@@ -114,20 +114,36 @@ export default function MemberSettingsForm({ user }: { user: any }) {
             <div style={{ display: 'flex', gap: 16 }}>
               <button 
                 type="button" 
-                onClick={() => setTheme('light')}
+                onClick={() => {
+                  setTheme('light');
+                  const fd = new FormData();
+                  fd.set('name', user?.name || '');
+                  fd.set('noteId', user?.noteId || '');
+                  fd.set('xId', user?.xId || '');
+                  fd.set('themePreference', 'light');
+                  updateUserProfile(fd).catch(console.error);
+                }}
                 style={{ flex: 1, padding: 20, background: theme === 'light' ? 'rgba(217,180,91,.1)' : '#101d31', border: `2px solid ${theme === 'light' ? '#f2d992' : 'rgba(255,255,255,.07)'}`, borderRadius: 8, cursor: 'pointer', color: '#e9eef7', fontWeight: 600 }}
               >
                 ☀️ ライトモード
               </button>
               <button 
                 type="button" 
-                onClick={() => setTheme('dark')}
+                onClick={() => {
+                  setTheme('dark');
+                  const fd = new FormData();
+                  fd.set('name', user?.name || '');
+                  fd.set('noteId', user?.noteId || '');
+                  fd.set('xId', user?.xId || '');
+                  fd.set('themePreference', 'dark');
+                  updateUserProfile(fd).catch(console.error);
+                }}
                 style={{ flex: 1, padding: 20, background: theme === 'dark' ? 'rgba(217,180,91,.1)' : '#101d31', border: `2px solid ${theme === 'dark' ? '#f2d992' : 'rgba(255,255,255,.07)'}`, borderRadius: 8, cursor: 'pointer', color: '#e9eef7', fontWeight: 600 }}
               >
                 🌙 ダークモード
               </button>
             </div>
-            <p style={{ fontSize: 12, color: '#7d8b9f', marginTop: 12 }}>※この設定はお使いの端末に保存され、ログインごとに適用されます。</p>
+            <p style={{ fontSize: 12, color: '#7d8b9f', marginTop: 12 }}>※この設定はお使いの端末に保存され、サーバーにも同期されます。</p>
           </label>
         </div>
       )}

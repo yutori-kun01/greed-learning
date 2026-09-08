@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createPost, deletePost, getPosts, getPublishedPosts, getPostBySlug } from './posts'
+import { createPost, deletePost } from './posts'
+import { getPosts, getPublishedPosts, getPostBySlug } from '@/lib/queries/posts'
 import { getDb } from '@/db'
 
 describe('Posts Actions', () => {
@@ -40,7 +41,9 @@ describe('Posts Actions', () => {
     vi.mocked(getDb).mockReturnValueOnce({
       select: () => ({
         from: () => ({
-          orderBy: () => Promise.resolve([{ id: 'p-1', title: 'Published Post', status: 'PUBLISHED' }])
+          where: () => ({
+            orderBy: () => Promise.resolve([{ id: 'p-1', title: 'Published Post', status: 'PUBLISHED' }])
+          })
         })
       })
     } as any);

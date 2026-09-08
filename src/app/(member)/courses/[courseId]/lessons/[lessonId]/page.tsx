@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
 import LessonClientUI from './LessonClientUI';
+import sanitizeHtml from 'sanitize-html';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
@@ -27,22 +28,23 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
   const lessonData = await db().select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
 
   // For development/preview: if no lesson in DB, use mock data
-  const course = courseData[0] || {
-    id: courseId,
-    title: 'リード獲得の全体設計',
-    number: '01'
-  };
+  const course = courseData[0];
+  const lesson = lessonData[0];
 
-  const lesson = lessonData[0] || {
-    id: lessonId,
-    courseId: courseId,
-    title: '1. コンセプトメイクの重要性',
-    description: 'なぜコンセプトが最も重要なのか、具体的な事例を交えて解説します。',
-    content: '<p>ここはエディタで作成された本文コンテンツが入ります。</p>',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Dummy video
-    number: 1,
-    duration: 15
-  };
+  if (!course || !lesson) {
+    notFound();
+  }
+
+  const sanitizedContent = lesson.content ? sanitizeHtml(lesson.content, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img', 'iframe' ]),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      'img': ['src', 'alt', 'width', 'height'],
+      'iframe': ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen'],
+      'div': ['style', 'data-type'],
+      'span': ['style'],
+    },
+  }) : null;
 
   // Fetch progress
   const progressData = await db().select().from(lessonProgress).where(
@@ -88,7 +90,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
       <LessonClientUI 
         lessonId={lesson.id} 
         initialCompleted={isCompleted} 
-        content={lesson.content}
+        content={sanitizedContent}
         description={lesson.description}
       />
     </div>

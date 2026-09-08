@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import React from 'react'
-import { getPosts } from '@/actions/posts'
+import { getPosts } from '@/lib/queries/posts'
+import { deletePost } from '@/actions/posts'
 import DeletePostButton from './DeletePostButton'
 
 export default async function AdminPostsPage() {
