@@ -1,0 +1,53 @@
+name: CI
+
+# Validation only — never touches Cloudflare. Runs on every pull request and on
+# every branch except main, so a change is checked before it can reach the
+# deploy workflow (which is what main pushes trigger).
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p .
+
+      - name: Lint
+        # Non-blocking while the pre-existing no-explicit-any violations are
+        # worked down. Tracked to become a hard gate.
+        run: pnpm run lint
+        continue-on-error: true
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build (Next.js)
+        run: pnpm run build
+        env:
+          # Placeholders for build-time code paths only; real values are
+          # Workers secrets injected at runtime (see DEPLOY.md).
+          DB: dummy
+          BETTER_AUTH_SECRET: dummy
+          NEXT_PUBLIC_APP_URL: http://localhost:3000

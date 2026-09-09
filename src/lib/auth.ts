@@ -1,8 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db";
-import { user as userTable } from "@/db/schema";
-import { count } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
 
 export function getAuth(d1: D1Database) {
@@ -85,13 +83,15 @@ export function getAuth(d1: D1Database) {
     databaseHooks: {
       user: {
         create: {
-          // Self-hosted deployments have no seed data — the very first
-          // account to sign up becomes the admin so the operator can
-          // reach /admin without touching the database by hand.
-          before: async (user) => {
-            const result = await db.select({ value: count() }).from(userTable);
-            if (result[0]?.value === 0) {
-              return { data: { ...user, role: "ADMIN" } };
+          // Self-hosted deployments have no seed data, so the first operator
+          // needs some way into /admin. Granting ADMIN to whoever signs up
+          // first would hand the site to any visitor who reaches the public
+          // URL before the operator does, so it's gated on an address the
+          // operator sets explicitly and removes once they've signed up.
+          before: async (newUser) => {
+            const bootstrapEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+            if (bootstrapEmail && newUser.email.trim().toLowerCase() === bootstrapEmail) {
+              return { data: { ...newUser, role: "ADMIN" } };
             }
           },
         },

@@ -1,6 +1,12 @@
 import Link from 'next/link';
 import { getSiteSettingsQuery } from '@/actions/settings';
 
+// These pages read operator details out of D1, which has no binding during
+// `next build`. Prerendered, they would permanently serve the "（未設定）"
+// placeholders the build saw — on the 特定商取引法 page that is a legal
+// disclosure the operator cannot fix from the admin UI. Render per request.
+export const dynamic = 'force-dynamic';
+
 export default async function LegalLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettingsQuery();
   const siteName = settings?.siteName || 'N8N MARKETING';

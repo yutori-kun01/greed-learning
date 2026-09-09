@@ -31,11 +31,14 @@ export function useImageUpload() {
         body: JSON.stringify({
           filename: file.name,
           contentType: fileToUpload.type,
+          // Signed into the upload URL, so it must match the body exactly.
+          size: fileToUpload.size,
         }),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to get upload URL');
+        const detail = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(detail?.error || 'Failed to get upload URL');
       }
 
       const data = await res.json();
