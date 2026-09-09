@@ -1,35 +1,160 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getDb } from '@/db';
-import { purchases, user, plans } from '@/db/schema';
+import { purchases, user, plans, webhookEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { mapSubscriptionStatus } from '@/lib/subscriptionStatus';
 
-function mapSubscriptionStatus(status: Stripe.Subscription.Status): 'ACTIVE' | 'PAST_DUE' | 'CANCELED' {
-  if (status === 'active' || status === 'trialing') return 'ACTIVE';
-  if (status === 'past_due' || status === 'unpaid' || status === 'incomplete') return 'PAST_DUE';
-  return 'CANCELED';
+type Db = ReturnType<typeof getDb>;
+
+function idOf(value: string | { id: string } | null | undefined): string | undefined {
+  if (!value) return undefined;
+  return typeof value === 'string' ? value : value.id;
 }
 
-async function syncSubscription(db: ReturnType<typeof getDb>, subscription: Stripe.Subscription) {
+/**
+ * Stripe does not guarantee event ordering, so a subscription event can arrive
+ * before the checkout.session.completed that would have linked the
+ * subscription to a user. Matching on stripeSubscriptionId alone therefore
+ * updates zero rows and loses the grant silently. Resolve through the metadata
+ * we set at Checkout first, then the two ids, and treat "no match" as an error
+ * rather than a no-op.
+ */
+async function resolveUserId(db: Db, subscription: Stripe.Subscription): Promise<string | null> {
+  const fromMetadata = subscription.metadata?.userId;
+  if (fromMetadata) {
+    const rows = await db.select({ id: user.id }).from(user).where(eq(user.id, fromMetadata)).limit(1);
+    if (rows[0]) return rows[0].id;
+  }
+
+  const bySubscription = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.stripeSubscriptionId, subscription.id))
+    .limit(1);
+  if (bySubscription[0]) return bySubscription[0].id;
+
+  const customerId = idOf(subscription.customer);
+  if (customerId) {
+    const byCustomer = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.stripeCustomerId, customerId))
+      .limit(1);
+    if (byCustomer[0]) return byCustomer[0].id;
+  }
+
+  return null;
+}
+
+async function syncSubscription(db: Db, subscription: Stripe.Subscription) {
+  const userId = await resolveUserId(db, subscription);
+  if (!userId) {
+    // Throwing makes Stripe retry and surfaces the failure in the dashboard.
+    // A paid subscription with no local grant must never be silently dropped.
+    throw new Error(
+      `No user matches subscription ${subscription.id} (customer ${idOf(subscription.customer)}). Subscription is paid but access was not granted.`
+    );
+  }
+
   const priceId = subscription.items.data[0]?.price.id;
   let planId: string | null = null;
   if (priceId) {
     const planResult = await db.select().from(plans).where(eq(plans.stripePriceId, priceId)).limit(1);
     planId = planResult[0]?.id || null;
+    if (!planId) {
+      console.error(`[stripe] Subscription ${subscription.id} uses price ${priceId}, which matches no plan. Access will not reflect a plan.`);
+    }
   }
 
-  const status = mapSubscriptionStatus(subscription.status);
-  const currentPeriodEnd = subscription.items.data[0]?.current_period_end
-    ? new Date(subscription.items.data[0].current_period_end * 1000)
-    : null;
+  const periodEndSeconds = subscription.items.data[0]?.current_period_end;
 
-  await db.update(user)
+  await db
+    .update(user)
     .set({
       planId,
-      subscriptionStatus: status,
-      currentPeriodEnd,
+      subscriptionStatus: mapSubscriptionStatus(subscription.status),
+      currentPeriodEnd: periodEndSeconds ? new Date(periodEndSeconds * 1000) : null,
+      // Written here as well as at checkout, so a subscription created out of
+      // order (or in the Stripe dashboard) still ends up linked.
+      stripeSubscriptionId: subscription.id,
+      stripeCustomerId: idOf(subscription.customer) ?? undefined,
     })
-    .where(eq(user.stripeSubscriptionId, subscription.id));
+    .where(eq(user.id, userId));
+}
+
+async function handleEvent(db: Db, stripe: Stripe, event: Stripe.Event) {
+  switch (event.type) {
+    case 'checkout.session.completed': {
+      const session = event.data.object as Stripe.Checkout.Session;
+
+      if (session.mode === 'subscription') {
+        const subscriptionId = idOf(session.subscription);
+        if (!subscriptionId) {
+          throw new Error(`Checkout session ${session.id} completed in subscription mode with no subscription id.`);
+        }
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        await syncSubscription(db, subscription);
+        return;
+      }
+
+      const userId = session.metadata?.userId;
+      const postId = session.metadata?.postId;
+      if (!userId || !postId) {
+        throw new Error(`Checkout session ${session.id} is missing userId/postId metadata; cannot grant access.`);
+      }
+
+      const existing = await db
+        .select({ id: purchases.id })
+        .from(purchases)
+        .where(eq(purchases.stripeSessionId, session.id))
+        .limit(1);
+      if (existing[0]) return;
+
+      await db.insert(purchases).values({
+        id: crypto.randomUUID(),
+        userId,
+        postId,
+        stripeSessionId: session.id,
+        amount: session.amount_total || 0,
+        purchasedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated':
+      await syncSubscription(db, event.data.object as Stripe.Subscription);
+      return;
+
+    case 'customer.subscription.deleted': {
+      const subscription = event.data.object as Stripe.Subscription;
+      const userId = await resolveUserId(db, subscription);
+      if (!userId) {
+        // Nothing to revoke. Unlike the grant path this is safe to accept.
+        console.warn(`[stripe] Cancellation for unknown subscription ${subscription.id}; nothing to revoke.`);
+        return;
+      }
+      await db.update(user).set({ subscriptionStatus: 'CANCELED' }).where(eq(user.id, userId));
+      return;
+    }
+
+    // Renewals and failed renewals change access but arrive as invoice events,
+    // so without these a lapsed card kept its access until cancellation.
+    case 'invoice.paid':
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object as Stripe.Invoice;
+      const subscriptionId = idOf(invoice.parent?.subscription_details?.subscription);
+      if (!subscriptionId) return; // One-off invoice; nothing subscription-shaped to sync.
+
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      await syncSubscription(db, subscription);
+      return;
+    }
+
+    default:
+      return;
+  }
 }
 
 export async function POST(req: Request) {
@@ -45,76 +170,50 @@ export async function POST(req: Request) {
   }
 
   let event: Stripe.Event;
-
   try {
     // Edge compatibility: use text() and constructEventAsync
     const body = await req.text();
     event = await stripe.webhooks.constructEventAsync(body, signature, endpointSecret);
   } catch (err) {
-    console.error(`⚠️ Webhook signature verification failed.`, err);
+    console.error('⚠️ Webhook signature verification failed.', err);
     return NextResponse.json({ error: 'Webhook Error' }, { status: 400 });
   }
 
   const db = getDb(process.env.DB as unknown as D1Database);
 
+  // Claim the event id before handling it. A concurrent delivery loses the
+  // insert on the primary key and gets a 500, and its retry then sees the row.
   try {
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-
-      if (session.mode === 'subscription') {
-        const userId = session.metadata?.userId;
-        const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
-        const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
-
-        if (userId && customerId && subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          await db.update(user)
-            .set({ stripeCustomerId: customerId, stripeSubscriptionId: subscriptionId })
-            .where(eq(user.id, userId));
-          await syncSubscription(db, subscription);
-          console.log(`✅ Subscription ${subscriptionId} activated for user ${userId}`);
-        }
-      } else {
-        // One-off payment (e.g. a PAID blog post)
-        const userId = session.metadata?.userId;
-        const postId = session.metadata?.postId;
-
-        if (userId && postId) {
-          try {
-            await db.insert(purchases).values({
-              id: crypto.randomUUID(),
-              userId,
-              postId,
-              stripeSessionId: session.id,
-              amount: session.amount_total || 0,
-              purchasedAt: new Date().toISOString(),
-            });
-            console.log(`✅ Granted access to post ${postId} for user ${userId}`);
-          } catch (insertError: any) {
-            // If UNIQUE constraint fails, it means we already processed this session
-            if (insertError.message?.includes('UNIQUE constraint failed')) {
-              console.log(`ℹ️ Session ${session.id} already processed.`);
-            } else {
-              throw insertError;
-            }
-          }
-        }
-      }
+    const already = await db
+      .select({ id: webhookEvents.id })
+      .from(webhookEvents)
+      .where(eq(webhookEvents.id, event.id))
+      .limit(1);
+    if (already[0]) {
+      return NextResponse.json({ received: true, duplicate: true });
     }
-
-    if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created') {
-      await syncSubscription(db, event.data.object as Stripe.Subscription);
-    }
-
-    if (event.type === 'customer.subscription.deleted') {
-      const subscription = event.data.object as Stripe.Subscription;
-      await db.update(user)
-        .set({ subscriptionStatus: 'CANCELED' })
-        .where(eq(user.stripeSubscriptionId, subscription.id));
-    }
+    await db.insert(webhookEvents).values({
+      id: event.id,
+      type: event.type,
+      receivedAt: new Date().toISOString(),
+    });
   } catch (err) {
-    console.error('Webhook handling error:', err);
-    return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    console.error(`[stripe] Could not record event ${event.id}:`, err);
+    return NextResponse.json({ error: 'Webhook bookkeeping failed' }, { status: 500 });
+  }
+
+  try {
+    await handleEvent(db, stripe, event);
+  } catch (err) {
+    // Release the claim so Stripe's redelivery gets a real second attempt
+    // rather than being dismissed as a duplicate.
+    try {
+      await db.delete(webhookEvents).where(eq(webhookEvents.id, event.id));
+    } catch (cleanupErr) {
+      console.error(`[stripe] Could not release event claim ${event.id}:`, cleanupErr);
+    }
+    console.error(`[stripe] Failed to handle ${event.type} (${event.id}):`, err);
+    return NextResponse.json({ error: 'Webhook handling failed' }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

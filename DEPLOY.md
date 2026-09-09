@@ -104,7 +104,9 @@ Stripeダッシュボード → 開発者 → Webhook で、デプロイ後のUR
 https://<your-domain>/api/webhooks/stripe
 ```
 
-送信するイベント：`checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
+送信するイベント：`checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`
+
+`invoice.*` の2つは**必ず追加してください**。これが無いと、継続課金の決済が失敗した会員のアクセスが継続し、支払いが復旧しても `PAST_DUE` のまま戻りません。
 
 発行された署名シークレットを `STRIPE_WEBHOOK_SECRET` として登録し直してください。
 

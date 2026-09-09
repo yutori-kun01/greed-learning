@@ -202,9 +202,20 @@ export const purchases = sqliteTable('purchases', {
   id: text('id').primaryKey(),
   userId: text('userId').references(() => user.id, { onDelete: 'cascade' }).notNull(),
   postId: text('postId').references(() => blogPosts.id, { onDelete: 'cascade' }).notNull(),
-  stripeSessionId: text('stripeSessionId').notNull(),
+  // Unique: Stripe redelivers checkout.session.completed until it gets a 2xx,
+  // and one Checkout Session must never grant access twice.
+  stripeSessionId: text('stripeSessionId').notNull().unique(),
   amount: integer('amount').notNull(),
   purchasedAt: text('purchasedAt').notNull(),
+});
+
+// One row per Stripe event id we have finished processing. The row is written
+// before handling and removed again if handling throws, so a redelivery of a
+// failed event is still retried while a redelivery of a successful one is not.
+export const webhookEvents = sqliteTable('webhookEvents', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  receivedAt: text('receivedAt').notNull(),
 });
 
 
