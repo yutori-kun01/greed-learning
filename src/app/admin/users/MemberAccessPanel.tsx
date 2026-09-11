@@ -33,10 +33,10 @@ export default function MemberAccessPanel({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // The parent keys this component on userId, so switching members remounts
+  // it with fresh state rather than resetting state from inside the effect.
   useEffect(() => {
     let cancelled = false;
-    setAccess(null);
-    setError(null);
     getMemberAccess(userId)
       .then((data) => {
         if (!cancelled) setAccess(data);

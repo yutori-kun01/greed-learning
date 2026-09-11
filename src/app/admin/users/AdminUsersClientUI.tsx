@@ -165,6 +165,7 @@ export default function AdminUsersClientUI({ users: initialUsers }: { users: Adm
             </div>
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
               <MemberAccessPanel
+                key={detailUser.id}
                 userId={detailUser.id}
                 userName={detailUser.name}
                 onRoleChange={(role) => {

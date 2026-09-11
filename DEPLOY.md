@@ -139,6 +139,51 @@ https://<your-domain>/api/webhooks/stripe
    - 会員プラン（`/admin/plans`）
    - 講座（`/admin/courses`）
 
+## 8. 運用
+
+### バックアップと復旧（D1）
+
+会員データ・購入履歴・進捗を預かるため、復旧手順は公開前に一度試しておいてください。
+
+**定期エクスポート**（手元にSQLとして保存）
+
+```bash
+npx wrangler d1 export greed-learning-db --remote --output=backup-$(date +%Y%m%d).sql
+```
+
+**任意時点への復旧（Time Travel）** — D1は過去30日間の任意の時点に巻き戻せます。
+
+```bash
+# 現在の復旧ポイントを確認
+npx wrangler d1 time-travel info greed-learning-db
+
+# 指定時刻の状態を確認（bookmarkが返る）
+npx wrangler d1 time-travel info greed-learning-db --timestamp=2026-01-01T00:00:00Z
+
+# その時点へ復元（取り消せません。先にexportを取ってください）
+npx wrangler d1 time-travel restore greed-learning-db --bookmark=<上で得たbookmark>
+```
+
+> 復元は**データベース全体**が対象です。特定のテーブルだけを戻すことはできないので、
+> 部分的に戻したい場合はexportしたSQLから該当行を手で戻してください。
+
+### Content-Security-Policy を強制する
+
+初期状態では CSP は **Report-Only**（違反を報告するだけでブロックしない）です。
+本番でしばらく運用し、ブラウザのコンソールに違反が出ないことを確認してから強制に切り替えてください。
+
+```bash
+npx wrangler secret put CSP_ENFORCE   # true と入力
+```
+
+違反が出たまま強制にすると、該当する画像・埋め込み・スクリプトが表示されなくなります。
+
+### メールアドレスの確認
+
+`RESEND_API_KEY` と `RESEND_FROM_EMAIL` の両方を設定すると、**新規登録時にメールアドレスの確認が必須**になります。
+未設定の場合は確認なしで登録できます（確認メールを送れないため、必須にすると誰もログインできなくなるためです）。
+本番では必ず設定し、Resend側でドメイン認証（SPF / DKIM / DMARC）まで済ませてください。
+
 ## 補足：Cloudflareへの自動デプロイについて
 
 稼働中のアプリ自身が「設定画面のボタン一つで自分自身を再デプロイする」ことはプラットフォームの制約上できません（デプロイはビルド＋Wrangler CLIによる別プロセスのため）。そのため上記の「方法A: GitHub Actions」が、pushだけで完結する実質的な最短ルートです。

@@ -1,45 +1,43 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-export default async function proxy(request: NextRequest) {
-  // Use native fetch to check session from Better Auth
-  const response = await fetch(new URL("/api/auth/get-session", request.url), {
-    headers: {
-      cookie: request.headers.get("cookie") || "",
-    },
-  });
+/**
+ * Optimistic routing only.
+ *
+ * This used to `fetch('/api/auth/get-session')` on every single request — a
+ * second round trip through the Worker, on top of the session lookup the
+ * layout then did anyway, for every page and every asset the matcher covered.
+ * The Next.js docs are explicit that proxy is not the place for session
+ * management or authorization.
+ *
+ * So this only looks at whether a session cookie exists, to keep signed-out
+ * visitors off member pages and signed-in ones off the login form. Every
+ * real decision — is the session valid, is the account suspended, is the user
+ * an admin — is made by the member/admin layouts and by requireUser /
+ * requireAdmin in the server actions, which cannot be bypassed by forging a
+ * cookie.
+ */
 
-  const session = (await response.json().catch(() => null)) as any;
+const PROTECTED_PREFIXES = ['/dashboard', '/learning', '/bookmarks', '/admin', '/settings', '/resources', '/courses'];
 
-  const pathname = request.nextUrl.pathname;
+function hasSessionCookie(request: NextRequest): boolean {
+  // Better Auth prefixes the cookie with __Secure- when served over HTTPS.
+  return request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.includes('better-auth.session_token') && cookie.value.length > 0);
+}
 
-  // Protect strictly member/admin routes
-  const isProtected = pathname.startsWith("/dashboard") || 
-                      pathname.startsWith("/learning") || 
-                      pathname.startsWith("/bookmarks") || 
-                      pathname.startsWith("/admin");
+export default function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const signedIn = hasSessionCookie(request);
 
-  if (isProtected) {
-    if (!session || !session.session) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-
-    if (session.user?.status === "SUSPENDED") {
-      return NextResponse.redirect(new URL("/login?suspended=1", request.url));
-    }
-
-    // Check admin role
-    if (pathname.startsWith("/admin")) {
-      if (session.user?.role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      }
-    }
+  if (!signedIn && PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    const login = new URL('/login', request.url);
+    login.searchParams.set('next', pathname);
+    return NextResponse.redirect(login);
   }
 
-  // Redirect authenticated users away from login/signup
-  if (pathname === "/login" || pathname === "/signup") {
-    if (session && session.session) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
+  if (signedIn && (pathname === '/login' || pathname === '/signup')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();

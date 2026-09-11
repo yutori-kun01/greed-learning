@@ -9,11 +9,24 @@ import { requireAdmin, requireUser } from '@/lib/session';
 // Helper for DB instance
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+const DEFAULT_ACCENT = '#d9b45b';
+
+function normalizeAccentColor(value: string | null): string {
+  const candidate = (value || '').trim();
+  if (!candidate) return DEFAULT_ACCENT;
+  if (HEX_COLOR.test(candidate)) return candidate.toLowerCase();
+  throw new Error('アクセントカラーは #rrggbb 形式で指定してください');
+}
+
 export async function updateSiteSettings(formData: FormData) {
   await requireAdmin();
 
   const siteName = formData.get('siteName') as string;
-  const accentColor = formData.get('accentColor') as string;
+
+  // Rendered into a CSS custom property, so anything but a literal colour
+  // would let an admin inject arbitrary CSS onto every page of the site.
+  const accentColor = normalizeAccentColor(formData.get('accentColor') as string);
   const bgPattern = formData.get('bgPattern') as string;
   const logoUrl = (formData.get('logoUrl') as string) || null;
 

@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { cache } from 'react';
+
 import { getDb } from '@/db';
 import {
   blogPosts,
@@ -161,7 +163,9 @@ export async function getUsers() {
 
 let warnedAboutSettings = false;
 
-export async function getSiteSettingsQuery() {
+// generateMetadata and the layout body both read this, and so does every
+// nested layout — one query per request rather than one per caller.
+export const getSiteSettingsQuery = cache(async () => {
   try {
     const rows = await db().select().from(siteSettings).where(eq(siteSettings.id, '1')).limit(1);
     return rows[0] || null;
@@ -177,4 +181,4 @@ export async function getSiteSettingsQuery() {
     }
     return null;
   }
-}
+});

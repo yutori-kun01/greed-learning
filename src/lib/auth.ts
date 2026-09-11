@@ -3,6 +3,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db";
 import { sendEmail } from "@/lib/email";
 
+const emailIsConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
+
 export function getAuth(d1: D1Database) {
   const db = getDb(d1);
   const auth = betterAuth({
@@ -15,6 +17,11 @@ export function getAuth(d1: D1Database) {
     },
     emailAndPassword: {
       enabled: true,
+      // Turning this on without a working sender would lock every new account
+      // out permanently — the verification mail would only ever be logged.
+      // So it follows the Resend configuration: set RESEND_API_KEY and
+      // RESEND_FROM_EMAIL and signups must confirm their address.
+      requireEmailVerification: emailIsConfigured,
       sendResetPassword: async ({ user, url }) => {
         await sendEmail({
           to: user.email,
@@ -24,6 +31,8 @@ export function getAuth(d1: D1Database) {
       },
     },
     emailVerification: {
+      sendOnSignUp: emailIsConfigured,
+      autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
         await sendEmail({
           to: user.email,
@@ -47,11 +56,10 @@ export function getAuth(d1: D1Database) {
     user: {
       changeEmail: {
         enabled: true,
-        // This app doesn't require email verification at signup (emailVerified
-        // is always false), so gating email changes on a verified-email check
-        // would lock every user out of ever changing their address. Apply the
-        // change immediately and, when sendVerificationEmail below is
-        // configured, follow up with a "verify your new address" email.
+        // Accounts created before email delivery was configured have
+        // emailVerified false and no way to change it, so gating email
+        // changes on a verified address would strand them. Apply the change
+        // and confirm it by mail instead.
         updateEmailWithoutVerification: true,
         sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
           await sendEmail({
@@ -103,7 +111,7 @@ export function getAuth(d1: D1Database) {
   // (Uncomment this and set ENABLE_DEV_BYPASS=true in .env if you need to test without logging in)
   if (process.env.NODE_ENV === 'development' && process.env.ENABLE_DEV_BYPASS === 'true') {
     const originalGetSession = auth.api.getSession;
-    // @ts-ignore - Dev only override
+    // @ts-expect-error - dev-only override, deliberately not the full endpoint type
     auth.api.getSession = async (opts: any) => {
       const session = await originalGetSession(opts);
       if (!session) {

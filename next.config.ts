@@ -8,9 +8,10 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
 
-// Sent as Report-Only for now: the policy below is tight enough that a
-// mistake would break rendering, so collect violations against real traffic
-// first, then switch the header key to Content-Security-Policy.
+// Report-Only until CSP_ENFORCE=true. The policy below is tight enough that a
+// mistake breaks rendering for everyone, so it collects violations against
+// real traffic first; flipping the variable then enforces it without a code
+// change (see DEPLOY.md).
 //
 // 'unsafe-inline' in script-src is required because pages are rendered
 // without a nonce; moving to nonces means making every route dynamic (see
@@ -49,7 +50,13 @@ const nextConfig: NextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains",
           },
-          { key: "Content-Security-Policy-Report-Only", value: csp },
+          {
+            key:
+              process.env.CSP_ENFORCE === "true"
+                ? "Content-Security-Policy"
+                : "Content-Security-Policy-Report-Only",
+            value: csp,
+          },
         ],
       },
     ];

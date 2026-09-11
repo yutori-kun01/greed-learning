@@ -56,11 +56,9 @@ jobs:
         run: npx tsc --noEmit -p .
 
       - name: Lint
-        # Non-blocking: the codebase has ~80 pre-existing no-explicit-any
-        # errors by convention (not regressions), so a hard gate here would
-        # block every deploy. Still runs so issues are visible in the log.
-        run: pnpm run lint
-        continue-on-error: true
+        # Blocking. Pre-existing no-explicit-any uses are warnings (see
+        # eslint.config.mjs), so this fails only on real errors.
+        run: pnpm run lint --max-warnings=-1
 
       - name: Test
         run: pnpm run test
