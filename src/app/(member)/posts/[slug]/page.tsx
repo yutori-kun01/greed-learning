@@ -8,6 +8,7 @@ import { purchases } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createCheckoutSession } from '@/actions/stripe';
 import XShareLink from '@/components/XShareLink';
+import { splitAtPaywall } from '@/lib/paywall';
 
 export default async function PostDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -65,17 +66,17 @@ export default async function PostDetailPage({ params }: { params: Promise<{ slu
 
   const renderContent = () => {
     if (post.status === 'PAID' && !isPurchased) {
-      // split content by paywall if exists
-      const paywallSplit = post.content ? post.content.split('<!-- PAYWALL -->') : [''];
-      const freeContent = paywallSplit[0];
-      
+      const { free: freeContent } = splitAtPaywall(post.content);
+
       return (
         <>
-          <div 
-            className="prose"
-            style={{ fontSize: 16, lineHeight: 1.8 }}
-            dangerouslySetInnerHTML={{ __html: freeContent }}
-          />
+          {freeContent && (
+            <div
+              className="prose"
+              style={{ fontSize: 16, lineHeight: 1.8 }}
+              dangerouslySetInnerHTML={{ __html: freeContent }}
+            />
+          )}
           <div style={{ margin: '48px 0', padding: 32, background: 'linear-gradient(180deg, var(--panel), var(--panel-2))', borderRadius: 12, border: '1px solid rgba(217,180,91,0.2)', textAlign: 'center' }}>
             <h3 style={{ fontSize: 18, color: 'var(--gold-2)', marginBottom: 12 }}>ここから先は有料コンテンツです</h3>
             <p style={{ color: 'var(--text-2)', fontSize: 14, marginBottom: 24 }}>
