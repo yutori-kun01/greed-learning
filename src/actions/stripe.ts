@@ -1,7 +1,6 @@
 'use server';
 
-import { getAuth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { requireUser } from '@/lib/session';
 import { getDb } from '@/db';
 import { blogPosts, user } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -9,15 +8,7 @@ import Stripe from 'stripe';
 import { redirect } from 'next/navigation';
 
 export async function createCheckoutSession(postId: string) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
-
-  if (!session) {
-    throw new Error('Unauthorized');
-  }
+  const me = await requireUser();
 
   const db = getDb(process.env.DB as unknown as D1Database);
   
@@ -39,9 +30,9 @@ export async function createCheckoutSession(postId: string) {
   const checkoutSession = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: 'payment',
-    customer_email: session.user.email, // Use logged in user's email
+    customer_email: me.email, // Use logged in user's email
     metadata: {
-      userId: session.user.id,
+      userId: me.id,
       postId: post.id,
     },
     line_items: [

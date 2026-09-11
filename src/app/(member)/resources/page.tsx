@@ -3,7 +3,7 @@ import { courses } from '@/db/schema';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { getAccessibleCourseIds } from '@/lib/access';
-import { getResourcesForCourses } from '@/actions/resources';
+import { getResourcesForCourses } from '@/lib/queries';
 import ResourcesClientUI from './ResourcesClientUI';
 
 export default async function ResourcesPage() {

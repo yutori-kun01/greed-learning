@@ -1,4 +1,4 @@
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettingsQuery } from '@/lib/queries';
 
 const rowStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16, padding: '14px 0', borderBottom: '1px solid var(--line)', fontSize: 14, lineHeight: 1.7 };
 const labelStyle: React.CSSProperties = { color: 'var(--muted)', fontWeight: 600 };

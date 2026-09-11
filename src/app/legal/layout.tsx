@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettingsQuery } from '@/lib/queries';
 
 // These pages read operator details out of D1, which has no binding during
 // `next build`. Prerendered, they would permanently serve the "（未設定）"

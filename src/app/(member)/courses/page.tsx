@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { getAccessibleCourseIds } from '@/lib/access';
-import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
+import { getMyBookmarkedCourseIds } from '@/lib/queries';
 import CoursesClientUI from './CoursesClientUI';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);

@@ -50,6 +50,13 @@
       "when": 1788918598640,
       "tag": "0006_living_the_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1789102229529,
+      "tag": "0007_left_sersi",
+      "breakpoints": true
     }
   ]
 }

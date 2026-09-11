@@ -1,4 +1,4 @@
-import { getMyBookmarkedCourses } from '@/actions/bookmarks';
+import { getMyBookmarkedCourses } from '@/lib/queries';
 import BookmarksClientUI from './BookmarksClientUI';
 
 export default async function BookmarksPage() {

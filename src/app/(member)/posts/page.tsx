@@ -1,10 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import { getPublishedPosts } from '@/actions/posts';
+import { getPublishedPostSummaries } from '@/lib/queries';
 import Icon from '@/components/Icon';
 
 export default async function MemberPostsPage() {
-  const posts = await getPublishedPosts();
+  const posts = await getPublishedPostSummaries();
 
   const getStatusBadge = (status: string) => {
     switch (status) {

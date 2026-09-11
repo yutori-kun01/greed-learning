@@ -4,21 +4,12 @@ import { getDb } from '@/db';
 import { courses } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
-import { getAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/session';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
 export async function createCourse(formData: FormData) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
-
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
+  await requireAdmin();
 
   const number = formData.get('number') as string;
   const title = formData.get('title') as string;
@@ -52,15 +43,7 @@ export async function createCourse(formData: FormData) {
 }
 
 export async function updateCourse(id: string, formData: FormData) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
-
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
+  await requireAdmin();
 
   const number = formData.get('number') as string;
   const title = formData.get('title') as string;
@@ -90,24 +73,8 @@ export async function updateCourse(id: string, formData: FormData) {
   return { success: true };
 }
 
-export async function getCourses() {
-  try {
-    return await db().select().from(courses).orderBy(courses.createdAt);
-  } catch (e) {
-    return [];
-  }
-}
-
 export async function deleteCourse(id: string) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
-
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
+  await requireAdmin();
 
   await db().delete(courses).where(eq(courses.id, id));
   revalidatePath('/admin/courses');

@@ -5,7 +5,7 @@ import { getAuth } from '@/lib/auth';
 import { getDb } from '@/db';
 import { user as userTable, plans } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { getActivePlans } from '@/actions/plans';
+import { getActivePlans } from '@/lib/queries';
 
 export default async function MemberSettingsPage({
   searchParams,

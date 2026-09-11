@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getDb } from '@/db';
 import { user, courses, purchases, plans } from '@/db/schema';
 import { desc, count, sum, gte } from 'drizzle-orm';
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettingsQuery } from '@/lib/queries';
 import Stripe from 'stripe';
 import CommandLine from '@/components/CommandLine';
 

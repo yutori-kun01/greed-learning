@@ -1,5 +1,5 @@
 import React from 'react';
-import { getPostBySlug } from '@/actions/posts';
+import { getPostBySlug } from '@/lib/queries';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';

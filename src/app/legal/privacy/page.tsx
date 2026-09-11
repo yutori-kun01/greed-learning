@@ -1,4 +1,4 @@
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettingsQuery } from '@/lib/queries';
 import { DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
 
 export default async function PrivacyPage() {

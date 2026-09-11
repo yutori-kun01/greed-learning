@@ -8,7 +8,7 @@ import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import Icon from '@/components/Icon';
 import { canAccessCourse } from '@/lib/access';
-import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
+import { getMyBookmarkedCourseIds } from '@/lib/queries';
 import BookmarkButton from '@/components/BookmarkButton';
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {

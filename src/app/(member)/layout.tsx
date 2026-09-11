@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettingsQuery } from '@/lib/queries';
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   const reqHeaders = await headers();

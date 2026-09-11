@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 import { ThemeProvider } from '@/components/ThemeProvider'
-import { getSiteSettingsQuery } from '@/actions/settings'
+import { getSiteSettingsQuery } from '@/lib/queries'
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettingsQuery();
