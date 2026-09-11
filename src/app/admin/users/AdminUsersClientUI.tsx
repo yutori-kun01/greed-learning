@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useTransition } from 'react'
 import { setUserStatus, getUserCompletedLessonCount } from '@/actions/users'
+import MemberAccessPanel from './MemberAccessPanel'
 
 type AdminUser = {
   id: string
@@ -138,7 +139,7 @@ export default function AdminUsersClientUI({ users: initialUsers }: { users: Adm
         >
           <div
             className="panel"
-            style={{ width: 420, maxWidth: '90vw' }}
+            style={{ width: 520, maxWidth: '92vw', maxHeight: '88vh', overflowY: 'auto' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -162,6 +163,17 @@ export default function AdminUsersClientUI({ users: initialUsers }: { users: Adm
               <div><span style={{ color: 'var(--muted)' }}>最終学習日：</span><span style={{ color: 'var(--text)' }}>{formatDate(detailUser.lastActivityDate)}</span></div>
               <div><span style={{ color: 'var(--muted)' }}>完了レッスン数：</span><span style={{ color: 'var(--text)' }}>{completedCount === null ? '読込中...' : completedCount}</span></div>
             </div>
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+              <MemberAccessPanel
+                userId={detailUser.id}
+                userName={detailUser.name}
+                onRoleChange={(role) => {
+                  setUsers(prev => prev.map(x => x.id === detailUser.id ? { ...x, role } : x))
+                  setDetailUser(prev => prev && { ...prev, role })
+                }}
+              />
+            </div>
+
             {detailUser.role !== 'ADMIN' && (
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
                 <button

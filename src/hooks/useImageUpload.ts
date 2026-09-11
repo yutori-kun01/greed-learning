@@ -33,6 +33,7 @@ export function useImageUpload() {
           contentType: fileToUpload.type,
           // Signed into the upload URL, so it must match the body exactly.
           size: fileToUpload.size,
+          purpose: 'image',
         }),
       });
 

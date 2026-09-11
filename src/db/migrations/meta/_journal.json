@@ -57,6 +57,13 @@
       "when": 1789102229529,
       "tag": "0007_left_sersi",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1789102990821,
+      "tag": "0008_salty_captain_britain",
+      "breakpoints": true
     }
   ]
 }

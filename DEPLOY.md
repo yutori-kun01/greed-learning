@@ -51,6 +51,11 @@ npx wrangler secret put STRIPE_SECRET_KEY
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
 npx wrangler secret put RESEND_API_KEY       # https://resend.com で取得。未設定の場合、パスワード再設定メール等は送信されずログ出力のみになります
 npx wrangler secret put RESEND_FROM_EMAIL    # 例: no-reply@your-domain.com（Resend側でドメイン認証が必要）
+npx wrangler secret put R2_ACCOUNT_ID         # CloudflareのアカウントID
+npx wrangler secret put R2_ACCESS_KEY_ID      # R2 APIトークン（Object Read & Write）
+npx wrangler secret put R2_SECRET_ACCESS_KEY
+npx wrangler secret put R2_BUCKET_NAME        # 例: greed-learning-assets
+npx wrangler secret put R2_PUBLIC_URL         # 記事に貼る画像の公開URL。例: https://assets.your-domain.com
 ```
 
 `NEXT_PUBLIC_APP_URL` はビルド時に埋め込まれる値なので、`wrangler.toml` の `[vars]` に追加するか、デプロイ前に環境変数として設定してビルドしてください。

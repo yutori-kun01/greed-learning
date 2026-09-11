@@ -148,7 +148,16 @@ export const courseResources = sqliteTable("courseResources", {
   icon: text("icon").default('📄').notNull(),
   title: text("title").notNull(),
   description: text("description"),
+
+  // A resource is delivered either as an external link (Notion, a video) or
+  // as a file held in R2. objectKey is never exposed to the browser: members
+  // are sent through a download route that checks course access and mints a
+  // short-lived signed URL, so a forwarded link does not leak the file.
   fileUrl: text("fileUrl"),
+  objectKey: text("objectKey"),
+  fileName: text("fileName"),
+  fileSize: integer("fileSize"),
+
   sortOrder: integer("sortOrder").default(0).notNull(),
   createdAt: text("createdAt").notNull(),
 }, (t) => [

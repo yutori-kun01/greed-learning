@@ -159,6 +159,8 @@ export async function getUsers() {
 
 // --------------------------------------------------------- site settings
 
+let warnedAboutSettings = false;
+
 export async function getSiteSettingsQuery() {
   try {
     const rows = await db().select().from(siteSettings).where(eq(siteSettings.id, '1')).limit(1);
@@ -167,8 +169,12 @@ export async function getSiteSettingsQuery() {
     // The root layout reads this while prerendering the few static pages, when
     // no D1 binding exists, and on a fresh deploy before migrations have run.
     // Both must fall back to defaults rather than fail the render — but say so,
-    // instead of making a real outage look like an unconfigured site.
-    console.error('[settings] Could not read site settings; falling back to defaults.', err);
+    // instead of making a real outage look like an unconfigured site. Once per
+    // process: every prerendered page would otherwise repeat it.
+    if (!warnedAboutSettings) {
+      warnedAboutSettings = true;
+      console.error('[settings] Could not read site settings; falling back to defaults.', err);
+    }
     return null;
   }
 }

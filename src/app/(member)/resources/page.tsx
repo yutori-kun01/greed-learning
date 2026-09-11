@@ -1,25 +1,45 @@
 import { getDb } from '@/db';
 import { courses } from '@/db/schema';
-import { getAuth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { requireUser } from '@/lib/session';
 import { getAccessibleCourseIds } from '@/lib/access';
 import { getResourcesForCourses } from '@/lib/queries';
-import ResourcesClientUI from './ResourcesClientUI';
+import ResourcesClientUI, { type ResourceCard } from './ResourcesClientUI';
 
 export default async function ResourcesPage() {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({ headers: reqHeaders });
-  const userId = session?.user?.id;
+  const me = await requireUser();
+  const d1 = process.env.DB as unknown as D1Database;
+  const db = getDb(d1);
 
-  const db = getDb(process.env.DB as unknown as D1Database);
-  const allCourses = await db.select().from(courses);
+  const allCourses = await db
+    .select({ id: courses.id, requiredPlanId: courses.requiredPlanId })
+    .from(courses);
 
-  const accessibleIds = userId
-    ? await getAccessibleCourseIds(process.env.DB as unknown as D1Database, userId, allCourses)
-    : new Set<string>();
-
+  const accessibleIds = await getAccessibleCourseIds(d1, me.id, allCourses);
   const resources = await getResourcesForCourses([...accessibleIds]);
 
-  return <ResourcesClientUI resources={resources} />;
+  // Only what the card needs. The file location stays on the server — members
+  // reach it through /api/resources/[id]/download, which re-checks access.
+  const cards: ResourceCard[] = resources.map(
+    (r: {
+      id: string;
+      icon: string;
+      title: string;
+      description: string | null;
+      fileUrl: string | null;
+      objectKey: string | null;
+      fileName: string | null;
+      fileSize: number | null;
+    }) => ({
+      id: r.id,
+      icon: r.icon,
+      title: r.title,
+      description: r.description,
+      hasDownload: Boolean(r.objectKey || r.fileUrl),
+      fileName: r.fileName,
+      fileSize: r.fileSize,
+      isExternal: !r.objectKey && Boolean(r.fileUrl),
+    })
+  );
+
+  return <ResourcesClientUI resources={cards} />;
 }
