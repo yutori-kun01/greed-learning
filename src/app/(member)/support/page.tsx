@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { sendSupportInquiry } from '@/actions/support';
 
 type SendStatus = 'idle' | 'sending' | 'sent' | 'error';
 
@@ -9,12 +10,14 @@ export default function SupportPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState<SendStatus>('idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [sendError, setSendError] = useState('');
+  const [isPending, startTransition] = useTransition();
 
   const faqs = [
     { q: 'パスワードを忘れてしまいました', a: 'ログイン画面の「パスワード再設定」から手続きを行ってください。' },
-    { q: '退会方法を教えてください', a: 'アカウント設定ページの一番下にある「退会する」ボタンからお手続きいただけます。' },
+    { q: '退会・解約方法を教えてください', a: 'アカウント設定の「会員プラン」タブから「お支払い方法・解約の管理」に進み、Stripeの管理画面で解約できます。' },
     { q: 'コースの視聴期限はありますか？', a: '会員である限り、すべてのコースを無期限でご視聴いただけます。' },
-    { q: '領収書の発行は可能ですか？', a: 'マイページの「請求履歴」よりPDF形式でダウンロード可能です。' },
+    { q: '領収書の発行は可能ですか？', a: 'アカウント設定の「会員プラン」タブから「お支払い方法・解約の管理」に進むと、Stripeの管理画面で過去の請求書と領収書をダウンロードできます。' },
     { q: '動画が再生されません', a: 'ブラウザのキャッシュをクリアするか、別のブラウザでお試しください。' }
   ];
 
@@ -72,12 +75,24 @@ export default function SupportPage() {
               if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'メールアドレスの形式が正しくありません';
               if (!form.message.trim()) nextErrors.message = 'お問い合わせ内容を入力してください';
               setErrors(nextErrors);
+              setSendError('');
               if (Object.keys(nextErrors).length > 0) return;
 
+              const formData = new FormData();
+              formData.set('name', form.name);
+              formData.set('email', form.email);
+              formData.set('message', form.message);
+
               setStatus('sending');
-              setTimeout(() => {
-                setStatus('sent');
-              }, 900);
+              startTransition(async () => {
+                const result = await sendSupportInquiry(formData);
+                if (result.ok) {
+                  setStatus('sent');
+                } else {
+                  setSendError(result.error);
+                  setStatus('error');
+                }
+              });
             }}
           >
             <div>
@@ -112,8 +127,9 @@ export default function SupportPage() {
               />
               {errors.message && <p style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '4px' }}>{errors.message}</p>}
             </div>
-            <button type="submit" className="btn btn-gold" style={{ alignSelf: 'flex-start', marginTop: '8px' }} disabled={status === 'sending'}>
-              {status === 'sending' ? '送信中...' : '送信する'}
+            {sendError && <p style={{ color: 'var(--danger)', fontSize: '13px' }}>{sendError}</p>}
+            <button type="submit" className="btn btn-gold" style={{ alignSelf: 'flex-start', marginTop: '8px' }} disabled={isPending}>
+              {isPending ? '送信中...' : '送信する'}
             </button>
           </form>
         )}

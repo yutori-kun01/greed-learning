@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { advanceStreak, currentStreakAsOf, localDateKey } from './streak'
+import { advanceStreak, currentStreakAsOf, localDateKey, type StreakState } from './streak'
 
 const jst = (iso: string) => new Date(iso)
 
@@ -38,7 +38,7 @@ describe('advanceStreak', () => {
   })
 
   it('restarts after a missed day but keeps the best record', () => {
-    let state = { currentStreak: 7, longestStreak: 12, lastActivityDate: '2026-09-10' }
+    let state: StreakState = { currentStreak: 7, longestStreak: 12, lastActivityDate: '2026-09-10' }
     state = advanceStreak(state, jst('2026-09-15T01:00:00.000Z'))
     expect(state.currentStreak).toBe(1)
     expect(state.longestStreak).toBe(12)
