@@ -8,6 +8,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getSiteSettings, DEFAULT_SITE_NAME } from '@/lib/siteSettings';
 import { getMemberProgress } from '@/lib/progress';
+import { currentStreakAsOf } from '@/lib/streak';
 import { getDb } from '@/db';
 import { user as userTable } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -54,7 +55,15 @@ export default async function MemberLayout({ children }: { children: React.React
           completedThisMonth: progress.completedThisMonth,
           completedLastMonth: progress.completedLastMonth,
           weeklyCompletions: progress.weeklyCompletions,
-          currentStreak: me?.currentStreak ?? 0,
+          // 保存値は最終学習日から時間が経つと古くなるので、読み出し側で減衰させる。
+          currentStreak: currentStreakAsOf(
+            {
+              currentStreak: me?.currentStreak ?? 0,
+              longestStreak: me?.longestStreak ?? 0,
+              lastActivityDate: me?.lastActivityDate ?? null,
+            },
+            new Date()
+          ),
           longestStreak: me?.longestStreak ?? 0,
         }}
       />

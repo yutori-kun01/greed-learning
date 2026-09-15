@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import { user } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getMemberProgress } from '@/lib/progress';
+import { currentStreakAsOf } from '@/lib/streak';
 
 export default async function DashboardPage() {
   const reqHeaders = await headers();
@@ -24,6 +25,14 @@ export default async function DashboardPage() {
 
   // Progress is computed once per request and shared with the right rail.
   const progress = await getMemberProgress(session.user.id);
+  const streak = currentStreakAsOf(
+    {
+      currentStreak: currentUser?.currentStreak ?? 0,
+      longestStreak: currentUser?.longestStreak ?? 0,
+      lastActivityDate: currentUser?.lastActivityDate ?? null,
+    },
+    new Date()
+  );
   const activeCourses = (progress.inProgress.length > 0 ? progress.inProgress : progress.courses).slice(0, 3);
 
   return (
@@ -41,7 +50,7 @@ export default async function DashboardPage() {
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>完了したレッスン</div>
         </div>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{currentUser?.currentStreak || 0}</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{streak}</div>
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>連続学習日数</div>
         </div>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
