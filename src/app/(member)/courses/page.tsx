@@ -6,10 +6,16 @@ import { headers } from 'next/headers';
 import { getAccessibleCourseIds, isCourseVisible } from '@/lib/access';
 import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
 import CoursesClientUI from './CoursesClientUI';
+import { UNCATEGORIZED } from '@/lib/courseCategories';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
-export default async function CoursesPage() {
+export default async function CoursesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const reqHeaders = await headers();
   const auth = getAuth(process.env.DB as unknown as D1Database);
   const session = await auth.api.getSession({ headers: reqHeaders });
@@ -48,12 +54,12 @@ export default async function CoursesPage() {
       // totalDuration columns are never updated when lessons change.
       lessons: courseLessons.length,
       minutes: Math.round(courseLessons.reduce((sum: number, l: any) => sum + (l.duration || 0), 0) / 60),
-      cat: c.categoryId || 'strategy',
+      cat: c.categoryId || UNCATEGORIZED,
       badge: c.badge || null,
       locked: !accessibleIds.has(c.id),
       bookmarked: bookmarkedIds.has(c.id),
     };
   });
 
-  return <CoursesClientUI courses={formattedCourses} />;
+  return <CoursesClientUI courses={formattedCourses} query={q || ''} />;
 }

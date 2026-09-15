@@ -1,15 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Icon from '@/components/Icon';
 import Link from 'next/link';
 import BookmarkButton from '@/components/BookmarkButton';
+import { categoriesFrom } from '@/lib/courseCategories';
 
-const CATEGORIES = [
-  { id: 'all', label: 'すべて' },
-  { id: 'strategy', label: '戦略・思考' },
-  { id: 'traffic', label: '集客・リスト' },
-  { id: 'content', label: 'コンテンツ' }
-];
+type SortKey = 'new' | 'progress' | 'remaining';
 
 type Course = {
   id: string;
@@ -25,21 +21,32 @@ type Course = {
   bookmarked?: boolean;
 };
 
-export default function CoursesClientUI({ courses }: { courses: Course[] }) {
+export default function CoursesClientUI({ courses, query = '' }: { courses: Course[]; query?: string }) {
   const [activeCat, setActiveCat] = useState('all');
-  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<SortKey>('new');
 
-  const filtered = courses.filter(c => {
-    if (activeCat !== 'all' && c.cat !== activeCat) return false;
-    if (search && !`${c.number} ${c.title} ${c.desc}`.includes(search)) return false;
-    return true;
-  });
+  // 検索語はヘッダーの検索ボックスから ?q= で渡ってくる。
+  const categories = useMemo(() => categoriesFrom(courses), [courses]);
+  const needle = query.trim().toLowerCase();
+
+  const filtered = useMemo(() => {
+    const matched = courses.filter(c => {
+      if (activeCat !== 'all' && c.cat !== activeCat) return false;
+      if (needle && !`${c.number} ${c.title} ${c.desc ?? ''}`.toLowerCase().includes(needle)) return false;
+      return true;
+    });
+
+    // 「新着順」はサーバーから渡された順（作成日順）のまま。
+    if (sort === 'progress') return [...matched].sort((a, b) => b.progress - a.progress);
+    if (sort === 'remaining') return [...matched].sort((a, b) => a.progress - b.progress);
+    return matched;
+  }, [courses, activeCat, needle, sort]);
 
   return (
     <section className="courses">
       <div className="toolbar">
         <div className="chips" role="tablist" aria-label="カテゴリー">
-          {CATEGORIES.map(c => (
+          {categories.map(c => (
             <button 
               key={c.id}
               className={`chip ${activeCat === c.id ? 'is-active' : ''}`}
@@ -50,7 +57,7 @@ export default function CoursesClientUI({ courses }: { courses: Course[] }) {
           ))}
         </div>
         <label className="select">
-          <select aria-label="並び替え">
+          <select aria-label="並び替え" value={sort} onChange={e => setSort(e.target.value as SortKey)}>
             <option value="new">新着順</option>
             <option value="progress">進捗が高い順</option>
             <option value="remaining">残りが多い順</option>
@@ -59,7 +66,10 @@ export default function CoursesClientUI({ courses }: { courses: Course[] }) {
         </label>
       </div>
 
-      <h2 className="section-title">すべての講座<span id="count">（{filtered.length}）</span></h2>
+      <h2 className="section-title">
+        {query ? `「${query}」の検索結果` : 'すべての講座'}
+        <span id="count">（{filtered.length}）</span>
+      </h2>
 
       <div className="grid">
         {filtered.map(c => (
@@ -99,7 +109,7 @@ export default function CoursesClientUI({ courses }: { courses: Course[] }) {
       
       {filtered.length === 0 && (
         <div className="empty">
-          該当する講座がありません。
+          {query ? `「${query}」に一致する講座がありません。` : '該当する講座がありません。'}
         </div>
       )}
     </section>
