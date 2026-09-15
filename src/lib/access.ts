@@ -58,3 +58,14 @@ export async function getAccessibleCourseIds(
 
   return new Set([...open, ...planUnlocked, ...enrolled.map((e: any) => e.courseId)]);
 }
+
+type CourseVisibilityInfo = { status: string };
+
+/**
+ * Draft and archived courses are catalogue-invisible: they must not appear in
+ * the member course list, and their detail and lesson pages must 404.
+ * Admins still see them so they can preview before publishing.
+ */
+export function isCourseVisible(course: CourseVisibilityInfo, viewerRole?: string | null): boolean {
+  return course.status === 'PUBLISHED' || viewerRole === 'ADMIN';
+}

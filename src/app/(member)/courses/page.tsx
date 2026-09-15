@@ -3,7 +3,7 @@ import { courses, lessons, lessonProgress } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { getAccessibleCourseIds } from '@/lib/access';
+import { getAccessibleCourseIds, isCourseVisible } from '@/lib/access';
 import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
 import CoursesClientUI from './CoursesClientUI';
 
@@ -15,7 +15,10 @@ export default async function CoursesPage() {
   const session = await auth.api.getSession({ headers: reqHeaders });
   const userId = session?.user?.id;
 
-  const allCourses = await db().select().from(courses).orderBy(courses.createdAt);
+  // 下書き・アーカイブは会員に出さない（管理者はプレビューできる）。
+  const viewerRole = (session?.user as any)?.role;
+  const allCourses = (await db().select().from(courses).orderBy(courses.createdAt))
+    .filter((c: any) => isCourseVisible(c, viewerRole));
   const allLessons = await db().select().from(lessons);
   const userProgress = userId
     ? await db().select().from(lessonProgress).where(eq(lessonProgress.userId, userId))
