@@ -64,3 +64,38 @@ export function sanitizeLinkUrl(value: string | null | undefined): string | null
     return null;
   }
 }
+
+function hexToRgb(hex: string): [number, number, number] {
+  const value = hex.slice(1);
+  const full = value.length === 3 ? value.split('').map((c) => c + c).join('') : value;
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)) as [number, number, number];
+}
+
+function relativeLuminance(hex: string): number {
+  const channels = hexToRgb(hex)
+    .map((c) => c / 255)
+    .map((c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+/**
+ * Accent text sits on white panels in light mode, where the brand gold (and
+ * most accent colours) fall well under 4.5:1. This darkens the colour until it
+ * is readable, keeping its hue. Fills and strokes keep the original colour.
+ */
+export function accentTextForLightTheme(hex: string, minContrast = 4.5): string {
+  const white = 1;
+  let [r, g, b] = hexToRgb(hex);
+
+  for (let i = 0; i < 24; i++) {
+    const luminance = relativeLuminance(
+      `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, '0')).join('')}`
+    );
+    if ((white + 0.05) / (luminance + 0.05) >= minContrast) break;
+    r *= 0.9;
+    g *= 0.9;
+    b *= 0.9;
+  }
+
+  return `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, '0')).join('')}`;
+}

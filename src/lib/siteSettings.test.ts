@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  accentTextForLightTheme,
   ACCENT_COLORS,
   BG_PATTERNS,
   DEFAULT_BG_PATTERN,
@@ -47,5 +48,34 @@ describe('sanitizeBgPattern', () => {
     expect(sanitizeBgPattern('')).toBe(DEFAULT_BG_PATTERN)
     expect(sanitizeBgPattern(null)).toBe(DEFAULT_BG_PATTERN)
     expect(sanitizeBgPattern(undefined)).toBe(DEFAULT_BG_PATTERN)
+  })
+})
+
+describe('accentTextForLightTheme', () => {
+  const luminance = (hex: string) => {
+    const channels = [1, 3, 5]
+      .map((i) => parseInt(hex.substr(i, 2), 16) / 255)
+      .map((c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)))
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+  }
+  const contrastOnWhite = (hex: string) => 1.05 / (luminance(hex) + 0.05)
+
+  it('darkens the brand gold until it is readable on a white panel', () => {
+    expect(contrastOnWhite('#d9b45b')).toBeLessThan(4.5) // the starting point
+    expect(contrastOnWhite(accentTextForLightTheme('#d9b45b'))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('darkens every accent the admin can pick', () => {
+    for (const color of ACCENT_COLORS) {
+      expect(contrastOnWhite(accentTextForLightTheme(color.value))).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('leaves a colour that is already dark enough alone', () => {
+    expect(accentTextForLightTheme('#3b2a06')).toBe('#3b2a06')
+  })
+
+  it('returns a valid hex colour', () => {
+    expect(accentTextForLightTheme('#4ade80')).toMatch(/^#[0-9a-f]{6}$/)
   })
 })

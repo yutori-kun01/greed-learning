@@ -11,10 +11,17 @@
   --line:      rgba(255, 255, 255, .07);
   --line-2:    rgba(255, 255, 255, .12);
 
+  /* ゴールドは役割で分けている:
+       --gold     … 塗り・線・グラフのブランドゴールド（両テーマ共通）
+       --gold-hi  … 塗りのハイライト（グラデーション上端、濃い地の上の文字）
+       --gold-2   … 背景の上に置く文字色。ライトでは白地で読めるまで落とす
+       --gold-graph … 進捗リング・バーなど図形の線。ライトでは一段濃くする
+       --on-gold  … ゴールド地の上に乗せる文字色 */
   --gold:      #d9b45b;
+  --gold-hi:   #f2d992;
   --gold-2:    #f2d992;
+  --gold-graph:#d9b45b;
   --gold-dim:  rgba(217, 180, 91, .14);
-  /* ゴールド地の上に置く文字色。ライトではゴールドが濃くなるため反転する。 */
   --on-gold:   #23180a;
 
   --text:      #e9eef7;
@@ -48,10 +55,14 @@
   --line:      rgba(0, 0, 0, .08);
   --line-2:    rgba(0, 0, 0, .14);
 
-  --gold:      #b89032;
-  --gold-2:    #8b6c23;
-  --gold-dim:  rgba(184, 144, 50, .12);
-  --on-gold:   #fff8e7;
+  /* 塗りはダークと同じブランドゴールド。文字だけ白地で読める濃さに落とす。 */
+  --gold:      #d9b45b;
+  --gold-hi:   #f2d992;
+  --gold-2:    #8e6b1f;
+  /* 進捗リング・バーは白地だと明るいゴールドが沈むので一段濃くする。 */
+  --gold-graph:#b8891f;
+  --gold-dim:  rgba(217, 180, 91, .20);
+  --on-gold:   #23180a;
 
   --text:      #1a202c;
   --text-2:    #4a5568;
@@ -68,6 +79,9 @@
   --danger-dim:  rgba(198, 40, 40, .10);
   --info:        #2f5fbf;
 }
+
+:root { color-scheme: dark; }
+.light { color-scheme: light; }
 
 * { box-sizing: border-box; }
 
@@ -354,7 +368,7 @@ button, select, input { font: inherit; color: inherit; }
 .spark-col span {
   width: 100%;
   border-radius: 3px 3px 2px 2px;
-  background: linear-gradient(180deg, var(--gold-2), rgba(217, 180, 91, .45));
+  background: linear-gradient(180deg, var(--gold), var(--gold-graph));
 }
 .spark-col span.dim { background: var(--line-2); }
 .spark-col em { font-style: normal; font-size: 10px; color: var(--muted); }
@@ -429,7 +443,7 @@ button, select, input { font: inherit; color: inherit; }
 .btn i { width: 15px; height: 15px; }
 .btn:active { transform: translateY(1px); }
 .btn-gold {
-  background: linear-gradient(180deg, var(--gold-2), var(--gold));
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
   color: var(--on-gold);
   font-weight: 700;
   box-shadow: 0 6px 18px rgba(217, 180, 91, .22);
@@ -541,8 +555,8 @@ button, select, input { font: inherit; color: inherit; }
   font-weight: 700;
   letter-spacing: .06em;
 }
-.badge--new  { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #23180a; }
-.badge--hot  { background: rgba(10, 18, 32, .8); border: 1px solid rgba(217, 180, 91, .5); color: var(--gold-2); }
+.badge--new  { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: var(--on-gold); }
+.badge--hot  { background: rgba(10, 18, 32, .8); border: 1px solid rgba(217, 180, 91, .5); color: var(--gold-hi); }
 .badge--pick { background: rgba(10, 18, 32, .8); border: 1px solid var(--line-2); color: var(--text-2); }
 
 .card-body { padding: 14px 15px 15px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
@@ -554,7 +568,7 @@ button, select, input { font: inherit; color: inherit; }
 .bar > span {
   display: block; height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--gold), var(--gold-2));
+  background: linear-gradient(90deg, var(--gold-graph), var(--gold));
 }
 .progress b { font-size: 11.5px; color: var(--text-2); min-width: 32px; text-align: right; }
 
@@ -622,9 +636,13 @@ button, select, input { font: inherit; color: inherit; }
 .donut circle { fill: none; stroke-width: 9; stroke-linecap: round; }
 .donut-track { stroke: var(--line-2); }
 .donut-value {
-  stroke: var(--gold);
+  stroke: var(--gold-graph);
   stroke-dasharray: calc(var(--value) * 2.639) 264;
   filter: drop-shadow(0 0 6px rgba(217, 180, 91, .35));
+}
+/* ライトでは白地に光彩がにじんで輪郭が弱くなるだけなので外す。 */
+.light .donut-value {
+  filter: none;
 }
 .summary-label { font-size: 11.5px; color: var(--muted); }
 .summary-value { font-size: 30px; font-weight: 700; color: var(--gold-2); line-height: 1.15; }

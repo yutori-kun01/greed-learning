@@ -2,7 +2,13 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 import { ThemeProvider } from '@/components/ThemeProvider'
-import { getSiteSettings, sanitizeAccentColor, sanitizeBgPattern, DEFAULT_SITE_NAME } from '@/lib/siteSettings';
+import {
+  getSiteSettings,
+  sanitizeAccentColor,
+  sanitizeBgPattern,
+  accentTextForLightTheme,
+  DEFAULT_SITE_NAME,
+} from '@/lib/siteSettings';
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -33,9 +39,17 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           {accentColor && (
             <style dangerouslySetInnerHTML={{ __html: `
-              :root, .light {
+              :root {
                 --gold: ${accentColor};
+                --gold-hi: ${accentColor};
                 --gold-2: ${accentColor};
+                --gold-graph: ${accentColor};
+              }
+              .light {
+                --gold: ${accentColor};
+                --gold-hi: ${accentColor};
+                --gold-2: ${accentTextForLightTheme(accentColor)};
+                --gold-graph: ${accentTextForLightTheme(accentColor, 3)};
               }
             `}} />
           )}
