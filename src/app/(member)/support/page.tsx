@@ -59,7 +59,7 @@ export default function SupportPage() {
       <div className="panel">
         <h2 className="section-title" style={{ marginBottom: '16px' }}>お問い合わせ</h2>
         {status === 'sent' ? (
-          <div style={{ color: '#8ce0a8', fontSize: '14px', padding: '8px 0' }}>
+          <div style={{ color: 'var(--success)', fontSize: '14px', padding: '8px 0' }}>
             送信しました。担当者よりご登録のメールアドレス宛にご連絡いたします。
           </div>
         ) : (
@@ -89,7 +89,7 @@ export default function SupportPage() {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
-              {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.name}</p>}
+              {errors.name && <p style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '4px' }}>{errors.name}</p>}
             </div>
             <div>
               <label style={{ fontSize: '13px', color: 'var(--text-2)' }}>メールアドレス</label>
@@ -100,7 +100,7 @@ export default function SupportPage() {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
-              {errors.email && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.email}</p>}
+              {errors.email && <p style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '4px' }}>{errors.email}</p>}
             </div>
             <div>
               <label style={{ fontSize: '13px', color: 'var(--text-2)' }}>お問い合わせ内容</label>
@@ -110,7 +110,7 @@ export default function SupportPage() {
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
               />
-              {errors.message && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.message}</p>}
+              {errors.message && <p style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '4px' }}>{errors.message}</p>}
             </div>
             <button type="submit" className="btn btn-gold" style={{ alignSelf: 'flex-start', marginTop: '8px' }} disabled={status === 'sending'}>
               {status === 'sending' ? '送信中...' : '送信する'}

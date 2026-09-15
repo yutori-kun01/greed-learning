@@ -79,7 +79,7 @@ export default async function AdminDashboard() {
   ];
   const remaining = checklist.filter(c => !c.done);
 
-  const badgeStyle = { background: 'rgba(111,208,160,.15)', color: '#6fd0a0', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
+  const badgeStyle = { background: 'var(--success-dim)', color: 'var(--success)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
 
   return (
     <div>
@@ -95,7 +95,7 @@ export default async function AdminDashboard() {
                   width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
                   background: item.done ? 'rgba(111,208,160,.2)' : 'var(--line-2)',
-                  color: item.done ? '#6fd0a0' : 'var(--muted)',
+                  color: item.done ? 'var(--success)' : 'var(--muted)',
                 }}>
                   {item.done ? '✓' : ''}
                 </span>

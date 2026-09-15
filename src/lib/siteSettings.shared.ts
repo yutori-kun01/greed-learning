@@ -48,3 +48,19 @@ export function sanitizeAccentColor(value: string | null | undefined): string | 
 export function sanitizeBgPattern(value: string | null | undefined): string {
   return BG_PATTERNS.some((pattern) => pattern.id === value) ? (value as string) : DEFAULT_BG_PATTERN;
 }
+
+/**
+ * Outbound links from site settings are rendered as anchors, so only http(s)
+ * URLs are kept — `javascript:` and friends never reach the page.
+ */
+export function sanitizeLinkUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? trimmed : null;
+  } catch {
+    return null;
+  }
+}

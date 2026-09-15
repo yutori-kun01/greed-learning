@@ -170,8 +170,8 @@ export default function MemberSettingsForm({
                 placeholder="new@example.com"
               />
             </label>
-            {emailStatus === 'error' && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{emailError}</p>}
-            {emailStatus === 'saved' && <p style={{ color: '#8ce0a8', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>確認メールを送信しました。メール内のリンクから変更を完了してください。</p>}
+            {emailStatus === 'error' && <p style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{emailError}</p>}
+            {emailStatus === 'saved' && <p style={{ color: 'var(--success)', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>確認メールを送信しました。メール内のリンクから変更を完了してください。</p>}
             <button type="submit" className="btn btn-ghost" disabled={emailStatus === 'saving'}>
               {emailStatus === 'saving' ? '更新中...' : 'メールアドレスを更新'}
             </button>
@@ -206,8 +206,8 @@ export default function MemberSettingsForm({
                 onChange={(e) => { setPasswords({ ...passwords, confirm: e.target.value }); setPasswordStatus('idle'); }}
               />
             </label>
-            {passwordStatus === 'error' && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{passwordError}</p>}
-            {passwordStatus === 'saved' && <p style={{ color: '#8ce0a8', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>パスワードを更新しました。</p>}
+            {passwordStatus === 'error' && <p style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{passwordError}</p>}
+            {passwordStatus === 'saved' && <p style={{ color: 'var(--success)', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>パスワードを更新しました。</p>}
             <button type="submit" className="btn btn-ghost" disabled={passwordStatus === 'saving'}>
               {passwordStatus === 'saving' ? '更新中...' : 'パスワードを更新'}
             </button>
@@ -266,8 +266,8 @@ export default function MemberSettingsForm({
               </form>
             </div>
           ) : subscriptionStatus === 'PAST_DUE' ? (
-            <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)' }}>
-              <p style={{ fontSize: 13, color: '#ef4444', fontWeight: 600 }}>お支払いに問題が発生しています。お支払い方法をご確認ください。</p>
+            <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'var(--danger-dim)', border: '1px solid rgba(239,68,68,.3)' }}>
+              <p style={{ fontSize: 13, color: 'var(--danger)', fontWeight: 600 }}>お支払いに問題が発生しています。お支払い方法をご確認ください。</p>
               <form action={createBillingPortalSession} style={{ marginTop: 12 }}>
                 <button type="submit" className="btn btn-gold">お支払い方法を更新</button>
               </form>

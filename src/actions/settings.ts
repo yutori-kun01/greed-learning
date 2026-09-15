@@ -8,6 +8,7 @@ import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
 import { sanitizeAccentColor, sanitizeBgPattern, DEFAULT_SITE_NAME } from '@/lib/siteSettings.shared';
 import { sanitizeImageUrl } from '@/lib/uploads';
+import { sanitizeLinkUrl } from '@/lib/siteSettings.shared';
 
 // Helper for DB instance
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -29,6 +30,7 @@ export async function updateSiteSettings(formData: FormData) {
   const accentColor = sanitizeAccentColor(formData.get('accentColor') as string) || '';
   const bgPattern = sanitizeBgPattern(formData.get('bgPattern') as string);
   const logoUrl = sanitizeImageUrl(formData.get('logoUrl') as string);
+  const discordUrl = sanitizeLinkUrl(formData.get('discordUrl') as string);
 
   const operatorName = (formData.get('operatorName') as string) || null;
   const operatorRepresentative = (formData.get('operatorRepresentative') as string) || null;
@@ -44,6 +46,7 @@ export async function updateSiteSettings(formData: FormData) {
     accentColor,
     bgPattern,
     logoUrl,
+    discordUrl,
     operatorName,
     operatorRepresentative,
     operatorAddress,

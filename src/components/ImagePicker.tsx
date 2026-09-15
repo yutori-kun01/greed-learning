@@ -106,9 +106,9 @@ export default function ImagePicker({
           {hint || `PNG / JPEG / WebP / GIF・${MAX_IMAGE_LABEL}まで`}
         </p>
         {failedToLoad && value && (
-          <p style={{ fontSize: 12, color: '#ef4444', marginTop: 6 }}>画像を読み込めませんでした</p>
+          <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>画像を読み込めませんでした</p>
         )}
-        {uploadError && <p style={{ fontSize: 12, color: '#ef4444', marginTop: 6 }}>{uploadError}</p>}
+        {uploadError && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{uploadError}</p>}
       </div>
     </div>
   );

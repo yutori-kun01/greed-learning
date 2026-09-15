@@ -219,6 +219,9 @@ export const siteSettings = sqliteTable('siteSettings', {
   accentColor: text('accentColor').default('gold').notNull(),
   bgPattern: text('bgPattern').default('pattern1').notNull(),
 
+  // Community link shown in the member sidebar. Hidden when unset.
+  discordUrl: text('discordUrl'),
+
   // Legal / operator info — backs the auto-generated 特定商取引法に基づく表記,
   // and the editable 利用規約 / プライバシーポリシー pages.
   operatorName: text('operatorName'),

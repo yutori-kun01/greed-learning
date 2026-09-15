@@ -70,6 +70,15 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
       </div>
 
       <div className="panel" style={{ marginTop: 24 }}>
+        <h2 className="panel-title">コミュニティ</h2>
+        <label style={labelStyle}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>コミュニティ招待URL (任意)</span>
+          <input type="url" name="discordUrl" style={inputStyle} defaultValue={initialSettings?.discordUrl || ''} placeholder="https://discord.gg/..." />
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>入力するとサイドバーにリンクが表示されます。未設定の場合は表示されません。</p>
+        </label>
+      </div>
+
+      <div className="panel" style={{ marginTop: 24 }}>
         <h2 className="panel-title">デザイン・テーマカスタマイズ</h2>
 
         <label style={labelStyle}>

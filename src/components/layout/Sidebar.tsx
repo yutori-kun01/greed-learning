@@ -31,10 +31,12 @@ const NAV_ITEMS_TAIL = [
 export default function Sidebar({
   siteName = DEFAULT_SITE_NAME,
   logoUrl,
+  discordUrl,
   stats,
 }: {
   siteName?: string;
   logoUrl?: string | null;
+  discordUrl?: string | null;
   stats: SidebarStats;
 }) {
   const { data: session } = useSession();
@@ -76,10 +78,13 @@ export default function Sidebar({
             <Icon name={item.icon} />{item.label}
           </Link>
         ))}
-        <a href="https://discord.gg/INVITE_CODE" target="_blank" rel="noopener noreferrer" className="nav-item">
-          <Icon name="users" />Discord コミュニティ
-          <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--muted)' }}>↗</span>
-        </a>
+        {/* 招待URLが未設定のうちは出さない（以前はダミーのURLに飛んでいた）。 */}
+        {discordUrl && (
+          <a href={discordUrl} target="_blank" rel="noopener noreferrer" className="nav-item">
+            <Icon name="users" />コミュニティ
+            <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--muted)' }}>↗</span>
+          </a>
+        )}
         {NAV_ITEMS_TAIL.map(item => (
           <Link
             key={item.href}

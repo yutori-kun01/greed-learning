@@ -49,6 +49,7 @@ export default async function MemberLayout({ children }: { children: React.React
       <Sidebar
         siteName={siteName}
         logoUrl={settings?.logoUrl}
+        discordUrl={settings?.discordUrl}
         stats={{
           completedThisMonth: progress.completedThisMonth,
           completedLastMonth: progress.completedLastMonth,
