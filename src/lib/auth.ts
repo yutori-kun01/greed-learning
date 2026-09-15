@@ -4,7 +4,7 @@ import { getDb } from "@/db";
 import { user as userTable } from "@/db/schema";
 import { count } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
-import { isEmailVerificationRequired } from "@/lib/authPolicy";
+import { isEmailVerificationRequired, shouldPromoteToAdmin } from "@/lib/authPolicy";
 
 export function getAuth(d1: D1Database) {
   const db = getDb(d1);
@@ -96,12 +96,13 @@ export function getAuth(d1: D1Database) {
     databaseHooks: {
       user: {
         create: {
-          // Self-hosted deployments have no seed data — the very first
-          // account to sign up becomes the admin so the operator can
-          // reach /admin without touching the database by hand.
+          // Self-hosted deployments have no seed data, so the operator needs a
+          // way to reach /admin without editing the database by hand.
+          // ADMIN_EMAIL names that account; without it the first signup wins
+          // (see shouldPromoteToAdmin).
           before: async (user) => {
             const result = await db.select({ value: count() }).from(userTable);
-            if (result[0]?.value === 0) {
+            if (shouldPromoteToAdmin(user.email, result[0]?.value ?? 0)) {
               return { data: { ...user, role: "ADMIN" } };
             }
           },

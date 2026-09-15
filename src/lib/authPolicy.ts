@@ -23,3 +23,33 @@ export function isEmailVerificationRequired(): boolean {
 
 /** Exposed to the signup screen so it can say what happens next. */
 export const EMAIL_VERIFICATION_ENV = 'REQUIRE_EMAIL_VERIFICATION';
+
+/**
+ * Who becomes the admin of a fresh deployment.
+ *
+ * Without ADMIN_EMAIL the very first account to sign up is made admin, which
+ * is convenient for self-hosting but means whoever registers first — including
+ * a stranger who finds the URL before the operator signs up — takes the site
+ * over. Setting ADMIN_EMAIL closes that window: only that address is promoted.
+ */
+export function adminBootstrapEmail(): string | null {
+  const value = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  return value ? value : null;
+}
+
+export function shouldPromoteToAdmin(email: string, existingUserCount: number): boolean {
+  const configured = adminBootstrapEmail();
+
+  if (configured) {
+    return email.trim().toLowerCase() === configured;
+  }
+
+  if (existingUserCount === 0) {
+    console.warn(
+      '[auth] ADMIN_EMAIL is not set — promoting the first account to sign up to ADMIN. Set ADMIN_EMAIL so only your own address can claim the admin role.'
+    );
+    return true;
+  }
+
+  return false;
+}
