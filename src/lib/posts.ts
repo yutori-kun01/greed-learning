@@ -21,7 +21,7 @@ export async function getAllPosts() {
   }
 }
 
-export async function getPublishedPosts() {
+export async function getPublishedPosts(): Promise<(typeof blogPosts.$inferSelect)[]> {
   try {
     const all = await db().select().from(blogPosts).orderBy(blogPosts.createdAt);
     return all.filter((p: typeof blogPosts.$inferSelect) => p.status !== 'DRAFT');

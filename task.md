@@ -27,7 +27,7 @@
 
 | # | タスク | 内容 | 主な対象 | 状態 |
 |---|--------|------|----------|------|
-| 12 | SEO / OGP | sitemap・robots・記事のdescription/OG画像 | `app/` | 未着手 |
+| 12 | SEO / OGP | sitemap・robots・記事のdescription/OG画像。記事ページを会員ゲートの外へ | `app/` | ✅ 完了 |
 | 13 | テスト補強 | Stripe Webhookとアクセス制御のテストを追加 | `*.test.ts` | 未着手 |
 
 ## 完了済み（今回の作業より前）

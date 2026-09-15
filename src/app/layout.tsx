@@ -13,9 +13,22 @@ import {
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
   const siteName = settings?.siteName || DEFAULT_SITE_NAME;
+  const description = '実践に直結する講座を体系的に学びましょう。';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
   return {
-    title: siteName,
-    description: '実践に直結する講座を体系的に学びましょう。',
+    // 相対URLのOG画像を絶対URLに解決するために必要。
+    metadataBase: appUrl ? new URL(appUrl) : undefined,
+    title: { default: siteName, template: `%s | ${siteName}` },
+    description,
+    openGraph: {
+      type: 'website',
+      siteName,
+      title: siteName,
+      description,
+      images: settings?.logoUrl ? [settings.logoUrl] : undefined,
+    },
+    twitter: { card: 'summary', title: siteName, description },
   };
 }
 
