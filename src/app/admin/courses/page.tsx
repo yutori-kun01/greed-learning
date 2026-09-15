@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import React from 'react'
-import { getCourses } from '@/actions/courses'
+import { getAllCourses } from '@/lib/courses'
 import DeleteCourseButton from './DeleteCourseButton'
 
 export default async function AdminCoursesPage() {
   const badgePublished = { background: 'var(--success-dim)', color: 'var(--success)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
   const badgeDraft = { background: 'var(--line-2)', color: 'var(--muted)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
 
-  const courses = await getCourses()
+  const courses = await getAllCourses()
 
   return (
     <div>

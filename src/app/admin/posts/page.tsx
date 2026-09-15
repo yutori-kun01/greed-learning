@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import React from 'react'
-import { getPosts } from '@/actions/posts'
+import { getAllPosts } from '@/lib/posts'
 import DeletePostButton from './DeletePostButton'
 
 export default async function AdminPostsPage() {
@@ -11,7 +11,7 @@ export default async function AdminPostsPage() {
     PAID: { background: 'rgba(217,180,91,.15)', color: 'var(--gold-2)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
   }
 
-  const posts = await getPosts()
+  const posts = await getAllPosts()
 
   return (
     <div>

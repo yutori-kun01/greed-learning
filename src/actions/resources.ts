@@ -18,22 +18,7 @@ async function requireAdmin() {
   }
 }
 
-export async function getCourseResources(courseId: string) {
-  try {
-    return await db().select().from(courseResources).where(eq(courseResources.courseId, courseId)).orderBy(asc(courseResources.sortOrder));
-  } catch (e) {
-    return [];
-  }
-}
 
-export async function getResourcesForCourses(courseIds: string[]) {
-  if (courseIds.length === 0) return [];
-  try {
-    return await db().select().from(courseResources).where(inArray(courseResources.courseId, courseIds)).orderBy(asc(courseResources.sortOrder));
-  } catch (e) {
-    return [];
-  }
-}
 
 export async function createCourseResource(courseId: string, formData: FormData) {
   await requireAdmin();

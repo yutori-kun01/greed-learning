@@ -1,7 +1,7 @@
-import { getPlans } from '@/actions/plans'
+import { getAllPlans } from '@/lib/plans'
 import NewCourseForm from './NewCourseForm'
 
 export default async function AdminNewCoursePage() {
-  const plans = await getPlans()
+  const plans = await getAllPlans()
   return <NewCourseForm plans={plans} />
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { getPublishedPosts } from '@/actions/posts';
+import { getPublishedPosts } from '@/lib/posts';
 import Icon from '@/components/Icon';
 
 export default async function MemberPostsPage() {

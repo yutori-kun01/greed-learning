@@ -90,23 +90,6 @@ export async function updateCourse(id: string, formData: FormData) {
   return { success: true };
 }
 
-export async function getCourses() {
-  try {
-    const [allCourses, allLessons] = await Promise.all([
-      db().select().from(courses).orderBy(courses.createdAt),
-      db().select().from(lessons),
-    ]);
-
-    // The lessonCount column is not maintained when lessons are added or
-    // removed, so the real count is derived here.
-    return allCourses.map((course: typeof courses.$inferSelect) => ({
-      ...course,
-      lessonCount: allLessons.filter((l: typeof lessons.$inferSelect) => l.courseId === course.id).length,
-    }));
-  } catch (e) {
-    return [];
-  }
-}
 
 export async function deleteCourse(id: string) {
   const reqHeaders = await headers();
