@@ -10,7 +10,7 @@
 | 2 | 下書き講座の遮断 | 講座一覧・詳細で PUBLISHED 以外を除外（管理者プレビューは除く） | `(member)/courses/*` | ✅ 完了 |
 | 3 | 連続学習日数 | lastActivityDate から currentStreak / longestStreak を実際に更新 | `actions/progress.ts` | ✅ 完了 |
 | 4 | お問い合わせ送信 | ダミーのsetTimeoutを廃止し、運営者メールへ実送信するServer Action | `(member)/support` | ✅ 完了 |
-| 5 | メール確認 | サインアップ時のメール確認を任意で必須化できるようにする | `lib/auth.ts` / サイト設定 | 未着手 |
+| 5 | メール確認 | サインアップ時のメール確認を任意で必須化できるようにする | `lib/auth.ts` / `REQUIRE_EMAIL_VERIFICATION` | ✅ 完了 |
 
 ## P1 — 早めに
 

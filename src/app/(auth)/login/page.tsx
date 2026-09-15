@@ -28,7 +28,12 @@ export default function LoginPage() {
     });
 
     if (res.error) {
-      setError(res.error.message || 'ログインに失敗しました');
+      // メール確認が必須の設定では、未確認のうちはログインできない。
+      setError(
+        res.error.code === 'EMAIL_NOT_VERIFIED'
+          ? 'メールアドレスの確認が完了していません。確認メールを再送しましたので、メール内のリンクから確認してください。'
+          : res.error.message || 'ログインに失敗しました'
+      );
       setLoading(false);
     } else {
       router.push('/dashboard'); // or /courses

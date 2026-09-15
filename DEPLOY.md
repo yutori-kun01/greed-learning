@@ -55,6 +55,8 @@ npx wrangler secret put RESEND_FROM_EMAIL    # 例: no-reply@your-domain.com（R
 
 `NEXT_PUBLIC_APP_URL` はビルド時に埋め込まれる値なので、`wrangler.toml` の `[vars]` に追加するか、デプロイ前に環境変数として設定してビルドしてください。
 
+なりすまし登録を防ぐためにメール確認を必須にする場合は、`REQUIRE_EMAIL_VERIFICATION` を `true` にします（`wrangler.toml` の `[vars]` かシークレットで設定）。有効にすると登録時に確認メールが送られ、確認を終えるまでログインできません。`RESEND_*` が未設定のままだと全員が締め出されるため、その場合この設定は自動的に無視されます。
+
 Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` も同様に設定します（未設定でもメール/パスワードログインのみで動作します）。
 
 ## 4.5 R2（画像アップロード）の設定

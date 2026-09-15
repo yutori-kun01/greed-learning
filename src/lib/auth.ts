@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { user as userTable } from "@/db/schema";
 import { count } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
+import { isEmailVerificationRequired } from "@/lib/authPolicy";
 
 export function getAuth(d1: D1Database) {
   const db = getDb(d1);
@@ -17,6 +18,13 @@ export function getAuth(d1: D1Database) {
     },
     emailAndPassword: {
       enabled: true,
+      // REQUIRE_EMAIL_VERIFICATION=true でメール確認を必須にする。
+      // 有効にするとサインアップ時に確認メールが送られ、確認するまで
+      // ログインできない。
+      requireEmailVerification: isEmailVerificationRequired(),
+      // 確認必須のときは登録直後の自動ログインもしない。しないと「登録時は
+      // 入れるのに次回からログインできない」という状態になる。
+      autoSignIn: !isEmailVerificationRequired(),
       sendResetPassword: async ({ user, url }) => {
         await sendEmail({
           to: user.email,
@@ -26,6 +34,9 @@ export function getAuth(d1: D1Database) {
       },
     },
     emailVerification: {
+      // ログインを弾いたときに確認メールを送り直す（リンク切れの救済）。
+      sendOnSignIn: true,
+      autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
         await sendEmail({
           to: user.email,

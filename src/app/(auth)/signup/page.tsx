@@ -9,6 +9,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [verificationSent, setVerificationSent] = useState(false);
   const router = useRouter();
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -25,6 +26,10 @@ export default function SignupPage() {
     if (res.error) {
       setError(res.error.message || 'アカウント作成に失敗しました');
       setLoading(false);
+    } else if (!res.data?.token) {
+      // メール確認が必須の設定では自動ログインされない。確認メールの案内を出す。
+      setVerificationSent(true);
+      setLoading(false);
     } else {
       router.push('/dashboard'); // or /courses
     }
@@ -37,6 +42,16 @@ export default function SignupPage() {
 
       {error && <div className="auth-error">{error}</div>}
 
+      {verificationSent ? (
+        <>
+          <div className="auth-success">
+            確認メールを送信しました。メール内のリンクからメールアドレスを確認すると、ログインできるようになります。
+          </div>
+          <p className="auth-note">
+            メールが届かない場合は迷惑メールフォルダをご確認ください。<a href="/login">ログイン画面へ</a>
+          </p>
+        </>
+      ) : (
       <form onSubmit={handleSignup} className="auth-form">
         <label className="auth-label">
           <span>お名前</span>
@@ -79,6 +94,7 @@ export default function SignupPage() {
           登録することで<a href="/legal/terms">利用規約</a>および<a href="/legal/privacy">プライバシーポリシー</a>に同意したものとみなされます。
         </p>
       </form>
+      )}
     </div>
   );
 }

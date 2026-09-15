@@ -7,6 +7,7 @@ import { getSiteSettings } from '@/lib/siteSettings';
 import Stripe from 'stripe';
 import CommandLine from '@/components/CommandLine';
 import { isR2Configured } from '@/lib/r2';
+import { isEmailVerificationRequired } from '@/lib/authPolicy';
 
 async function checkStripeConnection() {
   if (!process.env.STRIPE_SECRET_KEY) return false;
@@ -48,6 +49,7 @@ export default async function AdminDashboard() {
 
   const emailConfigured = !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
   const storageConfigured = isR2Configured();
+  const emailVerificationRequired = isEmailVerificationRequired();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://<your-domain>';
 
   const checklist: {
@@ -86,6 +88,16 @@ export default async function AdminDashboard() {
         { command: 'npx wrangler secret put R2_SECRET_ACCESS_KEY', note: '同じ画面で一度だけ表示されるシークレットアクセスキーです' },
         { command: 'npx wrangler secret put R2_BUCKET_NAME', note: 'wrangler.toml の bucket_name と同じ値（既定: greed-learning-assets）' },
         { command: 'npx wrangler secret put R2_PUBLIC_URL', note: 'バケットの公開URL。R2 → 対象バケット → 設定 → パブリックアクセス で r2.dev を有効化するか独自ドメインを接続し、そのURL（末尾スラッシュなし）を貼り付けてください。あわせて同じ設定画面でCORSにこのサイトのオリジンを許可してください（DEPLOY.md参照）' },
+      ],
+    },
+    {
+      label: '登録時のメール確認を必須にする（なりすまし登録の防止・任意）',
+      done: emailVerificationRequired,
+      commands: [
+        {
+          command: 'npx wrangler secret put REQUIRE_EMAIL_VERIFICATION',
+          note: '「true」と入力すると、登録時に確認メールが送られ、確認を終えるまでログインできなくなります。メール送信（RESEND_*）が未設定の場合は全員が締め出されるため自動的に無視されます。',
+        },
       ],
     },
     { label: '会員プランを作成する', done: totalPlans > 0, href: '/admin/plans' },
