@@ -21,7 +21,7 @@
 | 8 | 動かないUI | ヘッダー検索・学習履歴ボタン・並び替え・カテゴリのハードコードを解消 | `Topbar` / `CoursesClientUI` | ✅ 完了 |
 | 9 | エラー画面 | error.tsx / not-found.tsx をサイトのデザインで用意 | `app/` | ✅ 完了 |
 | 10 | 初回管理者 | 最初のサインアップが自動で管理者になる挙動を安全にする | `lib/auth.ts` / `ADMIN_EMAIL` | ✅ 完了 |
-| 11 | 配布時のDB設定 | wrangler.toml の database_id 固定値をテンプレ安全にする | `wrangler.toml` / CI | 未着手 |
+| 11 | 配布時のDB設定 | wrangler.toml の database_id 固定値をテンプレ安全にする | CI Preflight | ✅ 完了 |
 
 ## P2 — 望ましい
 

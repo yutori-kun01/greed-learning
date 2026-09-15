@@ -24,7 +24,7 @@ npx wrangler d1 create greed-learning-db
 npx wrangler r2 bucket create greed-learning-assets
 ```
 
-`wrangler d1 create` の出力に表示される `database_id` を、`wrangler.toml` の `[[d1_databases]]` の該当行に貼り替えてください（**この1行だけ**を書き換えます。`main` や `[assets]` など他の項目はビルド成果物の場所を指しているので、そのままにしてください）。
+`wrangler d1 create` の出力に表示される `database_id` を、`wrangler.toml` の `[[d1_databases]]` の該当行に貼り替えてください。**この値はリポジトリにコミットされているため、フォークして別のCloudflareアカウントにデプロイする場合は必ず自分のIDに書き換えてください**（GitHub Actionsでのデプロイでは、書き換え忘れを検知してビルドを止めます）（**この1行だけ**を書き換えます。`main` や `[assets]` など他の項目はビルド成果物の場所を指しているので、そのままにしてください）。
 
 ```toml
 [[d1_databases]]
