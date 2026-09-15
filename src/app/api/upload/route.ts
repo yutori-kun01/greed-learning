@@ -7,6 +7,7 @@ import {
   extensionForImageType,
   isAllowedImageType,
 } from '@/lib/uploads';
+import { getR2Config } from '@/lib/r2';
 
 // Reusing global auth setup. Note: DB binding is only required if we fetch users,
 // but for getSession we pass the dummy because we just need to verify session token.
@@ -39,19 +40,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'ファイルサイズが大きすぎます' }, { status: 413 });
     }
 
-    // Configure aws4fetch
-    const r2AccountId = process.env.R2_ACCOUNT_ID;
-    const r2AccessKey = process.env.R2_ACCESS_KEY_ID;
-    const r2SecretKey = process.env.R2_SECRET_ACCESS_KEY;
-    const r2BucketName = process.env.R2_BUCKET_NAME;
-
-    if (!r2AccountId || !r2AccessKey || !r2SecretKey || !r2BucketName) {
-      return NextResponse.json({ error: 'R2 configuration is missing' }, { status: 500 });
+    const r2 = getR2Config();
+    if (!r2) {
+      return NextResponse.json(
+        { error: '画像ストレージ（R2）が未設定のためアップロードできません。管理者ダッシュボードのセットアップガイドをご確認ください。' },
+        { status: 503 }
+      );
     }
 
     const aws = new AwsClient({
-      accessKeyId: r2AccessKey,
-      secretAccessKey: r2SecretKey,
+      accessKeyId: r2.accessKeyId,
+      secretAccessKey: r2.secretAccessKey,
       service: 's3',
       region: 'auto',
     });
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
     // type only — the client's filename never reaches the bucket.
     const objectKey = `${session.user.id}/${Date.now()}-${crypto.randomUUID()}.${extensionForImageType(contentType)}`;
 
-    const endpoint = `https://${r2AccountId}.r2.cloudflarestorage.com/${r2BucketName}/${objectKey}`;
+    const endpoint = `https://${r2.accountId}.r2.cloudflarestorage.com/${r2.bucketName}/${objectKey}`;
 
     // Create Presigned PUT URL (valid for 15 minutes)
     const signedRequest = await aws.sign(endpoint, {
@@ -74,7 +73,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       uploadUrl: signedRequest.url,
       objectKey,
-      publicUrl: `${process.env.R2_PUBLIC_URL}/${objectKey}`
+      publicUrl: `${r2.publicUrl}/${objectKey}`
     });
   } catch (error) {
     console.error('Presigned URL error:', error);

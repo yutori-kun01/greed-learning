@@ -57,6 +57,45 @@ npx wrangler secret put RESEND_FROM_EMAIL    # 例: no-reply@your-domain.com（R
 
 Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` も同様に設定します（未設定でもメール/パスワードログインのみで動作します）。
 
+## 4.5 R2（画像アップロード）の設定
+
+プロフィール画像・サイトロゴ・記事内の画像は、ブラウザから R2 へ直接アップロードします（アプリが発行する署名付きURLを使用）。`wrangler.toml` のバケットバインディングとは別に、S3互換APIの認証情報が必要です。
+
+**1) APIトークンを作成**
+
+Cloudflareダッシュボード → R2 → 「R2 APIトークンの管理」→ APIトークンを作成。権限は「オブジェクトの読み取りと書き込み」、対象は作成したバケットに限定してください。表示されるアクセスキーIDとシークレットアクセスキーを控えます（シークレットは一度しか表示されません）。
+
+**2) バケットを公開する**
+
+R2 → 対象バケット → 設定 → パブリックアクセス で、`r2.dev` のサブドメインを有効化するか、独自ドメインを接続します。ここで表示されるURLが `R2_PUBLIC_URL` です（末尾のスラッシュは不要）。公開しないと、アップロードは成功しても画像が表示されません。
+
+**3) CORSを設定する**
+
+同じ設定画面の CORS ポリシーに、このサイトのオリジンを許可する設定を追加します。**これが無いとブラウザからのアップロードがブロックされます。**
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://your-domain.com"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["content-type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+**4) シークレットを登録**
+
+```bash
+npx wrangler secret put R2_ACCOUNT_ID          # ダッシュボードのURLに含まれるアカウントID
+npx wrangler secret put R2_ACCESS_KEY_ID
+npx wrangler secret put R2_SECRET_ACCESS_KEY
+npx wrangler secret put R2_BUCKET_NAME         # 既定: greed-learning-assets
+npx wrangler secret put R2_PUBLIC_URL          # 例: https://pub-xxxx.r2.dev
+```
+
+設定できているかは、デプロイ後に管理者ダッシュボードのセットアップガイドで確認できます。
+
 ## 5. ビルド＆デプロイ
 
 ### 方法A: GitHub Actionsで自動デプロイ（推奨）

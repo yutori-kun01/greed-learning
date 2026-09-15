@@ -6,6 +6,7 @@ import { desc, count, sum, gte } from 'drizzle-orm';
 import { getSiteSettings } from '@/lib/siteSettings';
 import Stripe from 'stripe';
 import CommandLine from '@/components/CommandLine';
+import { isR2Configured } from '@/lib/r2';
 
 async function checkStripeConnection() {
   if (!process.env.STRIPE_SECRET_KEY) return false;
@@ -46,6 +47,7 @@ export default async function AdminDashboard() {
   const stripeConnected = await checkStripeConnection();
 
   const emailConfigured = !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
+  const storageConfigured = isR2Configured();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://<your-domain>';
 
   const checklist: {
@@ -72,6 +74,18 @@ export default async function AdminDashboard() {
       commands: [
         { command: 'npx wrangler secret put RESEND_API_KEY', note: 'https://resend.com/api-keys で発行したAPIキーを貼り付けてください' },
         { command: 'npx wrangler secret put RESEND_FROM_EMAIL', note: '例: no-reply@your-domain.com （Resend側で送信ドメインの認証が必要です）' },
+      ],
+    },
+    {
+      label: '画像アップロード（R2）を設定する',
+      done: storageConfigured,
+      href: 'https://dash.cloudflare.com/?to=/:account/r2/api-tokens',
+      commands: [
+        { command: 'npx wrangler secret put R2_ACCOUNT_ID', note: 'CloudflareダッシュボードのURLに含まれるアカウントID、または R2 → 「R2 APIトークンの管理」画面に表示されるアカウントIDです' },
+        { command: 'npx wrangler secret put R2_ACCESS_KEY_ID', note: 'R2 → APIトークンを作成（オブジェクトの読み取りと書き込み）で発行されるアクセスキーIDです' },
+        { command: 'npx wrangler secret put R2_SECRET_ACCESS_KEY', note: '同じ画面で一度だけ表示されるシークレットアクセスキーです' },
+        { command: 'npx wrangler secret put R2_BUCKET_NAME', note: 'wrangler.toml の bucket_name と同じ値（既定: greed-learning-assets）' },
+        { command: 'npx wrangler secret put R2_PUBLIC_URL', note: 'バケットの公開URL。R2 → 対象バケット → 設定 → パブリックアクセス で r2.dev を有効化するか独自ドメインを接続し、そのURL（末尾スラッシュなし）を貼り付けてください。あわせて同じ設定画面でCORSにこのサイトのオリジンを許可してください（DEPLOY.md参照）' },
       ],
     },
     { label: '会員プランを作成する', done: totalPlans > 0, href: '/admin/plans' },
