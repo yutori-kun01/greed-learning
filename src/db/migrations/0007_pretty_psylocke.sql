@@ -1,0 +1,1 @@
+ALTER TABLE `siteSettings` ADD `requireSubscription` integer DEFAULT false NOT NULL;

@@ -3,7 +3,7 @@ import { getAuth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import AdminSidebar from './AdminSidebar'
-import { getSiteSettingsQuery } from '@/actions/settings'
+import { getSiteSettings, DEFAULT_SITE_NAME } from '@/lib/siteSettings';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const reqHeaders = await headers();
@@ -20,11 +20,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/dashboard');
   }
 
-  const settings = await getSiteSettingsQuery();
+  const settings = await getSiteSettings();
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }}>
-      <AdminSidebar siteName={settings?.siteName || 'N8N MARKETING'} />
+      <AdminSidebar siteName={settings?.siteName || DEFAULT_SITE_NAME} />
       <div style={{ flex: 1, overflowX: 'auto' }}>
         <div style={{ padding: '32px 36px' }}>
           {children}

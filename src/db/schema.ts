@@ -219,6 +219,13 @@ export const siteSettings = sqliteTable('siteSettings', {
   accentColor: text('accentColor').default('gold').notNull(),
   bgPattern: text('bgPattern').default('pattern1').notNull(),
 
+  // Community link shown in the member sidebar. Hidden when unset.
+  discordUrl: text('discordUrl'),
+
+  // When true, courses without a requiredPlanId still need an active
+  // subscription. When false (default), signing up is enough to view them.
+  requireSubscription: integer('requireSubscription', { mode: 'boolean' }).default(false).notNull(),
+
   // Legal / operator info — backs the auto-generated 特定商取引法に基づく表記,
   // and the editable 利用規約 / プライバシーポリシー pages.
   operatorName: text('operatorName'),

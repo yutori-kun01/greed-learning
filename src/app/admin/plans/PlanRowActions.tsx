@@ -33,7 +33,7 @@ export default function PlanRowActions({ id, isActive }: { id: string; isActive:
         {isActive ? '無効化' : '有効化'}
       </button>
       <button
-        style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: '5px 10px', fontSize: '12px' }}
+        style={{ color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '5px 10px', fontSize: '12px' }}
         onClick={handleDelete}
         disabled={isPending}
       >

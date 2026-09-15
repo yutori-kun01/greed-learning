@@ -1,8 +1,8 @@
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettings } from '@/lib/siteSettings';
 import { DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
 
 export default async function PrivacyPage() {
-  const settings = await getSiteSettingsQuery();
+  const settings = await getSiteSettings();
   const content = settings?.privacyContent || DEFAULT_PRIVACY_CONTENT;
 
   return (

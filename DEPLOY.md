@@ -24,7 +24,7 @@ npx wrangler d1 create greed-learning-db
 npx wrangler r2 bucket create greed-learning-assets
 ```
 
-`wrangler d1 create` の出力に表示される `database_id` を、`wrangler.toml` の `[[d1_databases]]` の該当行に貼り替えてください（**この1行だけ**を書き換えます。`main` や `[assets]` など他の項目はビルド成果物の場所を指しているので、そのままにしてください）。
+`wrangler d1 create` の出力に表示される `database_id` を、`wrangler.toml` の `[[d1_databases]]` の該当行に貼り替えてください。**この値はリポジトリにコミットされているため、フォークして別のCloudflareアカウントにデプロイする場合は必ず自分のIDに書き換えてください**（GitHub Actionsでのデプロイでは、書き換え忘れを検知してビルドを止めます）（**この1行だけ**を書き換えます。`main` や `[assets]` など他の項目はビルド成果物の場所を指しているので、そのままにしてください）。
 
 ```toml
 [[d1_databases]]
@@ -55,7 +55,54 @@ npx wrangler secret put RESEND_FROM_EMAIL    # 例: no-reply@your-domain.com（R
 
 `NEXT_PUBLIC_APP_URL` はビルド時に埋め込まれる値なので、`wrangler.toml` の `[vars]` に追加するか、デプロイ前に環境変数として設定してビルドしてください。
 
+**管理者アカウントは先に決めておくことを強く推奨します。** `ADMIN_EMAIL` に自分のメールアドレスを設定しておくと、そのアドレスで登録したアカウントだけが管理者になります。未設定のままだと「最初に登録したアカウント」が管理者になるため、サイトを公開してから自分が登録するまでの間に第三者に管理者権限を取られる可能性があります。
+
+```bash
+npx wrangler secret put ADMIN_EMAIL
+```
+
+なりすまし登録を防ぐためにメール確認を必須にする場合は、`REQUIRE_EMAIL_VERIFICATION` を `true` にします（`wrangler.toml` の `[vars]` かシークレットで設定）。有効にすると登録時に確認メールが送られ、確認を終えるまでログインできません。`RESEND_*` が未設定のままだと全員が締め出されるため、その場合この設定は自動的に無視されます。
+
 Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` も同様に設定します（未設定でもメール/パスワードログインのみで動作します）。
+
+## 4.5 R2（画像アップロード）の設定
+
+プロフィール画像・サイトロゴ・記事内の画像は、ブラウザから R2 へ直接アップロードします（アプリが発行する署名付きURLを使用）。`wrangler.toml` のバケットバインディングとは別に、S3互換APIの認証情報が必要です。
+
+**1) APIトークンを作成**
+
+Cloudflareダッシュボード → R2 → 「R2 APIトークンの管理」→ APIトークンを作成。権限は「オブジェクトの読み取りと書き込み」、対象は作成したバケットに限定してください。表示されるアクセスキーIDとシークレットアクセスキーを控えます（シークレットは一度しか表示されません）。
+
+**2) バケットを公開する**
+
+R2 → 対象バケット → 設定 → パブリックアクセス で、`r2.dev` のサブドメインを有効化するか、独自ドメインを接続します。ここで表示されるURLが `R2_PUBLIC_URL` です（末尾のスラッシュは不要）。公開しないと、アップロードは成功しても画像が表示されません。
+
+**3) CORSを設定する**
+
+同じ設定画面の CORS ポリシーに、このサイトのオリジンを許可する設定を追加します。**これが無いとブラウザからのアップロードがブロックされます。**
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://your-domain.com"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["content-type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+**4) シークレットを登録**
+
+```bash
+npx wrangler secret put R2_ACCOUNT_ID          # ダッシュボードのURLに含まれるアカウントID
+npx wrangler secret put R2_ACCESS_KEY_ID
+npx wrangler secret put R2_SECRET_ACCESS_KEY
+npx wrangler secret put R2_BUCKET_NAME         # 既定: greed-learning-assets
+npx wrangler secret put R2_PUBLIC_URL          # 例: https://pub-xxxx.r2.dev
+```
+
+設定できているかは、デプロイ後に管理者ダッシュボードのセットアップガイドで確認できます。
 
 ## 5. ビルド＆デプロイ
 
@@ -110,7 +157,7 @@ https://<your-domain>/api/webhooks/stripe
 
 ## 7. 初回セットアップ（アプリ側）
 
-1. デプロイ先のURLで `/signup` から最初のアカウントを作成してください。**最初に登録したアカウントが自動的に管理者になります**（2人目以降は一般会員です）。
+1. デプロイ先のURLで `/signup` からアカウントを作成してください。`ADMIN_EMAIL` を設定している場合は、そのアドレスで登録したアカウントが管理者になります（設定していない場合は、最初に登録したアカウントが管理者になります）。
 2. `/admin` にログインし、ダッシュボードの「セットアップガイド」に従って以下を設定します。
    - サイト名・ロゴ・アクセントカラー（`/admin/settings`）
    - 特定商取引法に基づく表記（事業者情報）

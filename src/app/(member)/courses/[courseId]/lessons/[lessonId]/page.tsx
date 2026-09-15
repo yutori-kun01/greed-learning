@@ -5,7 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
-import { canAccessCourse } from '@/lib/access';
+import { canAccessCourse, isCourseVisible } from '@/lib/access';
 import LessonClientUI from './LessonClientUI';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -33,6 +33,10 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
 
   const course = courseData[0];
   const lesson = lessonData[0];
+
+  if (!isCourseVisible(course, (session.user as any).role)) {
+    notFound();
+  }
 
   const hasAccess = await canAccessCourse(process.env.DB as unknown as D1Database, session.user.id, course);
   if (!hasAccess) {

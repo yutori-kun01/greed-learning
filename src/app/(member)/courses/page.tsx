@@ -3,19 +3,28 @@ import { courses, lessons, lessonProgress } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { getAccessibleCourseIds } from '@/lib/access';
+import { getAccessibleCourseIds, isCourseVisible } from '@/lib/access';
 import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
 import CoursesClientUI from './CoursesClientUI';
+import { UNCATEGORIZED } from '@/lib/courseCategories';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
-export default async function CoursesPage() {
+export default async function CoursesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const reqHeaders = await headers();
   const auth = getAuth(process.env.DB as unknown as D1Database);
   const session = await auth.api.getSession({ headers: reqHeaders });
   const userId = session?.user?.id;
 
-  const allCourses = await db().select().from(courses).orderBy(courses.createdAt);
+  // 下書き・アーカイブは会員に出さない（管理者はプレビューできる）。
+  const viewerRole = (session?.user as any)?.role;
+  const allCourses = (await db().select().from(courses).orderBy(courses.createdAt))
+    .filter((c: any) => isCourseVisible(c, viewerRole));
   const allLessons = await db().select().from(lessons);
   const userProgress = userId
     ? await db().select().from(lessonProgress).where(eq(lessonProgress.userId, userId))
@@ -41,14 +50,16 @@ export default async function CoursesPage() {
       title: c.title,
       desc: c.description,
       progress,
-      lessons: c.lessonCount || 0,
-      minutes: c.totalDuration || 0,
-      cat: c.categoryId || 'strategy',
+      // Derived from the lessons themselves: the denormalized lessonCount /
+      // totalDuration columns are never updated when lessons change.
+      lessons: courseLessons.length,
+      minutes: Math.round(courseLessons.reduce((sum: number, l: any) => sum + (l.duration || 0), 0) / 60),
+      cat: c.categoryId || UNCATEGORIZED,
       badge: c.badge || null,
       locked: !accessibleIds.has(c.id),
       bookmarked: bookmarkedIds.has(c.id),
     };
   });
 
-  return <CoursesClientUI courses={formattedCourses} />;
+  return <CoursesClientUI courses={formattedCourses} query={q || ''} />;
 }

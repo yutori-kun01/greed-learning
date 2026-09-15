@@ -11,9 +11,18 @@
   --line:      rgba(255, 255, 255, .07);
   --line-2:    rgba(255, 255, 255, .12);
 
+  /* ゴールドは役割で分けている:
+       --gold     … 塗り・線・グラフのブランドゴールド（両テーマ共通）
+       --gold-hi  … 塗りのハイライト（グラデーション上端、濃い地の上の文字）
+       --gold-2   … 背景の上に置く文字色。ライトでは白地で読めるまで落とす
+       --gold-graph … 進捗リング・バーなど図形の線。ライトでは一段濃くする
+       --on-gold  … ゴールド地の上に乗せる文字色 */
   --gold:      #d9b45b;
+  --gold-hi:   #f2d992;
   --gold-2:    #f2d992;
+  --gold-graph:#d9b45b;
   --gold-dim:  rgba(217, 180, 91, .14);
+  --on-gold:   #23180a;
 
   --text:      #e9eef7;
   --text-2:    #b6c1d2;
@@ -29,6 +38,13 @@
   --bg-gradient-1: rgba(217, 180, 91, .07);
   --bg-gradient-2: rgba(50, 90, 160, .10);
   --topbar-bg: rgba(6, 12, 23, .82);
+
+  /* 状態色。以前は各画面に直書きしていたため、ライトモードで読みづらかった。 */
+  --success:     #6fd0a0;
+  --success-dim: rgba(111, 208, 160, .15);
+  --danger:      #ef4444;
+  --danger-dim:  rgba(220, 38, 38, .12);
+  --info:        #6495ed;
 }
 
 .light {
@@ -39,9 +55,14 @@
   --line:      rgba(0, 0, 0, .08);
   --line-2:    rgba(0, 0, 0, .14);
 
-  --gold:      #b89032;
-  --gold-2:    #8b6c23;
-  --gold-dim:  rgba(184, 144, 50, .12);
+  /* 塗りはダークと同じブランドゴールド。文字だけ白地で読める濃さに落とす。 */
+  --gold:      #d9b45b;
+  --gold-hi:   #f2d992;
+  --gold-2:    #8e6b1f;
+  /* 進捗リング・バーは白地だと明るいゴールドが沈むので一段濃くする。 */
+  --gold-graph:#b8891f;
+  --gold-dim:  rgba(217, 180, 91, .20);
+  --on-gold:   #23180a;
 
   --text:      #1a202c;
   --text-2:    #4a5568;
@@ -51,7 +72,16 @@
   --bg-gradient-1: rgba(184, 144, 50, .04);
   --bg-gradient-2: rgba(50, 90, 160, .05);
   --topbar-bg: rgba(243, 245, 248, .82);
+
+  --success:     #12805a;
+  --success-dim: rgba(18, 128, 90, .12);
+  --danger:      #c62828;
+  --danger-dim:  rgba(198, 40, 40, .10);
+  --info:        #2f5fbf;
 }
+
+:root { color-scheme: dark; }
+.light { color-scheme: light; }
 
 * { box-sizing: border-box; }
 
@@ -59,15 +89,193 @@ html, body { height: 100%; }
 
 body {
   margin: 0;
-  background:
+  background-color: var(--bg);
+  background-image:
     radial-gradient(1200px 600px at 78% -10%, var(--bg-gradient-1), transparent 60%),
-    radial-gradient(900px 500px at 0% 100%, var(--bg-gradient-2), transparent 60%),
-    var(--bg);
+    radial-gradient(900px 500px at 0% 100%, var(--bg-gradient-2), transparent 60%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 認証画面（ログイン / 登録 / パスワード再設定） ---------- */
+/* 以前は各ページに style jsx で色を直書きしていたため、ライトモードでも
+   ダークのまま・サイト設定のアクセントカラーも効かなかった。
+   ここでは会員画面と同じトークンだけを使う。 */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 20px;
+  color: var(--text);
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.auth-brand-mark {
+  width: 34px; height: 34px;
+  color: var(--gold);
+  flex: none;
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.auth-brand-mark svg,
+.auth-brand-mark img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.auth-brand-text {
+  font-family: "Cormorant Garamond", "Noto Sans JP", serif;
+  letter-spacing: .12em;
+  font-size: 15px;
+  color: var(--gold-2);
+}
+.auth-box {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 420px;
+}
+.auth-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px;
+  text-align: center;
+}
+.auth-subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.auth-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.auth-input {
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s;
+}
+.auth-input:focus { border-color: var(--gold); }
+.auth-note {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.7;
+}
+.auth-note a { color: var(--gold); }
+.auth-error,
+.auth-success {
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+.auth-error {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+.auth-success {
+  background: var(--gold-dim);
+  color: var(--gold-2);
+  border: 1px solid rgba(217, 180, 91, .3);
+}
+
+/* ---------- エラー・404画面 ---------- */
+.status-page {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 20px;
+  text-align: center;
+}
+.status-code {
+  font-family: "Cormorant Garamond", "Noto Sans JP", serif;
+  font-size: 44px;
+  letter-spacing: .08em;
+  color: var(--gold-2);
+}
+.status-title { font-size: 18px; font-weight: 700; }
+.status-note { font-size: 13px; color: var(--muted); line-height: 1.9; }
+.status-page .btn { margin-top: 10px; }
+
+/* ---------- 背景パターン（サイト設定 → body[data-bg-pattern]） ---------- */
+/* `--pattern-ink` は模様の線・点の色。ダーク/ライト双方で成立する濃度にしている。 */
+:root { --pattern-ink: rgba(255, 255, 255, .10); }
+.light { --pattern-ink: rgba(0, 0, 0, .07); }
+
+/* pattern1 は body の既定スタイルをそのまま使う（標準） */
+
+/* ダークノイズ: 細かいドットを重ねた質感 */
+body[data-bg-pattern="pattern2"] {
+  background-image:
+    radial-gradient(var(--pattern-ink) 1px, transparent 1px),
+    radial-gradient(1200px 600px at 78% -10%, var(--bg-gradient-1), transparent 60%),
+    radial-gradient(900px 500px at 0% 100%, var(--bg-gradient-2), transparent 60%);
+  background-size: 3px 3px, auto, auto;
+}
+
+/* グラデーション: 上下方向に流れる大きめのグラデーション */
+body[data-bg-pattern="pattern3"] {
+  background-image:
+    linear-gradient(160deg, var(--bg-gradient-1) 0%, transparent 45%),
+    linear-gradient(20deg, var(--bg-gradient-2) 0%, transparent 55%),
+    radial-gradient(1100px 700px at 50% -20%, var(--bg-gradient-1), transparent 70%);
+}
+
+/* 幾何学模様: 32px のグリッド */
+body[data-bg-pattern="pattern4"] {
+  background-image:
+    repeating-linear-gradient(0deg, var(--pattern-ink) 0 1px, transparent 1px 32px),
+    repeating-linear-gradient(90deg, var(--pattern-ink) 0 1px, transparent 1px 32px),
+    radial-gradient(1200px 600px at 78% -10%, var(--bg-gradient-1), transparent 60%);
+}
+
+/* ウェーブ: 斜めのストライプを重ねた波状の陰影 */
+body[data-bg-pattern="pattern5"] {
+  background-image:
+    repeating-radial-gradient(circle at 0% 100%, var(--pattern-ink) 0 1px, transparent 1px 64px),
+    radial-gradient(900px 500px at 0% 100%, var(--bg-gradient-2), transparent 60%),
+    radial-gradient(1200px 600px at 78% -10%, var(--bg-gradient-1), transparent 60%);
+}
+
+/* メッシュ: 複数の光源を散らしたメッシュグラデーション */
+body[data-bg-pattern="pattern6"] {
+  background-image:
+    radial-gradient(600px 400px at 12% 8%, var(--bg-gradient-1), transparent 65%),
+    radial-gradient(700px 500px at 88% 12%, var(--bg-gradient-2), transparent 65%),
+    radial-gradient(600px 500px at 20% 92%, var(--bg-gradient-2), transparent 65%),
+    radial-gradient(700px 450px at 82% 88%, var(--bg-gradient-1), transparent 65%);
 }
 
 h1, h2, h3, p, ul { margin: 0; }
@@ -181,7 +389,7 @@ button, select, input { font: inherit; color: inherit; }
 .spark-col span {
   width: 100%;
   border-radius: 3px 3px 2px 2px;
-  background: linear-gradient(180deg, var(--gold-2), rgba(217, 180, 91, .45));
+  background: linear-gradient(180deg, var(--gold), var(--gold-graph));
 }
 .spark-col span.dim { background: var(--line-2); }
 .spark-col em { font-style: normal; font-size: 10px; color: var(--muted); }
@@ -256,8 +464,8 @@ button, select, input { font: inherit; color: inherit; }
 .btn i { width: 15px; height: 15px; }
 .btn:active { transform: translateY(1px); }
 .btn-gold {
-  background: linear-gradient(180deg, var(--gold-2), var(--gold));
-  color: #23180a;
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  color: var(--on-gold);
   font-weight: 700;
   box-shadow: 0 6px 18px rgba(217, 180, 91, .22);
 }
@@ -368,8 +576,8 @@ button, select, input { font: inherit; color: inherit; }
   font-weight: 700;
   letter-spacing: .06em;
 }
-.badge--new  { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #23180a; }
-.badge--hot  { background: rgba(10, 18, 32, .8); border: 1px solid rgba(217, 180, 91, .5); color: var(--gold-2); }
+.badge--new  { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: var(--on-gold); }
+.badge--hot  { background: rgba(10, 18, 32, .8); border: 1px solid rgba(217, 180, 91, .5); color: var(--gold-hi); }
 .badge--pick { background: rgba(10, 18, 32, .8); border: 1px solid var(--line-2); color: var(--text-2); }
 
 .card-body { padding: 14px 15px 15px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
@@ -381,7 +589,7 @@ button, select, input { font: inherit; color: inherit; }
 .bar > span {
   display: block; height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--gold), var(--gold-2));
+  background: linear-gradient(90deg, var(--gold-graph), var(--gold));
 }
 .progress b { font-size: 11.5px; color: var(--text-2); min-width: 32px; text-align: right; }
 
@@ -449,9 +657,13 @@ button, select, input { font: inherit; color: inherit; }
 .donut circle { fill: none; stroke-width: 9; stroke-linecap: round; }
 .donut-track { stroke: var(--line-2); }
 .donut-value {
-  stroke: var(--gold);
+  stroke: var(--gold-graph);
   stroke-dasharray: calc(var(--value) * 2.639) 264;
   filter: drop-shadow(0 0 6px rgba(217, 180, 91, .35));
+}
+/* ライトでは白地に光彩がにじんで輪郭が弱くなるだけなので外す。 */
+.light .donut-value {
+  filter: none;
 }
 .summary-label { font-size: 11.5px; color: var(--muted); }
 .summary-value { font-size: 30px; font-weight: 700; color: var(--gold-2); line-height: 1.15; }
