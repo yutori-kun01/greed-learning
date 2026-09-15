@@ -19,7 +19,7 @@
 | 6 | Server Actionの認可 | 認可なしで有料記事本文・下書き・リソースURLを返す読み取り関数を塞ぐ | `lib/posts.ts` ほかへ移設 | ✅ 完了 |
 | 7 | 受講資格の既定 | 「サブスク必須 / 登録のみで閲覧可」をサイト設定で切替可能に | `lib/access.ts` / サイト設定 | ✅ 完了 |
 | 8 | 動かないUI | ヘッダー検索・学習履歴ボタン・並び替え・カテゴリのハードコードを解消 | `Topbar` / `CoursesClientUI` | ✅ 完了 |
-| 9 | エラー画面 | error.tsx / not-found.tsx をサイトのデザインで用意 | `app/` | 未着手 |
+| 9 | エラー画面 | error.tsx / not-found.tsx をサイトのデザインで用意 | `app/` | ✅ 完了 |
 | 10 | 初回管理者 | 最初のサインアップが自動で管理者になる挙動を安全にする | `lib/auth.ts` | 未着手 |
 | 11 | 配布時のDB設定 | wrangler.toml の database_id 固定値をテンプレ安全にする | `wrangler.toml` / CI | 未着手 |
 
