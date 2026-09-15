@@ -1,13 +1,38 @@
+# 実稼働に向けた開発タスク
 
-## Deep Execute: Settings Data Binding
-- [x] Create Server Actions for Settings (User + Admin)
-- [x] Bind Site Settings to Global Layout
-- [x] Update Admin Settings Page to use Actions
-- [x] Update Member Settings Page to use Actions
-- [x] Run Build and Verify
+監査日: 2026-09-15 / 対象ブランチ: claude/awesome-wozniak-873zf0
 
-## Implement Feature: Lesson Player UI & Progress
-- [x] Create actions/progress.ts for progress tracking
-- [x] Create courses/[courseId]/lessons/[lessonId]/page.tsx
-- [x] Implement LessonClientUI.tsx
-- [x] Build and Verify
+## P0 — 本番前に必須
+
+| # | タスク | 内容 | 主な対象 | 状態 |
+|---|--------|------|----------|------|
+| 1 | R2アップロード設定 | R2_* 5変数・バケット公開設定・CORSを文書化。未設定時は管理画面のセットアップガイドとUIで警告 | `.env.example` / `DEPLOY.md` / `api/upload` / `ImagePicker` | 未着手 |
+| 2 | 下書き講座の遮断 | 講座一覧・詳細で PUBLISHED 以外を除外（管理者プレビューは除く） | `(member)/courses/*` | 未着手 |
+| 3 | 連続学習日数 | lastActivityDate から currentStreak / longestStreak を実際に更新 | `actions/progress.ts` | 未着手 |
+| 4 | お問い合わせ送信 | ダミーのsetTimeoutを廃止し、運営者メールへ実送信するServer Action | `(member)/support` | 未着手 |
+| 5 | メール確認 | サインアップ時のメール確認を任意で必須化できるようにする | `lib/auth.ts` / サイト設定 | 未着手 |
+
+## P1 — 早めに
+
+| # | タスク | 内容 | 主な対象 | 状態 |
+|---|--------|------|----------|------|
+| 6 | Server Actionの認可 | 認可なしで有料記事本文・下書き・リソースURLを返す読み取り関数を塞ぐ | `actions/posts.ts` / `actions/resources.ts` | 未着手 |
+| 7 | 受講資格の既定 | 「サブスク必須 / 登録のみで閲覧可」をサイト設定で切替可能に | `lib/access.ts` / サイト設定 | 未着手 |
+| 8 | 動かないUI | ヘッダー検索・学習履歴ボタン・並び替え・カテゴリのハードコードを解消 | `Topbar` / `CoursesClientUI` | 未着手 |
+| 9 | エラー画面 | error.tsx / not-found.tsx をサイトのデザインで用意 | `app/` | 未着手 |
+| 10 | 初回管理者 | 最初のサインアップが自動で管理者になる挙動を安全にする | `lib/auth.ts` | 未着手 |
+| 11 | 配布時のDB設定 | wrangler.toml の database_id 固定値をテンプレ安全にする | `wrangler.toml` / CI | 未着手 |
+
+## P2 — 望ましい
+
+| # | タスク | 内容 | 主な対象 | 状態 |
+|---|--------|------|----------|------|
+| 12 | SEO / OGP | sitemap・robots・記事のdescription/OG画像 | `app/` | 未着手 |
+| 13 | テスト補強 | Stripe Webhookとアクセス制御のテストを追加 | `*.test.ts` | 未着手 |
+
+## 完了済み（今回の作業より前）
+
+- サイト設定（アクセントカラー・背景パターン・ロゴ）の全ページ反映
+- プロフィール画像/ロゴのアップロードとアップロードAPIの制限
+- 会員画面の進捗表示の実データ化
+- 認証画面のデザイン統一・ライト/ダークのゴールド調整
