@@ -31,6 +31,7 @@ export async function updateSiteSettings(formData: FormData) {
   const bgPattern = sanitizeBgPattern(formData.get('bgPattern') as string);
   const logoUrl = sanitizeImageUrl(formData.get('logoUrl') as string);
   const discordUrl = sanitizeLinkUrl(formData.get('discordUrl') as string);
+  const requireSubscription = formData.get('requireSubscription') === 'on';
 
   const operatorName = (formData.get('operatorName') as string) || null;
   const operatorRepresentative = (formData.get('operatorRepresentative') as string) || null;
@@ -47,6 +48,7 @@ export async function updateSiteSettings(formData: FormData) {
     bgPattern,
     logoUrl,
     discordUrl,
+    requireSubscription,
     operatorName,
     operatorRepresentative,
     operatorAddress,

@@ -70,6 +70,26 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
       </div>
 
       <div className="panel" style={{ marginTop: 24 }}>
+        <h2 className="panel-title">受講資格</h2>
+        <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 8 }}>
+          <input
+            type="checkbox"
+            name="requireSubscription"
+            defaultChecked={!!initialSettings?.requireSubscription}
+            style={{ width: 16, height: 16, marginTop: 2, accentColor: accent }}
+          />
+          <span>
+            <span style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600, display: 'block' }}>
+              講座の閲覧にサブスクリプションを必須にする
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+              オフの場合、プランを指定していない講座は登録した会員なら誰でも閲覧できます。オンにすると、有効なサブスクリプション（または個別に付与した受講権）が必要になります。
+            </span>
+          </span>
+        </label>
+      </div>
+
+      <div className="panel" style={{ marginTop: 24 }}>
         <h2 className="panel-title">コミュニティ</h2>
         <label style={labelStyle}>
           <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>コミュニティ招待URL (任意)</span>
