@@ -1,7 +1,7 @@
 'use server';
 
 import { getDb } from '@/db';
-import { courses } from '@/db/schema';
+import { courses, lessons } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
@@ -92,7 +92,17 @@ export async function updateCourse(id: string, formData: FormData) {
 
 export async function getCourses() {
   try {
-    return await db().select().from(courses).orderBy(courses.createdAt);
+    const [allCourses, allLessons] = await Promise.all([
+      db().select().from(courses).orderBy(courses.createdAt),
+      db().select().from(lessons),
+    ]);
+
+    // The lessonCount column is not maintained when lessons are added or
+    // removed, so the real count is derived here.
+    return allCourses.map((course: typeof courses.$inferSelect) => ({
+      ...course,
+      lessonCount: allLessons.filter((l: typeof lessons.$inferSelect) => l.courseId === course.id).length,
+    }));
   } catch (e) {
     return [];
   }

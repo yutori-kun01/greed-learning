@@ -41,8 +41,10 @@ export default async function CoursesPage() {
       title: c.title,
       desc: c.description,
       progress,
-      lessons: c.lessonCount || 0,
-      minutes: c.totalDuration || 0,
+      // Derived from the lessons themselves: the denormalized lessonCount /
+      // totalDuration columns are never updated when lessons change.
+      lessons: courseLessons.length,
+      minutes: Math.round(courseLessons.reduce((sum: number, l: any) => sum + (l.duration || 0), 0) / 60),
       cat: c.categoryId || 'strategy',
       badge: c.badge || null,
       locked: !accessibleIds.has(c.id),

@@ -2,8 +2,9 @@ import Link from 'next/link';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { getDb } from '@/db';
-import { user, lessonProgress, courses } from '@/db/schema';
-import { eq, count } from 'drizzle-orm';
+import { user } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { getMemberProgress } from '@/lib/progress';
 
 export default async function DashboardPage() {
   const reqHeaders = await headers();
@@ -18,18 +19,12 @@ export default async function DashboardPage() {
 
   const db = getDb(process.env.DB as unknown as D1Database);
 
-  // Fetch real stats
   const userData = await db.select().from(user).where(eq(user.id, session.user.id)).limit(1);
   const currentUser = userData[0];
 
-  const completedLessons = await db.select({ value: count() })
-    .from(lessonProgress)
-    .where(eq(lessonProgress.userId, session.user.id));
-
-  const totalCompleted = completedLessons[0]?.value || 0;
-
-  // Recent active courses (mocked logic for now as we don't have enrollments table yet, just fetch top 3 courses)
-  const activeCourses = await db.select().from(courses).limit(3);
+  // Progress is computed once per request and shared with the right rail.
+  const progress = await getMemberProgress(session.user.id);
+  const activeCourses = (progress.inProgress.length > 0 ? progress.inProgress : progress.courses).slice(0, 3);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -42,7 +37,7 @@ export default async function DashboardPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{totalCompleted}</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{progress.completedLessonCount}</div>
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>完了したレッスン</div>
         </div>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
@@ -50,8 +45,10 @@ export default async function DashboardPage() {
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>連続学習日数</div>
         </div>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>0</div>
-          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>獲得ポイント</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>
+            {progress.completedCourseCount}<span style={{ fontSize: 16, color: 'var(--muted)' }}> / {progress.totalCourseCount}</span>
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>完了した講座</div>
         </div>
       </div>
 
@@ -60,21 +57,26 @@ export default async function DashboardPage() {
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
           {activeCourses.length === 0 ? (
             <div style={{ color: 'var(--muted)', fontSize: 13 }}>現在学習中のコースはありません。</div>
-          ) : activeCourses.map((c: any, i: number) => (
+          ) : activeCourses.map((c) => (
             <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-              <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
-                {c.badge && <span className={`badge badge-gold`}>{c.badge}</span>}
+              <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)', overflow: 'hidden' }}>
+                {c.thumbnailUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : c.badge ? (
+                  <span className="badge badge-gold">{c.badge}</span>
+                ) : null}
               </div>
               <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <h3 className="card-title" style={{ marginBottom: '16px' }}>{c.title}</h3>
                 <div className="progress">
-                  <div className="bar"><span style={{ width: `0%` }}></span></div>
+                  <div className="bar"><span style={{ width: `${c.percent}%` }}></span></div>
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', marginBottom: '16px' }}>
-                  進捗: 0%
+                  進捗: {c.percent}%（{c.completedLessons} / {c.totalLessons} レッスン）
                 </div>
                 <Link href={`/courses/${c.id}`} className="btn btn-gold btn-block" style={{ marginTop: 'auto', textAlign: 'center' }}>
-                  学習を続ける
+                  {c.status === 'not_started' ? '学習を始める' : '学習を続ける'}
                 </Link>
               </div>
             </div>
