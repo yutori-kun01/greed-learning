@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
         <p className="auth-subtitle">ご登録のメールアドレスに再設定用のリンクをお送りします</p>
 
         {sent ? (
-          <div style={{ background: 'rgba(217,180,91,.1)', color: '#f2d992', padding: '0.75rem 1rem', borderRadius: 6, fontSize: '0.9rem', textAlign: 'center' }}>
+          <div style={{ background: 'rgba(217,180,91,.1)', color: 'var(--gold-2)', padding: '0.75rem 1rem', borderRadius: 6, fontSize: '0.9rem', textAlign: 'center' }}>
             メールを送信しました。届いたリンクからパスワードを再設定してください。
           </div>
         ) : (
@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <p style={{ fontSize: '0.85rem', color: '#8fa2bd', textAlign: 'center', marginTop: '1.5rem' }}>
-          <a href="/login" style={{ color: '#d9b45b' }}>ログイン画面に戻る</a>
+          <a href="/login" style={{ color: 'var(--gold)' }}>ログイン画面に戻る</a>
         </p>
       </div>
 
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
           transition: border-color 0.2s;
         }
         .auth-input:focus {
-          border-color: #d9b45b;
+          border-color: var(--gold);
         }
         .auth-error {
           background: rgba(220, 38, 38, 0.15);

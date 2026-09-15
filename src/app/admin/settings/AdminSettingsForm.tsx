@@ -2,32 +2,17 @@
 import React, { useState, useTransition } from 'react';
 import { updateSiteSettings } from '@/actions/settings';
 import { DEFAULT_TERMS_CONTENT, DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
+import { ACCENT_COLORS, BG_PATTERNS, DEFAULT_SITE_NAME, sanitizeAccentColor, sanitizeBgPattern } from '@/lib/siteSettings.shared';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '24px' };
 const textareaStyle = { ...inputStyle, resize: 'vertical' as const, fontFamily: 'inherit', lineHeight: 1.7 };
 
-const ACCENT_COLORS = [
-  { name: 'Gold', value: 'var(--gold)' },
-  { name: 'Blue', value: '#6495ed' },
-  { name: 'Green', value: '#4ade80' },
-  { name: 'Purple', value: '#c084fc' },
-  { name: 'Red', value: '#f87171' },
-  { name: 'Orange', value: '#fb923c' },
-];
-
-const BG_PATTERNS = [
-  { id: 'pattern1', label: '標準 (Standard)' },
-  { id: 'pattern2', label: 'ダークノイズ (Noise)' },
-  { id: 'pattern3', label: 'グラデーション (Gradient)' },
-  { id: 'pattern4', label: '幾何学模様 (Geometric)' },
-  { id: 'pattern5', label: 'ウェーブ (Wave)' },
-  { id: 'pattern6', label: 'メッシュ (Mesh)' },
-];
-
 export default function AdminSettingsForm({ initialSettings }: { initialSettings: any }) {
-  const [accent, setAccent] = useState(initialSettings?.accentColor || 'var(--gold)');
-  const [bgPattern, setBgPattern] = useState(initialSettings?.bgPattern || 'pattern1');
+  const [accent, setAccent] = useState(
+    sanitizeAccentColor(initialSettings?.accentColor) || ACCENT_COLORS[0].value
+  );
+  const [bgPattern, setBgPattern] = useState(sanitizeBgPattern(initialSettings?.bgPattern));
   const [termsContent, setTermsContent] = useState(initialSettings?.termsContent || DEFAULT_TERMS_CONTENT);
   const [privacyContent, setPrivacyContent] = useState(initialSettings?.privacyContent || DEFAULT_PRIVACY_CONTENT);
   const [isPending, startTransition] = useTransition();
@@ -41,8 +26,12 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
     formData.set('privacyContent', privacyContent);
 
     startTransition(async () => {
-      await updateSiteSettings(formData);
-      alert('設定を保存しました');
+      try {
+        await updateSiteSettings(formData);
+        alert('設定を保存しました');
+      } catch (err) {
+        alert(err instanceof Error ? err.message : '設定の保存に失敗しました');
+      }
     });
   };
 
@@ -54,7 +43,7 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
         <h2 className="panel-title">サイトの基本情報</h2>
         <label style={labelStyle}>
           <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>サイト名 / 講座名</span>
-          <input type="text" name="siteName" style={inputStyle} defaultValue={initialSettings?.siteName || "N8N MARKETING"} required />
+          <input type="text" name="siteName" style={inputStyle} defaultValue={initialSettings?.siteName || DEFAULT_SITE_NAME} required />
         </label>
 
         <label style={labelStyle}>

@@ -72,7 +72,7 @@ export default function LoginPage() {
           </button>
 
           <p style={{ fontSize: '0.85rem', color: '#8fa2bd', textAlign: 'center' }}>
-            <a href="/forgot-password" style={{ color: '#d9b45b' }}>パスワードをお忘れですか？</a>
+            <a href="/forgot-password" style={{ color: 'var(--gold)' }}>パスワードをお忘れですか？</a>
           </p>
         </form>
       </div>
@@ -129,7 +129,7 @@ export default function LoginPage() {
           transition: border-color 0.2s;
         }
         .auth-input:focus {
-          border-color: #d9b45b;
+          border-color: var(--gold);
         }
         .auth-error {
           background: rgba(220, 38, 38, 0.15);

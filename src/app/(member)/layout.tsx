@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettings, DEFAULT_SITE_NAME } from '@/lib/siteSettings';
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   const reqHeaders = await headers();
@@ -22,8 +22,8 @@ export default async function MemberLayout({ children }: { children: React.React
     redirect('/login?suspended=1');
   }
 
-  const settings = await getSiteSettingsQuery();
-  const siteName = settings?.siteName || 'N8N MARKETING';
+  const settings = await getSiteSettings();
+  const siteName = settings?.siteName || DEFAULT_SITE_NAME;
 
   return (
     <div className="app">

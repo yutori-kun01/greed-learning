@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
+import { sanitizeAccentColor, sanitizeBgPattern, DEFAULT_SITE_NAME } from '@/lib/siteSettings.shared';
 
 // Helper for DB instance
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -21,9 +22,11 @@ export async function updateSiteSettings(formData: FormData) {
     throw new Error('Unauthorized');
   }
 
-  const siteName = formData.get('siteName') as string;
-  const accentColor = formData.get('accentColor') as string;
-  const bgPattern = formData.get('bgPattern') as string;
+  const siteName = ((formData.get('siteName') as string) || '').trim() || DEFAULT_SITE_NAME;
+  // Reject anything that is not a plain hex colour — the value is inlined into
+  // a <style> tag by the root layout.
+  const accentColor = sanitizeAccentColor(formData.get('accentColor') as string) || '';
+  const bgPattern = sanitizeBgPattern(formData.get('bgPattern') as string);
   const logoUrl = (formData.get('logoUrl') as string) || null;
 
   const operatorName = (formData.get('operatorName') as string) || null;
@@ -84,13 +87,4 @@ export async function updateUserProfile(formData: FormData) {
 
   revalidatePath('/settings');
   return { success: true };
-}
-
-export async function getSiteSettingsQuery() {
-  try {
-    const settings = await db().select().from(siteSettings).where(eq(siteSettings.id, '1')).limit(1);
-    return settings[0] || null;
-  } catch (e) {
-    return null; // DB not ready or missing table
-  }
 }

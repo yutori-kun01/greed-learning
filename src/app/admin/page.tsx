@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getDb } from '@/db';
 import { user, courses, purchases, plans } from '@/db/schema';
 import { desc, count, sum, gte } from 'drizzle-orm';
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettings } from '@/lib/siteSettings';
 import Stripe from 'stripe';
 import CommandLine from '@/components/CommandLine';
 
@@ -40,7 +40,7 @@ export default async function AdminDashboard() {
   const recentUsers = await db.select().from(user).orderBy(desc(user.createdAt)).limit(5);
 
   // Setup checklist
-  const settings = await getSiteSettingsQuery();
+  const settings = await getSiteSettings();
   const plansResult = await db.select({ value: count() }).from(plans);
   const totalPlans = plansResult[0].value;
   const stripeConnected = await checkStripeConnection();

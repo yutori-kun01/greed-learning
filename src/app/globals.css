@@ -59,15 +59,65 @@ html, body { height: 100%; }
 
 body {
   margin: 0;
-  background:
+  background-color: var(--bg);
+  background-image:
     radial-gradient(1200px 600px at 78% -10%, var(--bg-gradient-1), transparent 60%),
-    radial-gradient(900px 500px at 0% 100%, var(--bg-gradient-2), transparent 60%),
-    var(--bg);
+    radial-gradient(900px 500px at 0% 100%, var(--bg-gradient-2), transparent 60%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 背景パターン（サイト設定 → body[data-bg-pattern]） ---------- */
+/* `--pattern-ink` は模様の線・点の色。ダーク/ライト双方で成立する濃度にしている。 */
+:root { --pattern-ink: rgba(255, 255, 255, .10); }
+.light { --pattern-ink: rgba(0, 0, 0, .07); }
+
+/* pattern1 は body の既定スタイルをそのまま使う（標準） */
+
+/* ダークノイズ: 細かいドットを重ねた質感 */
+body[data-bg-pattern="pattern2"] {
+  background-image:
+    radial-gradient(var(--pattern-ink) 1px, transparent 1px),
+    radial-gradient(1200px 600px at 78% -10%, var(--bg-gradient-1), transparent 60%),
+    radial-gradient(900px 500px at 0% 100%, var(--bg-gradient-2), transparent 60%);
+  background-size: 3px 3px, auto, auto;
+}
+
+/* グラデーション: 上下方向に流れる大きめのグラデーション */
+body[data-bg-pattern="pattern3"] {
+  background-image:
+    linear-gradient(160deg, var(--bg-gradient-1) 0%, transparent 45%),
+    linear-gradient(20deg, var(--bg-gradient-2) 0%, transparent 55%),
+    radial-gradient(1100px 700px at 50% -20%, var(--bg-gradient-1), transparent 70%);
+}
+
+/* 幾何学模様: 32px のグリッド */
+body[data-bg-pattern="pattern4"] {
+  background-image:
+    repeating-linear-gradient(0deg, var(--pattern-ink) 0 1px, transparent 1px 32px),
+    repeating-linear-gradient(90deg, var(--pattern-ink) 0 1px, transparent 1px 32px),
+    radial-gradient(1200px 600px at 78% -10%, var(--bg-gradient-1), transparent 60%);
+}
+
+/* ウェーブ: 斜めのストライプを重ねた波状の陰影 */
+body[data-bg-pattern="pattern5"] {
+  background-image:
+    repeating-radial-gradient(circle at 0% 100%, var(--pattern-ink) 0 1px, transparent 1px 64px),
+    radial-gradient(900px 500px at 0% 100%, var(--bg-gradient-2), transparent 60%),
+    radial-gradient(1200px 600px at 78% -10%, var(--bg-gradient-1), transparent 60%);
+}
+
+/* メッシュ: 複数の光源を散らしたメッシュグラデーション */
+body[data-bg-pattern="pattern6"] {
+  background-image:
+    radial-gradient(600px 400px at 12% 8%, var(--bg-gradient-1), transparent 65%),
+    radial-gradient(700px 500px at 88% 12%, var(--bg-gradient-2), transparent 65%),
+    radial-gradient(600px 500px at 20% 92%, var(--bg-gradient-2), transparent 65%),
+    radial-gradient(700px 450px at 82% 88%, var(--bg-gradient-1), transparent 65%);
 }
 
 h1, h2, h3, p, ul { margin: 0; }

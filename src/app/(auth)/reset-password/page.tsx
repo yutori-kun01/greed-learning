@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
           transition: border-color 0.2s;
         }
         .auth-input:focus {
-          border-color: #d9b45b;
+          border-color: var(--gold);
         }
         .auth-error {
           background: rgba(220, 38, 38, 0.15);

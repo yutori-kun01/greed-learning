@@ -77,7 +77,7 @@ export default function SignupPage() {
           </button>
 
           <p style={{ fontSize: '0.75rem', color: '#8fa2bd', textAlign: 'center', marginTop: '0.5rem' }}>
-            登録することで<a href="/legal/terms" style={{ color: '#d9b45b' }}>利用規約</a>および<a href="/legal/privacy" style={{ color: '#d9b45b' }}>プライバシーポリシー</a>に同意したものとみなされます。
+            登録することで<a href="/legal/terms" style={{ color: 'var(--gold)' }}>利用規約</a>および<a href="/legal/privacy" style={{ color: 'var(--gold)' }}>プライバシーポリシー</a>に同意したものとみなされます。
           </p>
         </form>
       </div>
@@ -134,7 +134,7 @@ export default function SignupPage() {
           transition: border-color 0.2s;
         }
         .auth-input:focus {
-          border-color: #d9b45b;
+          border-color: var(--gold);
         }
         .auth-error {
           background: rgba(220, 38, 38, 0.15);
