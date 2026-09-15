@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes';
 import { updateUserProfile } from '@/actions/settings';
 import { createSubscriptionCheckoutSession, createBillingPortalSession } from '@/actions/subscription';
 import { changeEmail, changePassword } from '@/lib/auth-client';
+import ImagePicker from '@/components/ImagePicker';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '20px' };
@@ -44,7 +45,7 @@ export default function MemberSettingsForm({
   const [passwordStatus, setPasswordStatus] = useState<FieldStatus>('idle');
   const [passwordError, setPasswordError] = useState('');
 
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.image || null);
 
   const handleEmailUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -128,16 +129,13 @@ export default function MemberSettingsForm({
       {activeTab === 'profile' && (
         <div className="panel">
           <h2 className="panel-title">プロフィール情報</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
-            <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--panel-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              👤
-            </div>
-            <div>
-              <button className="btn btn-ghost" style={{ marginBottom: 8 }}>画像をアップロード</button>
-              <p style={{ fontSize: 12, color: 'var(--muted)' }}>推奨サイズ: 400x400px (JPG/PNG)</p>
-            </div>
-          </div>
           <form onSubmit={handleProfileUpdate}>
+            <ImagePicker
+              value={avatarUrl}
+              onChange={setAvatarUrl}
+              hint="推奨サイズ: 400x400px・PNG / JPEG / WebP / GIF"
+            />
+            <input type="hidden" name="image" value={avatarUrl || ''} />
             <label style={labelStyle}>
               <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>表示名</span>
               <input type="text" name="name" style={inputStyle} defaultValue={user?.name || ''} required />
@@ -215,19 +213,13 @@ export default function MemberSettingsForm({
             </button>
           </form>
 
+          {/* 2FAはまだ実装していない。以前はボタンで「有効」と表示できたが、
+              実際には何も設定されず誤解を招くため、状態の表示のみにしている。 */}
           <div style={{ borderTop: '1px solid var(--line)', paddingTop: 24 }}>
             <h3 style={{ fontSize: 14, color: 'var(--text)', marginBottom: 16 }}>二段階認証 (2FA)</h3>
-            {twoFAEnabled ? (
-              <>
-                <p style={{ fontSize: 13, color: '#8ce0a8', marginBottom: 16 }}>✓ 2FAは有効になっています。</p>
-                <button type="button" className="btn btn-ghost" onClick={() => setTwoFAEnabled(false)}>2FAを無効にする</button>
-              </>
-            ) : (
-              <>
-                <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 16 }}>アカウントのセキュリティを高めるために、2FAを有効にしてください。</p>
-                <button type="button" className="btn btn-gold" onClick={() => setTwoFAEnabled(true)}>2FAを設定する</button>
-              </>
-            )}
+            <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+              二段階認証は現在準備中です。パスワードは他サービスと使い回さないようご注意ください。
+            </p>
           </div>
         </div>
       )}

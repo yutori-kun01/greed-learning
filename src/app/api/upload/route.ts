@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { AwsClient } from 'aws4fetch';
+import {
+  MAX_IMAGE_BYTES,
+  extensionForImageType,
+  isAllowedImageType,
+} from '@/lib/uploads';
 
 // Reusing global auth setup. Note: DB binding is only required if we fetch users,
 // but for getSession we pass the dummy because we just need to verify session token.
@@ -18,10 +23,20 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { filename, contentType } = body as { filename: string; contentType: string };
+    const { contentType, size } = body as { contentType: string; size?: number };
 
-    if (!filename || !contentType) {
-      return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 });
+    if (!contentType) {
+      return NextResponse.json({ error: 'Missing contentType' }, { status: 400 });
+    }
+
+    // The bucket is public, so only image types we are willing to serve back
+    // are signed for. SVG is excluded — it can carry script.
+    if (!isAllowedImageType(contentType)) {
+      return NextResponse.json({ error: 'この形式のファイルはアップロードできません' }, { status: 415 });
+    }
+
+    if (typeof size === 'number' && size > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ error: 'ファイルサイズが大きすぎます' }, { status: 413 });
     }
 
     // Configure aws4fetch
@@ -41,10 +56,9 @@ export async function POST(req: Request) {
       region: 'auto',
     });
 
-    // Generate unique object key
-    const ext = filename.split('.').pop() || '';
-    const safeName = filename.replace(/[^a-zA-Z0-9-_\.]/g, '');
-    const objectKey = `${session.user.id}/${Date.now()}-${safeName}`;
+    // The object key is derived from the session and the validated content
+    // type only — the client's filename never reaches the bucket.
+    const objectKey = `${session.user.id}/${Date.now()}-${crypto.randomUUID()}.${extensionForImageType(contentType)}`;
 
     const endpoint = `https://${r2AccountId}.r2.cloudflarestorage.com/${r2BucketName}/${objectKey}`;
 

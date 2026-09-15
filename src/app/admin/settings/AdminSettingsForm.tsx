@@ -3,6 +3,7 @@ import React, { useState, useTransition } from 'react';
 import { updateSiteSettings } from '@/actions/settings';
 import { DEFAULT_TERMS_CONTENT, DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
 import { ACCENT_COLORS, BG_PATTERNS, DEFAULT_SITE_NAME, sanitizeAccentColor, sanitizeBgPattern } from '@/lib/siteSettings.shared';
+import ImagePicker from '@/components/ImagePicker';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '24px' };
@@ -13,6 +14,7 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
     sanitizeAccentColor(initialSettings?.accentColor) || ACCENT_COLORS[0].value
   );
   const [bgPattern, setBgPattern] = useState(sanitizeBgPattern(initialSettings?.bgPattern));
+  const [logoUrl, setLogoUrl] = useState<string | null>(initialSettings?.logoUrl || null);
   const [termsContent, setTermsContent] = useState(initialSettings?.termsContent || DEFAULT_TERMS_CONTENT);
   const [privacyContent, setPrivacyContent] = useState(initialSettings?.privacyContent || DEFAULT_PRIVACY_CONTENT);
   const [isPending, startTransition] = useTransition();
@@ -21,6 +23,7 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     formData.set('accentColor', accent);
+    formData.set('logoUrl', logoUrl || '');
     formData.set('bgPattern', bgPattern);
     formData.set('termsContent', termsContent);
     formData.set('privacyContent', privacyContent);
@@ -46,11 +49,24 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
           <input type="text" name="siteName" style={inputStyle} defaultValue={initialSettings?.siteName || DEFAULT_SITE_NAME} required />
         </label>
 
-        <label style={labelStyle}>
-          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>ロゴ画像URL (任意)</span>
-          <input type="text" name="logoUrl" style={inputStyle} defaultValue={initialSettings?.logoUrl || ''} placeholder="https://... (未設定の場合は標準アイコンを表示)" />
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>正方形の画像URLを指定してください。アップロード機能は今後対応予定です。</p>
-        </label>
+        <div style={labelStyle}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600, display: 'block', marginBottom: 12 }}>ロゴ画像 (任意)</span>
+          <ImagePicker
+            value={logoUrl}
+            onChange={setLogoUrl}
+            shape="square"
+            size={64}
+            label="ロゴをアップロード"
+            hint="正方形の画像を推奨。未設定の場合は標準アイコンを表示します。"
+          />
+          <input
+            type="text"
+            style={inputStyle}
+            value={logoUrl || ''}
+            onChange={(e) => setLogoUrl(e.target.value || null)}
+            placeholder="https://... (画像URLを直接指定することもできます)"
+          />
+        </div>
       </div>
 
       <div className="panel" style={{ marginTop: 24 }}>
