@@ -1,0 +1,23 @@
+diff --git a/dist/cli/build/open-next/bundle-node-middleware.js b/dist/cli/build/open-next/bundle-node-middleware.js
+index 6cc1cb15b8b5cf8aaa8ef2c922bff499b35f9704..067a51a7b70a5633e1a3a337581ae1bab741ce5a 100644
+--- a/dist/cli/build/open-next/bundle-node-middleware.js
++++ b/dist/cli/build/open-next/bundle-node-middleware.js
+@@ -20,6 +20,7 @@
+ import { existsSync, readFileSync, writeFileSync } from "node:fs";
+ import { builtinModules, isBuiltin } from "node:module";
+ import path from "node:path";
++import { fileURLToPath } from "node:url";
+ import { getBundlerRuntime, getPackagePath } from "@opennextjs/aws/build/helper.js";
+ import logger from "@opennextjs/aws/logger.js";
+ import { ContentUpdater } from "@opennextjs/aws/plugins/content-updater.js";
+@@ -192,6 +193,10 @@ export async function bundleNodeMiddleware(options) {
+         alias: {
+             // See `hasOpentelemetry` above.
+             ...(hasOpentelemetry ? {} : { "@opentelemetry/api": "next/dist/compiled/@opentelemetry/api" }),
++            // Proxy code never renders OG images, but the patched Turbopack runtime always emits
++            // `import("next/dist/compiled/@vercel/og/index.edge.js")`, which drags the library and
++            // its `resvg.wasm` (~520 KiB gzipped) into the Worker. Mirrors the alias in bundle-server.js.
++            "next/dist/compiled/@vercel/og/index.edge.js": fileURLToPath(new URL("../../templates/shims/throw.js", import.meta.url)),
+         },
+         plugins: [
+             openNextResolvePlugin({
