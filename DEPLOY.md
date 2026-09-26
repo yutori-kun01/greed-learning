@@ -103,6 +103,8 @@ Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 
 ※ Workerのシークレットは暗号化保存され、書き込み専用です。アプリ側のどのAPIからも読み出せないため、管理画面が万一侵害されてもStripeキーは漏れません。この理由から、これらは意図的にD1（アプリのDB）や設定画面には保存していません。
 
+> **Workerのサイズについて:** Cloudflare無料プランのWorker上限は gzip後 3 MiB です。`patches/@opennextjs__cloudflare@*.patch` で、proxy（ミドルウェア）に未使用のOG画像ライブラリ（約520 KiB）が同梱されないようにしており、現状は約2.3 MiBに収まっています。`@opennextjs/cloudflare` を更新する際は、`pnpm install` でパッチが当たらなくなっていないか確認してください。
+
 ### 方法B: 手動デプロイ
 
 ```bash

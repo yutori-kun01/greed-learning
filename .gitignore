@@ -44,6 +44,7 @@ next-env.d.ts
 # cloudflare & local db
 .open-next
 .wrangler
+.dev.vars
 *.db
 *.sqlite
 *.sqlite-shm

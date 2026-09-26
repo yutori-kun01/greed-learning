@@ -1,4 +1,5 @@
 import { drizzle as drizzleD1 } from 'drizzle-orm/d1';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from './schema';
@@ -29,5 +30,8 @@ export function getDb(d1: D1Database) {
     }
     return localDb;
   }
-  return drizzleD1(d1, { schema });
+  // Callers pass `process.env.DB`, but on Workers process.env only carries
+  // string vars and secrets — the D1 binding itself is never copied there,
+  // so it arrives undefined. Read it from the Cloudflare context instead.
+  return drizzleD1(d1 ?? (getCloudflareContext().env as { DB: D1Database }).DB, { schema });
 }
