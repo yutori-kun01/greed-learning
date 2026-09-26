@@ -23,7 +23,7 @@ export default function LessonList({ lessons, courseId }: { lessons: any[], cour
                 await deleteLesson(lesson.id, courseId);
               }
             }}
-            style={{ background: 'transparent', border: 'none', color: '#ff4d4f', cursor: 'pointer', padding: '8px' }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '8px' }}
             title="削除"
           >
             <Icon name="trash" />

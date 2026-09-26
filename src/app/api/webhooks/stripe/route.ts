@@ -4,7 +4,7 @@ import { getDb } from '@/db';
 import { purchases, user, plans } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
-function mapSubscriptionStatus(status: Stripe.Subscription.Status): 'ACTIVE' | 'PAST_DUE' | 'CANCELED' {
+export function mapSubscriptionStatus(status: Stripe.Subscription.Status): 'ACTIVE' | 'PAST_DUE' | 'CANCELED' {
   if (status === 'active' || status === 'trialing') return 'ACTIVE';
   if (status === 'past_due' || status === 'unpaid' || status === 'incomplete') return 'PAST_DUE';
   return 'CANCELED';

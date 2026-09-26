@@ -93,7 +93,7 @@ export default function CourseInfoForm({ course, plans = [] }: { course: Course;
         <button type="submit" disabled={isPending} className="btn btn-gold">
           {isPending ? '保存中...' : '変更を保存'}
         </button>
-        {saved && !isPending && <span style={{ color: '#8ce0a8', fontSize: '13px' }}>保存しました</span>}
+        {saved && !isPending && <span style={{ color: 'var(--success)', fontSize: '13px' }}>保存しました</span>}
       </div>
     </form>
   );

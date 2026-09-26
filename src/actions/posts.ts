@@ -92,31 +92,8 @@ export async function updatePost(id: string, formData: FormData) {
   return { success: true };
 }
 
-export async function getPosts() {
-  try {
-    return await db().select().from(blogPosts).orderBy(blogPosts.createdAt);
-  } catch (e) {
-    return [];
-  }
-}
 
-export async function getPublishedPosts() {
-  try {
-    const all = await db().select().from(blogPosts).orderBy(blogPosts.createdAt);
-    return all.filter((p: any) => p.status !== 'DRAFT');
-  } catch (e) {
-    return [];
-  }
-}
 
-export async function getPostBySlug(slug: string) {
-  try {
-    const data = await db().select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
-    return data[0] || null;
-  } catch (e) {
-    return null;
-  }
-}
 
 export async function deletePost(id: string) {
   const reqHeaders = await headers();

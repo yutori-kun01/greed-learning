@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { AwsClient } from 'aws4fetch';
+import {
+  MAX_IMAGE_BYTES,
+  extensionForImageType,
+  isAllowedImageType,
+} from '@/lib/uploads';
+import { getR2Config } from '@/lib/r2';
 
 // Reusing global auth setup. Note: DB binding is only required if we fetch users,
 // but for getSession we pass the dummy because we just need to verify session token.
@@ -18,35 +24,42 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { filename, contentType } = body as { filename: string; contentType: string };
+    const { contentType, size } = body as { contentType: string; size?: number };
 
-    if (!filename || !contentType) {
-      return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 });
+    if (!contentType) {
+      return NextResponse.json({ error: 'Missing contentType' }, { status: 400 });
     }
 
-    // Configure aws4fetch
-    const r2AccountId = process.env.R2_ACCOUNT_ID;
-    const r2AccessKey = process.env.R2_ACCESS_KEY_ID;
-    const r2SecretKey = process.env.R2_SECRET_ACCESS_KEY;
-    const r2BucketName = process.env.R2_BUCKET_NAME;
+    // The bucket is public, so only image types we are willing to serve back
+    // are signed for. SVG is excluded — it can carry script.
+    if (!isAllowedImageType(contentType)) {
+      return NextResponse.json({ error: 'この形式のファイルはアップロードできません' }, { status: 415 });
+    }
 
-    if (!r2AccountId || !r2AccessKey || !r2SecretKey || !r2BucketName) {
-      return NextResponse.json({ error: 'R2 configuration is missing' }, { status: 500 });
+    if (typeof size === 'number' && size > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ error: 'ファイルサイズが大きすぎます' }, { status: 413 });
+    }
+
+    const r2 = getR2Config();
+    if (!r2) {
+      return NextResponse.json(
+        { error: '画像ストレージ（R2）が未設定のためアップロードできません。管理者ダッシュボードのセットアップガイドをご確認ください。' },
+        { status: 503 }
+      );
     }
 
     const aws = new AwsClient({
-      accessKeyId: r2AccessKey,
-      secretAccessKey: r2SecretKey,
+      accessKeyId: r2.accessKeyId,
+      secretAccessKey: r2.secretAccessKey,
       service: 's3',
       region: 'auto',
     });
 
-    // Generate unique object key
-    const ext = filename.split('.').pop() || '';
-    const safeName = filename.replace(/[^a-zA-Z0-9-_\.]/g, '');
-    const objectKey = `${session.user.id}/${Date.now()}-${safeName}`;
+    // The object key is derived from the session and the validated content
+    // type only — the client's filename never reaches the bucket.
+    const objectKey = `${session.user.id}/${Date.now()}-${crypto.randomUUID()}.${extensionForImageType(contentType)}`;
 
-    const endpoint = `https://${r2AccountId}.r2.cloudflarestorage.com/${r2BucketName}/${objectKey}`;
+    const endpoint = `https://${r2.accountId}.r2.cloudflarestorage.com/${r2.bucketName}/${objectKey}`;
 
     // Create Presigned PUT URL (valid for 15 minutes)
     const signedRequest = await aws.sign(endpoint, {
@@ -60,7 +73,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       uploadUrl: signedRequest.url,
       objectKey,
-      publicUrl: `${process.env.R2_PUBLIC_URL}/${objectKey}`
+      publicUrl: `${r2.publicUrl}/${objectKey}`
     });
   } catch (error) {
     console.error('Presigned URL error:', error);

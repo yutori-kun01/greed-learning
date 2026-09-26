@@ -1,10 +1,10 @@
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettings } from '@/lib/siteSettings';
 
 const rowStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16, padding: '14px 0', borderBottom: '1px solid var(--line)', fontSize: 14, lineHeight: 1.7 };
 const labelStyle: React.CSSProperties = { color: 'var(--muted)', fontWeight: 600 };
 
 export default async function TokushohoPage() {
-  const settings = await getSiteSettingsQuery();
+  const settings = await getSiteSettings();
 
   const rows: [string, string][] = [
     ['販売事業者', settings?.operatorName || '（未設定）'],

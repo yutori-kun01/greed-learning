@@ -23,8 +23,8 @@ const badges = {
 }
 
 const statusBadges = {
-  ACTIVE: { background: 'rgba(111,208,160,.15)', color: '#6fd0a0', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
-  SUSPENDED: { background: 'rgba(239,68,68,.15)', color: '#ef4444', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
+  ACTIVE: { background: 'var(--success-dim)', color: 'var(--success)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
+  SUSPENDED: { background: 'rgba(239,68,68,.15)', color: 'var(--danger)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
 }
 
 function formatDate(d: string | number | Date | null) {
@@ -111,7 +111,7 @@ export default function AdminUsersClientUI({ users: initialUsers }: { users: Adm
                     <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: '12px' }} onClick={() => openDetail(u)}>詳細</button>
                     {u.role !== 'ADMIN' && (
                       <button
-                        style={{ color: u.status === 'ACTIVE' ? '#ef4444' : '#6fd0a0', background: 'transparent', border: 'none', cursor: 'pointer', padding: '5px 10px', fontSize: '12px' }}
+                        style={{ color: u.status === 'ACTIVE' ? 'var(--danger)' : 'var(--success)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '5px 10px', fontSize: '12px' }}
                         onClick={() => toggleSuspend(u)}
                         disabled={isPending}
                       >
@@ -165,7 +165,7 @@ export default function AdminUsersClientUI({ users: initialUsers }: { users: Adm
             {detailUser.role !== 'ADMIN' && (
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
                 <button
-                  style={{ color: detailUser.status === 'ACTIVE' ? '#ef4444' : '#6fd0a0', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontSize: '13px', fontWeight: 600 }}
+                  style={{ color: detailUser.status === 'ACTIVE' ? 'var(--danger)' : 'var(--success)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontSize: '13px', fontWeight: 600 }}
                   onClick={() => toggleSuspend(detailUser)}
                   disabled={isPending}
                 >

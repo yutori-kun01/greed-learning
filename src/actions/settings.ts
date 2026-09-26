@@ -6,6 +6,9 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
+import { sanitizeAccentColor, sanitizeBgPattern, DEFAULT_SITE_NAME } from '@/lib/siteSettings.shared';
+import { sanitizeImageUrl } from '@/lib/uploads';
+import { sanitizeLinkUrl } from '@/lib/siteSettings.shared';
 
 // Helper for DB instance
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -21,10 +24,14 @@ export async function updateSiteSettings(formData: FormData) {
     throw new Error('Unauthorized');
   }
 
-  const siteName = formData.get('siteName') as string;
-  const accentColor = formData.get('accentColor') as string;
-  const bgPattern = formData.get('bgPattern') as string;
-  const logoUrl = (formData.get('logoUrl') as string) || null;
+  const siteName = ((formData.get('siteName') as string) || '').trim() || DEFAULT_SITE_NAME;
+  // Reject anything that is not a plain hex colour — the value is inlined into
+  // a <style> tag by the root layout.
+  const accentColor = sanitizeAccentColor(formData.get('accentColor') as string) || '';
+  const bgPattern = sanitizeBgPattern(formData.get('bgPattern') as string);
+  const logoUrl = sanitizeImageUrl(formData.get('logoUrl') as string);
+  const discordUrl = sanitizeLinkUrl(formData.get('discordUrl') as string);
+  const requireSubscription = formData.get('requireSubscription') === 'on';
 
   const operatorName = (formData.get('operatorName') as string) || null;
   const operatorRepresentative = (formData.get('operatorRepresentative') as string) || null;
@@ -40,6 +47,8 @@ export async function updateSiteSettings(formData: FormData) {
     accentColor,
     bgPattern,
     logoUrl,
+    discordUrl,
+    requireSubscription,
     operatorName,
     operatorRepresentative,
     operatorAddress,
@@ -74,23 +83,19 @@ export async function updateUserProfile(formData: FormData) {
     throw new Error('Unauthorized');
   }
 
-  const name = formData.get('name') as string;
+  const name = ((formData.get('name') as string) || '').trim();
   const noteId = formData.get('noteId') as string;
   const xId = formData.get('xId') as string;
+  const image = sanitizeImageUrl(formData.get('image') as string);
+
+  if (!name) {
+    throw new Error('表示名を入力してください');
+  }
 
   await db().update(user)
-    .set({ name, noteId, xId })
+    .set({ name, noteId, xId, image })
     .where(eq(user.id, session.user.id));
 
   revalidatePath('/settings');
   return { success: true };
-}
-
-export async function getSiteSettingsQuery() {
-  try {
-    const settings = await db().select().from(siteSettings).where(eq(siteSettings.id, '1')).limit(1);
-    return settings[0] || null;
-  } catch (e) {
-    return null; // DB not ready or missing table
-  }
 }

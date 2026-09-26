@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { getDb } from '@/db';
 import { user, courses, purchases, plans } from '@/db/schema';
 import { desc, count, sum, gte } from 'drizzle-orm';
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettings } from '@/lib/siteSettings';
 import Stripe from 'stripe';
 import CommandLine from '@/components/CommandLine';
+import { isR2Configured } from '@/lib/r2';
+import { isEmailVerificationRequired } from '@/lib/authPolicy';
 
 async function checkStripeConnection() {
   if (!process.env.STRIPE_SECRET_KEY) return false;
@@ -40,12 +42,14 @@ export default async function AdminDashboard() {
   const recentUsers = await db.select().from(user).orderBy(desc(user.createdAt)).limit(5);
 
   // Setup checklist
-  const settings = await getSiteSettingsQuery();
+  const settings = await getSiteSettings();
   const plansResult = await db.select({ value: count() }).from(plans);
   const totalPlans = plansResult[0].value;
   const stripeConnected = await checkStripeConnection();
 
   const emailConfigured = !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
+  const storageConfigured = isR2Configured();
+  const emailVerificationRequired = isEmailVerificationRequired();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://<your-domain>';
 
   const checklist: {
@@ -74,12 +78,34 @@ export default async function AdminDashboard() {
         { command: 'npx wrangler secret put RESEND_FROM_EMAIL', note: '例: no-reply@your-domain.com （Resend側で送信ドメインの認証が必要です）' },
       ],
     },
+    {
+      label: '画像アップロード（R2）を設定する',
+      done: storageConfigured,
+      href: 'https://dash.cloudflare.com/?to=/:account/r2/api-tokens',
+      commands: [
+        { command: 'npx wrangler secret put R2_ACCOUNT_ID', note: 'CloudflareダッシュボードのURLに含まれるアカウントID、または R2 → 「R2 APIトークンの管理」画面に表示されるアカウントIDです' },
+        { command: 'npx wrangler secret put R2_ACCESS_KEY_ID', note: 'R2 → APIトークンを作成（オブジェクトの読み取りと書き込み）で発行されるアクセスキーIDです' },
+        { command: 'npx wrangler secret put R2_SECRET_ACCESS_KEY', note: '同じ画面で一度だけ表示されるシークレットアクセスキーです' },
+        { command: 'npx wrangler secret put R2_BUCKET_NAME', note: 'wrangler.toml の bucket_name と同じ値（既定: greed-learning-assets）' },
+        { command: 'npx wrangler secret put R2_PUBLIC_URL', note: 'バケットの公開URL。R2 → 対象バケット → 設定 → パブリックアクセス で r2.dev を有効化するか独自ドメインを接続し、そのURL（末尾スラッシュなし）を貼り付けてください。あわせて同じ設定画面でCORSにこのサイトのオリジンを許可してください（DEPLOY.md参照）' },
+      ],
+    },
+    {
+      label: '登録時のメール確認を必須にする（なりすまし登録の防止・任意）',
+      done: emailVerificationRequired,
+      commands: [
+        {
+          command: 'npx wrangler secret put REQUIRE_EMAIL_VERIFICATION',
+          note: '「true」と入力すると、登録時に確認メールが送られ、確認を終えるまでログインできなくなります。メール送信（RESEND_*）が未設定の場合は全員が締め出されるため自動的に無視されます。',
+        },
+      ],
+    },
     { label: '会員プランを作成する', done: totalPlans > 0, href: '/admin/plans' },
     { label: '講座を作成する', done: totalCourses > 0, href: '/admin/courses' },
   ];
   const remaining = checklist.filter(c => !c.done);
 
-  const badgeStyle = { background: 'rgba(111,208,160,.15)', color: '#6fd0a0', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
+  const badgeStyle = { background: 'var(--success-dim)', color: 'var(--success)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
 
   return (
     <div>
@@ -95,7 +121,7 @@ export default async function AdminDashboard() {
                   width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
                   background: item.done ? 'rgba(111,208,160,.2)' : 'var(--line-2)',
-                  color: item.done ? '#6fd0a0' : 'var(--muted)',
+                  color: item.done ? 'var(--success)' : 'var(--muted)',
                 }}>
                   {item.done ? '✓' : ''}
                 </span>

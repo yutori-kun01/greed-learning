@@ -1,13 +1,51 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import Icon from '../Icon';
 import { ThemeToggle } from '../ThemeToggle';
 import { useSession, signOut } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
+/** ページごとの見出し。以前はどの画面でも「講座一覧」と表示していた。 */
+const PAGE_TITLES: { prefix: string; title: string; lead: string }[] = [
+  { prefix: '/dashboard', title: 'ダッシュボード', lead: '学習の状況をまとめて確認できます。' },
+  { prefix: '/learning', title: '学習中の講座', lead: '取り組み中の講座の続きから再開できます。' },
+  { prefix: '/bookmarks', title: 'ブックマーク', lead: '後で見返したい講座を集めています。' },
+  { prefix: '/resources', title: 'リソース・特典', lead: '講座に付属する配布物をダウンロードできます。' },
+  { prefix: '/posts', title: '記事', lead: '会員向けの記事をお読みいただけます。' },
+  { prefix: '/support', title: 'サポート', lead: 'よくあるご質問とお問い合わせはこちらから。' },
+  { prefix: '/settings', title: 'アカウント設定', lead: 'プロフィール・セキュリティ・プランを管理します。' },
+  { prefix: '/courses', title: '会員サイト・講座一覧', lead: '実践に直結する講座を体系的に学び、成果につなげましょう。' },
+];
 
 export default function Topbar() {
   const { data: session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchRef = React.useRef<HTMLInputElement>(null);
+
+  const page = PAGE_TITLES.find(p => pathname === p.prefix || pathname.startsWith(`${p.prefix}/`))
+    ?? PAGE_TITLES[PAGE_TITLES.length - 1];
+
+  // ⌘K / Ctrl+K で検索へフォーカス（kbd表示に実体を持たせる）。
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const value = new FormData(e.currentTarget).get('q') as string;
+    const trimmed = (value || '').trim();
+    router.push(trimmed ? `/courses?q=${encodeURIComponent(trimmed)}` : '/courses');
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -17,18 +55,26 @@ export default function Topbar() {
   return (
     <header className="topbar">
       <div className="topbar-title">
-        <h1>会員サイト・講座一覧</h1>
-        <p>実践に直結する講座を体系的に学び、成果につなげましょう。</p>
+        <h1>{page.title}</h1>
+        <p>{page.lead}</p>
       </div>
       <div className="topbar-tools">
-        <label className="search">
+        <form className="search" onSubmit={handleSearch} role="search">
           <Icon name="search" />
-          <input id="search" type="search" placeholder="講座を検索..." autoComplete="off" />
+          <input
+            ref={searchRef}
+            id="search"
+            name="q"
+            type="search"
+            placeholder="講座を検索..."
+            autoComplete="off"
+            defaultValue={searchParams.get('q') ?? ''}
+          />
           <kbd>⌘K</kbd>
-        </label>
-        <button className="btn btn-gold" type="button">
-          <Icon name="history" />学習履歴
-        </button>
+        </form>
+        <Link className="btn btn-gold" href="/dashboard">
+          <Icon name="history" />学習の記録
+        </Link>
         <ThemeToggle />
         
         {session?.user ? (

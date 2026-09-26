@@ -1,5 +1,7 @@
 import React from 'react';
-import { getPostBySlug } from '@/actions/posts';
+import type { Metadata } from 'next';
+import { getPostBySlug } from '@/lib/posts';
+import { getSiteSettings, DEFAULT_SITE_NAME } from '@/lib/siteSettings';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
@@ -8,6 +10,40 @@ import { purchases } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createCheckoutSession } from '@/actions/stripe';
 import XShareLink from '@/components/XShareLink';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const [post, settings] = await Promise.all([getPostBySlug(slug), getSiteSettings()]);
+
+  if (!post || post.status === 'DRAFT') {
+    return { title: '記事が見つかりません', robots: { index: false, follow: false } };
+  }
+
+  const siteName = settings?.siteName || DEFAULT_SITE_NAME;
+  const description = post.excerpt || undefined;
+  // 会員限定の記事は本文を出さないので検索結果にも載せない。
+  const indexable = post.status === 'PUBLISHED' || post.status === 'PAID';
+
+  return {
+    title: post.title,
+    description,
+    robots: indexable ? undefined : { index: false, follow: false },
+    openGraph: {
+      type: 'article',
+      siteName,
+      title: post.title,
+      description,
+      images: post.coverImageUrl ? [post.coverImageUrl] : undefined,
+      publishedTime: post.publishedAt || undefined,
+    },
+    twitter: {
+      card: post.coverImageUrl ? 'summary_large_image' : 'summary',
+      title: post.title,
+      description,
+      images: post.coverImageUrl ? [post.coverImageUrl] : undefined,
+    },
+  };
+}
 
 export default async function PostDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

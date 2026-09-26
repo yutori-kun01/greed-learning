@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createPost, deletePost, getPosts, getPublishedPosts, getPostBySlug } from './posts'
+import { createPost, deletePost } from './posts'
+import { getAllPosts, getPublishedPosts, getPostBySlug } from '@/lib/posts'
 import { getDb } from '@/db'
 
 describe('Posts Actions', () => {
@@ -31,7 +32,7 @@ describe('Posts Actions', () => {
       })
     } as any);
     
-    const posts = await getPosts();
+    const posts = await getAllPosts();
     expect(posts).toHaveLength(1);
     expect(posts[0].title).toBe('Test Post');
   });

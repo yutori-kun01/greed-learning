@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes';
 import { updateUserProfile } from '@/actions/settings';
 import { createSubscriptionCheckoutSession, createBillingPortalSession } from '@/actions/subscription';
 import { changeEmail, changePassword } from '@/lib/auth-client';
+import ImagePicker from '@/components/ImagePicker';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '20px' };
@@ -44,7 +45,7 @@ export default function MemberSettingsForm({
   const [passwordStatus, setPasswordStatus] = useState<FieldStatus>('idle');
   const [passwordError, setPasswordError] = useState('');
 
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.image || null);
 
   const handleEmailUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -128,16 +129,13 @@ export default function MemberSettingsForm({
       {activeTab === 'profile' && (
         <div className="panel">
           <h2 className="panel-title">プロフィール情報</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
-            <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--panel-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              👤
-            </div>
-            <div>
-              <button className="btn btn-ghost" style={{ marginBottom: 8 }}>画像をアップロード</button>
-              <p style={{ fontSize: 12, color: 'var(--muted)' }}>推奨サイズ: 400x400px (JPG/PNG)</p>
-            </div>
-          </div>
           <form onSubmit={handleProfileUpdate}>
+            <ImagePicker
+              value={avatarUrl}
+              onChange={setAvatarUrl}
+              hint="推奨サイズ: 400x400px・PNG / JPEG / WebP / GIF"
+            />
+            <input type="hidden" name="image" value={avatarUrl || ''} />
             <label style={labelStyle}>
               <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>表示名</span>
               <input type="text" name="name" style={inputStyle} defaultValue={user?.name || ''} required />
@@ -172,8 +170,8 @@ export default function MemberSettingsForm({
                 placeholder="new@example.com"
               />
             </label>
-            {emailStatus === 'error' && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{emailError}</p>}
-            {emailStatus === 'saved' && <p style={{ color: '#8ce0a8', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>確認メールを送信しました。メール内のリンクから変更を完了してください。</p>}
+            {emailStatus === 'error' && <p style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{emailError}</p>}
+            {emailStatus === 'saved' && <p style={{ color: 'var(--success)', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>確認メールを送信しました。メール内のリンクから変更を完了してください。</p>}
             <button type="submit" className="btn btn-ghost" disabled={emailStatus === 'saving'}>
               {emailStatus === 'saving' ? '更新中...' : 'メールアドレスを更新'}
             </button>
@@ -208,26 +206,20 @@ export default function MemberSettingsForm({
                 onChange={(e) => { setPasswords({ ...passwords, confirm: e.target.value }); setPasswordStatus('idle'); }}
               />
             </label>
-            {passwordStatus === 'error' && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{passwordError}</p>}
-            {passwordStatus === 'saved' && <p style={{ color: '#8ce0a8', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>パスワードを更新しました。</p>}
+            {passwordStatus === 'error' && <p style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>{passwordError}</p>}
+            {passwordStatus === 'saved' && <p style={{ color: 'var(--success)', fontSize: '12px', marginTop: '-12px', marginBottom: 16 }}>パスワードを更新しました。</p>}
             <button type="submit" className="btn btn-ghost" disabled={passwordStatus === 'saving'}>
               {passwordStatus === 'saving' ? '更新中...' : 'パスワードを更新'}
             </button>
           </form>
 
+          {/* 2FAはまだ実装していない。以前はボタンで「有効」と表示できたが、
+              実際には何も設定されず誤解を招くため、状態の表示のみにしている。 */}
           <div style={{ borderTop: '1px solid var(--line)', paddingTop: 24 }}>
             <h3 style={{ fontSize: 14, color: 'var(--text)', marginBottom: 16 }}>二段階認証 (2FA)</h3>
-            {twoFAEnabled ? (
-              <>
-                <p style={{ fontSize: 13, color: '#8ce0a8', marginBottom: 16 }}>✓ 2FAは有効になっています。</p>
-                <button type="button" className="btn btn-ghost" onClick={() => setTwoFAEnabled(false)}>2FAを無効にする</button>
-              </>
-            ) : (
-              <>
-                <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 16 }}>アカウントのセキュリティを高めるために、2FAを有効にしてください。</p>
-                <button type="button" className="btn btn-gold" onClick={() => setTwoFAEnabled(true)}>2FAを設定する</button>
-              </>
-            )}
+            <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+              二段階認証は現在準備中です。パスワードは他サービスと使い回さないようご注意ください。
+            </p>
           </div>
         </div>
       )}
@@ -274,8 +266,8 @@ export default function MemberSettingsForm({
               </form>
             </div>
           ) : subscriptionStatus === 'PAST_DUE' ? (
-            <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)' }}>
-              <p style={{ fontSize: 13, color: '#ef4444', fontWeight: 600 }}>お支払いに問題が発生しています。お支払い方法をご確認ください。</p>
+            <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'var(--danger-dim)', border: '1px solid rgba(239,68,68,.3)' }}>
+              <p style={{ fontSize: 13, color: 'var(--danger)', fontWeight: 600 }}>お支払いに問題が発生しています。お支払い方法をご確認ください。</p>
               <form action={createBillingPortalSession} style={{ marginTop: 12 }}>
                 <button type="submit" className="btn btn-gold">お支払い方法を更新</button>
               </form>

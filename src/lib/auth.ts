@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { user as userTable } from "@/db/schema";
 import { count } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
+import { isEmailVerificationRequired, shouldPromoteToAdmin } from "@/lib/authPolicy";
 
 export function getAuth(d1: D1Database) {
   const db = getDb(d1);
@@ -17,6 +18,13 @@ export function getAuth(d1: D1Database) {
     },
     emailAndPassword: {
       enabled: true,
+      // REQUIRE_EMAIL_VERIFICATION=true でメール確認を必須にする。
+      // 有効にするとサインアップ時に確認メールが送られ、確認するまで
+      // ログインできない。
+      requireEmailVerification: isEmailVerificationRequired(),
+      // 確認必須のときは登録直後の自動ログインもしない。しないと「登録時は
+      // 入れるのに次回からログインできない」という状態になる。
+      autoSignIn: !isEmailVerificationRequired(),
       sendResetPassword: async ({ user, url }) => {
         await sendEmail({
           to: user.email,
@@ -26,6 +34,9 @@ export function getAuth(d1: D1Database) {
       },
     },
     emailVerification: {
+      // ログインを弾いたときに確認メールを送り直す（リンク切れの救済）。
+      sendOnSignIn: true,
+      autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
         await sendEmail({
           to: user.email,
@@ -85,12 +96,13 @@ export function getAuth(d1: D1Database) {
     databaseHooks: {
       user: {
         create: {
-          // Self-hosted deployments have no seed data — the very first
-          // account to sign up becomes the admin so the operator can
-          // reach /admin without touching the database by hand.
+          // Self-hosted deployments have no seed data, so the operator needs a
+          // way to reach /admin without editing the database by hand.
+          // ADMIN_EMAIL names that account; without it the first signup wins
+          // (see shouldPromoteToAdmin).
           before: async (user) => {
             const result = await db.select({ value: count() }).from(userTable);
-            if (result[0]?.value === 0) {
+            if (shouldPromoteToAdmin(user.email, result[0]?.value ?? 0)) {
               return { data: { ...user, role: "ADMIN" } };
             }
           },

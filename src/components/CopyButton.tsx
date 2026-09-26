@@ -20,8 +20,8 @@ export default function CopyButton({ text }: { text: string }) {
       onClick={handleCopy}
       style={{
         flexShrink: 0,
-        background: copied ? 'rgba(111,208,160,.15)' : 'var(--line-2)',
-        color: copied ? '#6fd0a0' : 'var(--text-2)',
+        background: copied ? 'var(--success-dim)' : 'var(--line-2)',
+        color: copied ? 'var(--success)' : 'var(--text-2)',
         border: 'none',
         borderRadius: 6,
         padding: '4px 10px',

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createCourse, deleteCourse, getCourses } from './courses'
+import { createCourse, deleteCourse } from './courses'
+import { getAllCourses } from '@/lib/courses'
 import { getDb } from '@/db'
 
 vi.mock('next/cache', () => ({
@@ -16,7 +17,7 @@ describe('Courses Actions', () => {
       })
     } as any);
     
-    const courses = await getCourses();
+    const courses = await getAllCourses();
     expect(courses).toEqual([{ id: 'c-1', title: 'Course 1' }]);
   });
 

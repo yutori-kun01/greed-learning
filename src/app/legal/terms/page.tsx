@@ -1,8 +1,8 @@
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettings } from '@/lib/siteSettings';
 import { DEFAULT_TERMS_CONTENT } from '@/lib/legalDefaults';
 
 export default async function TermsPage() {
-  const settings = await getSiteSettingsQuery();
+  const settings = await getSiteSettings();
   const content = settings?.termsContent || DEFAULT_TERMS_CONTENT;
 
   return (

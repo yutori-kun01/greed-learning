@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
+import { advanceStreak } from '@/lib/streak';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
@@ -47,12 +48,28 @@ export async function toggleLessonComplete(lessonId: string, isCompleted: boolea
     });
   }
 
-  // Update user's streak logic could go here
-  // For simplicity, we just update lastActivityDate
-  await db().update(user).set({
-    lastActivityDate: now
-  }).where(eq(user.id, userId));
+  // 完了にしたときだけ学習記録として数える（完了解除は記録を伸ばさない）。
+  if (isCompleted) {
+    const rows = await db().select().from(user).where(eq(user.id, userId)).limit(1);
+    const me = rows[0];
+    if (me) {
+      const next = advanceStreak(
+        {
+          currentStreak: me.currentStreak ?? 0,
+          longestStreak: me.longestStreak ?? 0,
+          lastActivityDate: me.lastActivityDate ?? null,
+        },
+        new Date(now)
+      );
+      await db().update(user).set({
+        currentStreak: next.currentStreak,
+        longestStreak: next.longestStreak,
+        lastActivityDate: next.lastActivityDate,
+      }).where(eq(user.id, userId));
+    }
+  }
 
+  revalidatePath('/', 'layout'); // サイドバーの学習記録
   revalidatePath('/courses');
   revalidatePath('/dashboard');
   revalidatePath('/learning');

@@ -1,17 +1,17 @@
 import Link from 'next/link'
 import React from 'react'
-import { getPosts } from '@/actions/posts'
+import { getAllPosts } from '@/lib/posts'
 import DeletePostButton from './DeletePostButton'
 
 export default async function AdminPostsPage() {
   const badges = {
-    PUBLISHED: { background: 'rgba(111,208,160,.15)', color: '#6fd0a0', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
+    PUBLISHED: { background: 'var(--success-dim)', color: 'var(--success)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
     DRAFT: { background: 'var(--line-2)', color: 'var(--muted)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
     MEMBERS_ONLY: { background: 'rgba(100,149,237,.15)', color: '#6495ed', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 },
     PAID: { background: 'rgba(217,180,91,.15)', color: 'var(--gold-2)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
   }
 
-  const posts = await getPosts()
+  const posts = await getAllPosts()
 
   return (
     <div>

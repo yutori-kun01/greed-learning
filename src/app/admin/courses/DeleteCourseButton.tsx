@@ -21,7 +21,7 @@ export default function DeleteCourseButton({ id }: { id: string }) {
     <button 
       onClick={handleDelete}
       disabled={isPending}
-      style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: '5px 10px', fontSize: '12px' }}
+      style={{ color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '5px 10px', fontSize: '12px' }}
     >
       {isPending ? '削除中...' : '削除'}
     </button>

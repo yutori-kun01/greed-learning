@@ -7,7 +7,7 @@ import { eq, and, asc } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import Icon from '@/components/Icon';
-import { canAccessCourse } from '@/lib/access';
+import { canAccessCourse, isCourseVisible } from '@/lib/access';
 import { getMyBookmarkedCourseIds } from '@/actions/bookmarks';
 import BookmarkButton from '@/components/BookmarkButton';
 
@@ -27,6 +27,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   const courseList = await db.select().from(courses).where(eq(courses.id, courseId)).limit(1);
   if (courseList.length === 0) return notFound();
   const course = courseList[0];
+  if (!isCourseVisible(course, (session?.user as any)?.role)) return notFound();
 
   const hasAccess = await canAccessCourse(process.env.DB as unknown as D1Database, userId, course);
   if (!hasAccess) {

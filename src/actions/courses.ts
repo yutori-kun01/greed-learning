@@ -1,7 +1,7 @@
 'use server';
 
 import { getDb } from '@/db';
-import { courses } from '@/db/schema';
+import { courses, lessons } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
@@ -90,13 +90,6 @@ export async function updateCourse(id: string, formData: FormData) {
   return { success: true };
 }
 
-export async function getCourses() {
-  try {
-    return await db().select().from(courses).orderBy(courses.createdAt);
-  } catch (e) {
-    return [];
-  }
-}
 
 export async function deleteCourse(id: string) {
   const reqHeaders = await headers();

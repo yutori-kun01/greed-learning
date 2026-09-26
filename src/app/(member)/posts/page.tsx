@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { getPublishedPosts } from '@/actions/posts';
+import { getPublishedPosts } from '@/lib/posts';
 import Icon from '@/components/Icon';
 
 export default async function MemberPostsPage() {
@@ -9,7 +9,7 @@ export default async function MemberPostsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'MEMBERS_ONLY': return <span className="badge" style={{ background: '#6495ed', color: '#fff' }}>会員限定</span>;
-      case 'PAID': return <span className="badge" style={{ background: 'var(--gold)', color: '#23180a' }}>有料記事</span>;
+      case 'PAID': return <span className="badge" style={{ background: 'var(--gold)', color: 'var(--on-gold)' }}>有料記事</span>;
       default: return null;
     }
   };

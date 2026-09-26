@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import React from 'react';
-import { getPlans } from '@/actions/plans';
+import { getAllPlans } from '@/lib/plans';
 import PlanRowActions from './PlanRowActions';
 
 export default async function AdminPlansPage() {
-  const badgeActive = { background: 'rgba(111,208,160,.15)', color: '#6fd0a0', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 };
+  const badgeActive = { background: 'var(--success-dim)', color: 'var(--success)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 };
   const badgeInactive = { background: 'rgba(255,255,255,.08)', color: 'var(--muted)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 };
 
-  const plans = await getPlans();
+  const plans = await getAllPlans();
 
   return (
     <div>

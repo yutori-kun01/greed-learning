@@ -24,7 +24,7 @@ const hintStyle: React.CSSProperties = { fontSize: '11px', color: 'var(--muted)'
 
 const statusOptions = [
   { value: 'DRAFT', label: 'DRAFT — 下書き（非公開）', color: 'var(--muted)' },
-  { value: 'PUBLISHED', label: 'PUBLISHED — 一般公開', color: '#6fd0a0' },
+  { value: 'PUBLISHED', label: 'PUBLISHED — 一般公開', color: 'var(--success)' },
   { value: 'MEMBERS_ONLY', label: 'MEMBERS_ONLY — 無料会員以上', color: '#6495ed' },
   { value: 'PAID', label: 'PAID — 有料販売', color: 'var(--gold-2)' },
 ];
@@ -89,7 +89,7 @@ export default function EditPostForm({ post }: { post: Post }) {
       <div className="panel" style={{ marginBottom: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
           <label style={{ ...labelStyle, gridColumn: '1 / -1' }}>
-            <span style={labelTextStyle}>タイトル <span style={{ color: '#ef4444' }}>*</span></span>
+            <span style={labelTextStyle}>タイトル <span style={{ color: 'var(--danger)' }}>*</span></span>
             <input
               type="text" style={{ ...inputStyle, fontSize: 16, fontWeight: 600 }}
               value={title} onChange={e => setTitle(e.target.value)}
@@ -122,7 +122,7 @@ export default function EditPostForm({ post }: { post: Post }) {
 
           {status === 'PAID' && (
             <label style={labelStyle}>
-              <span style={labelTextStyle}>価格 (円) <span style={{ color: '#ef4444' }}>*</span></span>
+              <span style={labelTextStyle}>価格 (円) <span style={{ color: 'var(--danger)' }}>*</span></span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                 <span style={{ fontSize: 13, color: 'var(--muted)' }}>¥</span>
                 <input type="number" style={{ ...inputStyle, marginTop: 0, flex: 1 }} value={price} onChange={e => setPrice(e.target.value)} min={0} step={100} />

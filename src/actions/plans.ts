@@ -25,18 +25,7 @@ function getStripe() {
   });
 }
 
-export async function getPlans() {
-  try {
-    return await db().select().from(plans).orderBy(plans.sortOrder);
-  } catch (e) {
-    return [];
-  }
-}
 
-export async function getActivePlans() {
-  const all = await getPlans();
-  return all.filter((p: any) => p.isActive);
-}
 
 export async function createPlan(formData: FormData) {
   await requireAdmin();
