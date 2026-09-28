@@ -45,6 +45,22 @@ jobs:
             echo "::error::Set both Variable TURNSTILE_SITE_KEY and Secret TURNSTILE_SECRET_KEY, or neither. With only one, the bot check cannot work."
             missing=1
           fi
+          # Every later step reads the public URL from APP_URL. A value saved
+          # without a scheme ("greed-learning.x.workers.dev") would become a
+          # relative URL in auth callbacks and share links, so add https://
+          # and drop a trailing slash rather than fail the deploy over it.
+          app_url="$NEXT_PUBLIC_APP_URL"
+          if [ -n "$app_url" ]; then
+            case "$app_url" in
+              http://*|https://*) ;;
+              *)
+                echo "::warning::Variable NEXT_PUBLIC_APP_URL has no scheme; using https://$app_url. Update the variable to include https:// to silence this."
+                app_url="https://$app_url"
+                ;;
+            esac
+            app_url="${app_url%/}"
+          fi
+          echo "APP_URL=$app_url" >> "$GITHUB_ENV"
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::error::Secret CLOUDFLARE_API_TOKEN is not set. Settings → Secrets and variables → Actions → New repository secret."
             missing=1
@@ -102,14 +118,14 @@ jobs:
           # runtime (see DEPLOY.md), not read from this build step.
           DB: dummy
           BETTER_AUTH_SECRET: dummy
-          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ env.APP_URL }}
 
       - name: Build (Cloudflare Worker)
         run: pnpm run build:worker
         env:
           DB: dummy
           BETTER_AUTH_SECRET: dummy
-          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ env.APP_URL }}
 
       # D1 must already exist and its id must match wrangler.toml, otherwise the
       # deploy silently succeeds against a database the app cannot use. R2 is
@@ -155,7 +171,7 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           # Better Auth resolves BETTER_AUTH_URL first, so pointing it at the
           # same public URL keeps auth callbacks correct.
-          BETTER_AUTH_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+          BETTER_AUTH_URL: ${{ env.APP_URL }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
