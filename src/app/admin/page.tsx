@@ -57,12 +57,16 @@ export default async function AdminDashboard() {
     done: boolean;
     href?: string;
     commands?: { command: string; note?: string }[];
+    /** Only needed once the site sells something; not counted as remaining. */
+    optional?: boolean;
   }[] = [
     { label: 'サイト名・ブランドを設定する', done: !!settings, href: '/admin/settings' },
-    { label: '特定商取引法に基づく表記（事業者情報）を入力する', done: !!(settings?.operatorName && settings?.operatorEmail), href: '/admin/settings' },
+    { label: '登録用パスコードを設定する（招待URLから会員を登録できるようにする）', done: !!settings?.signupPasscode, href: '/admin/settings' },
+    { label: '特定商取引法に基づく表記（事業者情報）を入力する（有料販売する場合）', done: !!(settings?.operatorName && settings?.operatorEmail), href: '/admin/settings', optional: true },
     {
-      label: 'Stripeを接続する',
+      label: 'Stripeを接続する（有料販売する場合）',
       done: stripeConnected,
+      optional: true,
       href: 'https://dashboard.stripe.com/apikeys',
       commands: [
         { command: 'npx wrangler secret put STRIPE_SECRET_KEY', note: 'Stripeダッシュボード → 開発者 → APIキー の「シークレットキー」を貼り付けてください（本番運用時は制限付きキーの利用も検討してください）' },
@@ -78,10 +82,10 @@ export default async function AdminDashboard() {
         { command: 'npx wrangler secret put RESEND_FROM_EMAIL', note: '例: no-reply@your-domain.com （Resend側で送信ドメインの認証が必要です）' },
       ],
     },
-    { label: '会員プランを作成する', done: totalPlans > 0, href: '/admin/plans' },
+    { label: '会員プランを作成する（有料販売する場合）', done: totalPlans > 0, href: '/admin/plans', optional: true },
     { label: '講座を作成する', done: totalCourses > 0, href: '/admin/courses' },
   ];
-  const remaining = checklist.filter(c => !c.done);
+  const remaining = checklist.filter(c => !c.done && !c.optional);
 
   const badgeStyle = { background: 'rgba(111,208,160,.15)', color: '#6fd0a0', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
 

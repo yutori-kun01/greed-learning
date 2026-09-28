@@ -2,6 +2,7 @@
 import React, { useState, useTransition } from 'react';
 import { updateSiteSettings } from '@/actions/settings';
 import ImagePicker from '@/components/ImagePicker';
+import CopyButton from '@/components/CopyButton';
 import { DEFAULT_TERMS_CONTENT, DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
@@ -37,7 +38,7 @@ const BG_PATTERNS = [
   { id: 'pattern6', label: 'メッシュ (Mesh)' },
 ];
 
-export default function AdminSettingsForm({ initialSettings }: { initialSettings: any }) {
+export default function AdminSettingsForm({ initialSettings, inviteUrl }: { initialSettings: any; inviteUrl: string }) {
   const [accent, setAccent] = useState(normalizeHex(initialSettings?.accentColor));
   const [bgPattern, setBgPattern] = useState(initialSettings?.bgPattern || 'pattern1');
   const [termsContent, setTermsContent] = useState(initialSettings?.termsContent || DEFAULT_TERMS_CONTENT);
@@ -82,6 +83,33 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
             hint="正方形の画像がおすすめです。未設定の場合は標準アイコンを表示します。保存ボタンで反映されます。"
           />
         </div>
+      </div>
+
+      <div className="panel" style={{ marginTop: 24 }}>
+        <h2 className="panel-title">会員登録（招待）</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.7 }}>
+          下の招待URLとパスコードを伝えた人だけが、アカウントを作成できます。パスコードを空にすると新規登録を停止します。
+          パスコードを変更すると、入力済みでまだ登録していない人も入力し直しになります。
+        </p>
+        <div style={labelStyle}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>招待URL</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+            <code style={{ flex: 1, background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: 6, padding: '10px 14px', fontSize: 13, overflowX: 'auto', whiteSpace: 'nowrap' }}>{inviteUrl}</code>
+            <CopyButton text={inviteUrl} />
+          </div>
+        </div>
+        <label style={{ ...labelStyle, marginBottom: 0 }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>登録用パスコード（6文字以上）</span>
+          <input
+            type="text"
+            name="signupPasscode"
+            style={inputStyle}
+            defaultValue={initialSettings?.signupPasscode || ''}
+            placeholder="空欄 = 新規登録を停止"
+            autoComplete="off"
+            minLength={6}
+          />
+        </label>
       </div>
 
       <div className="panel" style={{ marginTop: 24 }}>

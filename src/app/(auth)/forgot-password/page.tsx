@@ -1,26 +1,35 @@
 'use client';
 import React, { useState } from 'react';
 import { requestPasswordReset } from '@/lib/auth-client';
+import { useTurnstile } from '@/components/Turnstile';
+import { authErrorMessage } from '@/lib/authErrors';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const turnstile = useTurnstile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (turnstile.required && !turnstile.token) {
+      setError('ボット対策のチェックを完了してください。');
+      return;
+    }
     setLoading(true);
     setError('');
 
     const res = await requestPasswordReset({
       email,
       redirectTo: '/reset-password',
+      fetchOptions: { headers: turnstile.headers },
     });
 
     setLoading(false);
     if (res.error) {
-      setError(res.error.message || '送信に失敗しました');
+      setError(authErrorMessage(res.error, '送信に失敗しました'));
+      turnstile.reset();
     } else {
       setSent(true);
     }
@@ -50,6 +59,8 @@ export default function ForgotPasswordPage() {
                   required
                 />
               </label>
+              {turnstile.widget}
+
               <button type="submit" className="btn btn-gold btn-block" disabled={loading}>
                 {loading ? '送信中...' : '再設定リンクを送信'}
               </button>

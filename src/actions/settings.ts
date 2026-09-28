@@ -36,6 +36,13 @@ export async function updateSiteSettings(formData: FormData): Promise<SaveResult
 
   // Rendered into a CSS custom property, so anything but a literal colour
   // would let an admin inject arbitrary CSS onto every page of the site.
+  // Blank closes signup. A short code is guessable even with the attempt
+  // limit, so require a little length.
+  const signupPasscode = ((formData.get('signupPasscode') as string) || '').trim() || null;
+  if (signupPasscode && signupPasscode.length < 6) {
+    return { success: false, error: '登録用パスコードは6文字以上にしてください' };
+  }
+
   let accentColor: string;
   let logoUrl: string | null;
   try {
@@ -68,6 +75,7 @@ export async function updateSiteSettings(formData: FormData): Promise<SaveResult
     tokushohoExtra,
     termsContent,
     privacyContent,
+    signupPasscode,
     updatedAt: new Date().toISOString(),
   };
 

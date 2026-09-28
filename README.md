@@ -44,4 +44,4 @@ npm run build:worker # opennextjs-cloudflare build
 
 ## 本番デプロイ
 
-自分のCloudflareアカウントへデプロイする手順は [DEPLOY.md](./DEPLOY.md) を参照してください。
+はじめての方は [docs/SETUP_GUIDE.md](./docs/SETUP_GUIDE.md)（画面操作だけの手順）、詳細は [DEPLOY.md](./DEPLOY.md) を参照してください。

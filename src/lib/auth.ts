@@ -3,7 +3,11 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db";
 import { APIError } from "better-auth/api";
 import { sendEmail } from "@/lib/email";
+import { captcha } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
+import { siteSettings } from "@/db/schema";
 import { isSignupAllowed } from "@/lib/signupPolicy";
+import { SIGNUP_PASS_COOKIE, readCookie, verifySignupPass } from "@/lib/signupPass";
 
 const emailIsConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
 
@@ -43,6 +47,12 @@ export function getAuth(d1: D1Database) {
         });
       },
     },
+    // Cloudflare Turnstile on sign-in, sign-up and password-reset requests.
+    // Registered only once the secret is configured, so local development
+    // and a first deploy without Turnstile keys still work.
+    plugins: process.env.TURNSTILE_SECRET_KEY
+      ? [captcha({ provider: "cloudflare-turnstile", secretKey: process.env.TURNSTILE_SECRET_KEY })]
+      : [],
     rateLimit: {
       enabled: true,
       // Memory storage doesn't survive across Workers isolates; back it
@@ -103,13 +113,27 @@ export function getAuth(d1: D1Database) {
           // first would hand the site to any visitor who reaches the public
           // URL before the operator does, so it's gated on an address the
           // operator sets explicitly and removes once they've signed up.
-          before: async (newUser) => {
-            if (!isSignupAllowed(newUser.email, {
-              ALLOWED_SIGNUP_EMAILS: process.env.ALLOWED_SIGNUP_EMAILS,
-              BOOTSTRAP_ADMIN_EMAIL: process.env.BOOTSTRAP_ADMIN_EMAIL,
-            })) {
+          before: async (newUser, context) => {
+            const cookieHeader =
+              context?.request?.headers.get("cookie") ?? context?.headers?.get("cookie") ?? null;
+            const settings = await db
+              .select({ signupPasscode: siteSettings.signupPasscode })
+              .from(siteSettings)
+              .where(eq(siteSettings.id, "1"))
+              .limit(1);
+            const hasValidPasscodePass = await verifySignupPass(
+              readCookie(cookieHeader, SIGNUP_PASS_COOKIE),
+              process.env.BETTER_AUTH_SECRET ?? "",
+              settings[0]?.signupPasscode
+            );
+
+            if (!isSignupAllowed(
+              newUser.email,
+              { BOOTSTRAP_ADMIN_EMAIL: process.env.BOOTSTRAP_ADMIN_EMAIL },
+              { hasValidPasscodePass }
+            )) {
               throw new APIError("FORBIDDEN", {
-                message: "このサイトは招待制です。登録が許可されたメールアドレスでのみアカウントを作成できます。",
+                message: "登録にはパスコードが必要です。招待URLを開き、パスコードを入力してからアカウントを作成してください。",
               });
             }
 

@@ -1,86 +1,53 @@
-'use client';
-import React, { useState } from 'react';
-import { signUp } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { eq } from 'drizzle-orm';
+import { getDb } from '@/db';
+import { user } from '@/db/schema';
+import { getSiteSettingsQuery } from '@/lib/queries';
+import { SIGNUP_PASS_COOKIE, verifySignupPass } from '@/lib/signupPass';
+import PasscodeForm from './PasscodeForm';
+import SignupForm from './SignupForm';
 
-export default function SignupPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
+// Depends on the visitor's pass cookie and the current passcode.
+export const dynamic = 'force-dynamic';
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+/**
+ * The invite URL. Visitors first enter the signup passcode; only a browser
+ * holding a valid pass sees the account form. The form is a convenience —
+ * the user create hook re-checks the same pass, so posting to the sign-up
+ * endpoint directly does not get around it.
+ */
+export default async function SignupPage() {
+  const settings = await getSiteSettingsQuery();
+  const passcode = settings?.signupPasscode ?? null;
 
-    const res = await signUp.email({
-      name,
-      email,
-      password,
-    });
-
-    if (res.error) {
-      setError(res.error.message || 'アカウント作成に失敗しました');
-      setLoading(false);
-    } else {
-      router.push('/dashboard'); // or /courses
+  if (!passcode) {
+    // First run: nobody is admin yet, so the operator signs up here with
+    // BOOTSTRAP_ADMIN_EMAIL (the only address the hook accepts without a
+    // passcode) and sets the passcode afterwards.
+    const admins = await getDb(process.env.DB as unknown as D1Database)
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.role, 'ADMIN'))
+      .limit(1);
+    if (admins.length === 0 && process.env.BOOTSTRAP_ADMIN_EMAIL) {
+      return <SignupForm notice="管理者アカウントの作成です。管理者として設定したメールアドレスで登録してください。" />;
     }
-  };
 
-  return (
-    <div className="auth-container">
-      <div className="auth-box">
-        <h1 className="auth-title">Create Account</h1>
-        <p className="auth-subtitle">新規会員登録</p>
-
-        {error && <div className="auth-error">{error}</div>}
-
-        <form onSubmit={handleSignup} className="auth-form">
-          <label className="auth-label">
-            <span>お名前</span>
-            <input 
-              type="text" 
-              className="auth-input" 
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-            />
-          </label>
-          
-          <label className="auth-label">
-            <span>メールアドレス</span>
-            <input 
-              type="email" 
-              className="auth-input" 
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
-          </label>
-          
-          <label className="auth-label">
-            <span>パスワード</span>
-            <input 
-              type="password" 
-              className="auth-input"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-          </label>
-
-          <button type="submit" className="btn btn-gold btn-block" disabled={loading}>
-            {loading ? '登録中...' : 'アカウントを作成'}
-          </button>
-
+    return (
+      <div className="auth-container">
+        <div className="auth-box">
+          <h1 className="auth-title">会員登録</h1>
+          <p className="auth-subtitle">現在、新規登録は受け付けていません。</p>
           <p className="auth-foot">
-            登録することで<a href="/legal/terms" className="auth-link">利用規約</a>および<a href="/legal/privacy" className="auth-link">プライバシーポリシー</a>に同意したものとみなされます。
+            すでにアカウントをお持ちの方は <a href="/login" className="auth-link">ログイン</a>
           </p>
-        </form>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  const pass = (await cookies()).get(SIGNUP_PASS_COOKIE)?.value;
+  const unlocked = await verifySignupPass(pass, process.env.BETTER_AUTH_SECRET ?? '', passcode);
+
+  return unlocked ? <SignupForm /> : <PasscodeForm />;
 }

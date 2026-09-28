@@ -1,21 +1,15 @@
 # デプロイ手順（自分のCloudflareアカウントへ）
 
-## 最短手順：自分専用で動かす（GitHub Actions経由）
+## 最短手順
 
-手元での作業は不要です。GitHubの **Settings → Secrets and variables → Actions** に以下を登録し、Actions タブから `Deploy to Cloudflare` を「Run workflow」するだけです。
+初めての方は **[docs/SETUP_GUIDE.md](./docs/SETUP_GUIDE.md)** の手順どおりに進めてください（画面操作だけで完了します）。登録するものの一覧は次の通りです。
 
-1. **Secrets**
-   - `CLOUDFLARE_API_TOKEN` … Cloudflare → My Profile → API Tokens →「Edit Cloudflare Workers」テンプレートに **D1: Edit** を追加して発行（期限切れ・削除済みのトークンだとPreflightで止まります）
-   - `CLOUDFLARE_ACCOUNT_ID`
-   - `BETTER_AUTH_SECRET` … `openssl rand -base64 32` の出力
-   - `BOOTSTRAP_ADMIN_EMAIL` … 自分のメールアドレス
-   - `ALLOWED_SIGNUP_EMAILS` … 自分のメールアドレス（これで他人は登録できません）
-2. **Variables**
-   - `NEXT_PUBLIC_APP_URL` … `https://greed-learning.<サブドメイン>.workers.dev`
-3. `wrangler.toml` の `database_id` が、自分のアカウントの `greed-learning-db` のIDと一致していること（`npx wrangler d1 list` で確認。無ければ手順2で作成）
-4. デプロイ後、`/signup` から上記メールアドレスで登録 → 自動的に管理者になります
+- **Secrets**：`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` / `BETTER_AUTH_SECRET` / `BOOTSTRAP_ADMIN_EMAIL` / `TURNSTILE_SECRET_KEY`
+- **Variables**：`NEXT_PUBLIC_APP_URL` / `TURNSTILE_SITE_KEY`
 
-Stripe・メール（Resend）・R2は後から追加できます（未設定でもアプリは動きます）。以下は各項目の詳細です。
+会員登録は **招待URL（`/signup`）＋パスコード** 方式です。パスコードは管理画面の「サイト設定 → 会員登録（招待）」で設定します。パスコードが未設定の間は、`BOOTSTRAP_ADMIN_EMAIL` のアカウント以外は登録できません。
+
+以下は各項目の詳細です。
 
 このアプリは Next.js + Cloudflare Workers（D1 / R2）で動きます。テナント分離はしていないので、**利用者ごとに自分のCloudflareアカウントへ1つデプロイする**構成を想定しています。
 
@@ -121,7 +115,7 @@ Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 | `RESEND_FROM_EMAIL` | 任意 | 例: `no-reply@your-domain.com`（Resend側でドメイン認証が必要） |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 任意 | Googleログインを使う場合 |
 | `BOOTSTRAP_ADMIN_EMAIL` | **必須（初回）** | 管理者にするメールアドレス。これが無いと誰も `/admin` に入れません（手順7） |
-| `ALLOWED_SIGNUP_EMAILS` | 任意 | 登録を許可するメールアドレス（カンマ区切り）。**設定すると、それ以外のアドレスでは登録できなくなります**（Googleログイン経由も同様）。自分専用・招待制で運用するときに使います。`BOOTSTRAP_ADMIN_EMAIL` は常に許可されます |
+| `TURNSTILE_SECRET_KEY` | 推奨 | Cloudflare Turnstile（ボット対策）のシークレットキー。設定するとログイン・登録・パスワード再設定・パスコード入力でボットチェックが必須になります。Variables の `TURNSTILE_SITE_KEY` と組で設定します |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | 任意 | 画像・特典ファイルのアップロードに使用。R2 → 「R2 APIトークンの管理」で Object Read & Write のトークンを発行。アカウントIDは `CLOUDFLARE_ACCOUNT_ID`、バケット名は `greed-learning-assets` が自動で使われます |
 
 **Variables** に `R2_PUBLIC_URL`（記事に貼る画像の公開URL。R2バケットの「パブリック開発URL（r2.dev）」を有効にした時のURL、または独自ドメイン）も登録すると、エディタの画像アップロードが使えるようになります。

@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { getSiteSettingsQuery } from '@/lib/queries';
+import { TurnstileProvider } from '@/components/Turnstile';
 
 // Reads site settings, which change at runtime; never prerender.
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         )}
         <span>{siteName}</span>
       </Link>
-      {children}
+      <TurnstileProvider siteKey={process.env.TURNSTILE_SITE_KEY || null}>{children}</TurnstileProvider>
     </div>
   );
 }

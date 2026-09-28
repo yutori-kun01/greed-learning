@@ -29,8 +29,10 @@ const SECRET_NAMES = [
   'GOOGLE_CLIENT_SECRET',
   // Without this nobody becomes admin on a fresh deployment (see DEPLOY.md).
   'BOOTSTRAP_ADMIN_EMAIL',
-  // Set to restrict signup to listed addresses (a private deployment).
-  'ALLOWED_SIGNUP_EMAILS',
+  // Cloudflare Turnstile (bot check on sign-in / sign-up). The site key is
+  // public; it is synced alongside so the app reads both at runtime.
+  'TURNSTILE_SITE_KEY',
+  'TURNSTILE_SECRET_KEY',
   // Editor image and perk file uploads (S3-compatible R2 API).
   'R2_ACCOUNT_ID',
   'R2_ACCESS_KEY_ID',

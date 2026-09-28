@@ -64,6 +64,13 @@
       "when": 1789102990821,
       "tag": "0008_salty_captain_britain",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790563421048,
+      "tag": "0009_woozy_steel_serpent",
+      "breakpoints": true
     }
   ]
 }

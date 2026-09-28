@@ -20,13 +20,13 @@ const isDev = process.env.NODE_ENV === "development";
 // with inline `style` attributes throughout.
 const csp = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""};
+  script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isDev ? " 'unsafe-eval'" : ""};
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' data: https://fonts.gstatic.com;
   img-src 'self' blob: data: https:;
   media-src 'self' https:;
-  frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com;
-  connect-src 'self' https://*.r2.cloudflarestorage.com;
+  frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://challenges.cloudflare.com;
+  connect-src 'self' https://*.r2.cloudflarestorage.com https://challenges.cloudflare.com;
   object-src 'none';
   base-uri 'self';
   form-action 'self';

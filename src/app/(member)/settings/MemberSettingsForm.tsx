@@ -33,7 +33,9 @@ export default function MemberSettingsForm({
   initialTab?: string;
 }) {
   const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState(initialTab);
+  // Nothing to show until the site sells a plan (or the member already has one).
+  const showPlanTab = plans.length > 0 || currentPlan !== null;
+  const [activeTab, setActiveTab] = useState(initialTab === 'plan' && !showPlanTab ? 'profile' : initialTab);
   const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -121,7 +123,9 @@ export default function MemberSettingsForm({
         <button className={`btn ${activeTab === 'profile' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('profile')}>プロフィール</button>
         <button className={`btn ${activeTab === 'security' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('security')}>セキュリティ・2FA</button>
         <button className={`btn ${activeTab === 'preferences' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('preferences')}>表示設定</button>
-        <button className={`btn ${activeTab === 'plan' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('plan')}>会員プラン</button>
+        {showPlanTab && (
+          <button className={`btn ${activeTab === 'plan' ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setActiveTab('plan')}>会員プラン</button>
+        )}
       </div>
 
       {activeTab === 'profile' && (
@@ -249,7 +253,7 @@ export default function MemberSettingsForm({
         </div>
       )}
 
-      {activeTab === 'plan' && (
+      {showPlanTab && activeTab === 'plan' && (
         <div className="panel">
           <h2 className="panel-title">会員プラン</h2>
 

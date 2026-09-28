@@ -300,6 +300,10 @@ export const siteSettings = sqliteTable('siteSettings', {
   termsContent: text('termsContent'),
   privacyContent: text('privacyContent'),
 
+  // Shared code a new member must enter on /signup before the account form
+  // appears. Null means signup is closed (see src/lib/signupPolicy.ts).
+  signupPasscode: text('signupPasscode'),
+
   updatedAt: text('updatedAt').notNull(),
 });
 
