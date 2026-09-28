@@ -21,7 +21,7 @@ type Course = {
 
 type Plan = { id: string; name: string };
 
-export default function CourseInfoForm({ course, plans = [] }: { course: Course; plans?: Plan[] }) {
+export default function CourseInfoForm({ course, plans = [], categories = [] }: { course: Course; plans?: Plan[]; categories?: { id: string; name: string }[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -70,10 +70,11 @@ export default function CourseInfoForm({ course, plans = [] }: { course: Course;
 
       <label style={labelStyle}>
         <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>カテゴリ</span>
-        <select name="categoryId" style={inputStyle} defaultValue={course.categoryId || 'strategy'}>
-          <option value="strategy">strategy</option>
-          <option value="traffic">traffic</option>
-          <option value="content">content</option>
+        <select name="categoryId" style={inputStyle} defaultValue={course.categoryId ?? ''}>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+          <option value="">未分類</option>
         </select>
       </label>
 

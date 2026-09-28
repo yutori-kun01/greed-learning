@@ -10,6 +10,7 @@ export default function AdminSidebar({ siteName = DEFAULT_SITE_NAME, logoUrl }: 
   const links = [
     { href: '/admin', label: 'ダッシュボード' },
     { href: '/admin/courses', label: '講座管理' },
+    { href: '/admin/categories', label: 'カテゴリ管理' },
     { href: '/admin/posts', label: '記事管理' },
     { href: '/admin/users', label: 'ユーザー管理' },
     { href: '/admin/plans', label: 'プラン管理' },

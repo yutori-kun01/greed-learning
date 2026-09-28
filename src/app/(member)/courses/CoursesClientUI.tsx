@@ -5,12 +5,10 @@ import Link from 'next/link';
 import BookmarkButton from '@/components/BookmarkButton';
 import CoverArt from '@/components/CoverArt';
 
-const CATEGORIES = [
-  { id: 'all', label: 'すべて' },
-  { id: 'strategy', label: '戦略・思考' },
-  { id: 'traffic', label: '集客・リスト' },
-  { id: 'content', label: 'コンテンツ' }
-];
+type Category = { id: string; name: string };
+type SortKey = 'new' | 'progress' | 'remaining';
+
+const UNCATEGORIZED = '__none__';
 
 type Course = {
   id: string;
@@ -27,21 +25,43 @@ type Course = {
   bookmarked?: boolean;
 };
 
-export default function CoursesClientUI({ courses }: { courses: Course[] }) {
+export default function CoursesClientUI({ courses, categories }: { courses: Course[]; categories: Category[] }) {
   const [activeCat, setActiveCat] = useState('all');
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<SortKey>('new');
 
-  const filtered = courses.filter(c => {
-    if (activeCat !== 'all' && c.cat !== activeCat) return false;
-    if (search && !`${c.number} ${c.title} ${c.desc}`.includes(search)) return false;
-    return true;
-  });
+  // Tabs come from カテゴリ管理. 未分類 appears only when some course has no
+  // (or a deleted) category, so it never shows as an empty tab.
+  const known = new Set(categories.map((c) => c.id));
+  const hasUncategorized = courses.some((c) => !known.has(c.cat));
+  const tabs = [
+    { id: 'all', label: 'すべて' },
+    ...categories.map((c) => ({ id: c.id, label: c.name })),
+    ...(hasUncategorized ? [{ id: UNCATEGORIZED, label: '未分類' }] : []),
+  ];
+
+  const filtered = courses
+    .map((c, index) => ({ c, index }))
+    .filter(({ c }) => {
+      if (activeCat === UNCATEGORIZED ? known.has(c.cat) : activeCat !== 'all' && c.cat !== activeCat) return false;
+      if (search && !`${c.number} ${c.title} ${c.desc}`.includes(search)) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      // Courses arrive oldest first, so "new" is the reverse of that order.
+      if (sort === 'progress') return b.c.progress - a.c.progress || b.index - a.index;
+      if (sort === 'remaining') return a.c.progress - b.c.progress || b.index - a.index;
+      return b.index - a.index;
+    })
+    .map(({ c }) => c);
+
+  const activeLabel = tabs.find((t) => t.id === activeCat)?.label ?? 'すべて';
 
   return (
     <section className="courses">
       <div className="toolbar">
         <div className="chips" role="tablist" aria-label="カテゴリー">
-          {CATEGORIES.map(c => (
+          {tabs.map(c => (
             <button 
               key={c.id}
               className={`chip ${activeCat === c.id ? 'is-active' : ''}`}
@@ -52,7 +72,7 @@ export default function CoursesClientUI({ courses }: { courses: Course[] }) {
           ))}
         </div>
         <label className="select">
-          <select aria-label="並び替え">
+          <select aria-label="並び替え" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
             <option value="new">新着順</option>
             <option value="progress">進捗が高い順</option>
             <option value="remaining">残りが多い順</option>
@@ -61,7 +81,7 @@ export default function CoursesClientUI({ courses }: { courses: Course[] }) {
         </label>
       </div>
 
-      <h2 className="section-title">すべての講座<span id="count">（{filtered.length}）</span></h2>
+      <h2 className="section-title">{activeCat === 'all' ? 'すべての講座' : activeLabel}<span id="count">（{filtered.length}）</span></h2>
 
       <div className="grid">
         {filtered.map(c => (

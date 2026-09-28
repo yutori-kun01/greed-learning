@@ -7,7 +7,7 @@ import ImagePicker from '@/components/ImagePicker';
 
 type Plan = { id: string; name: string };
 
-export default function NewCourseForm({ plans }: { plans: Plan[] }) {
+export default function NewCourseForm({ plans, categories }: { plans: Plan[]; categories: { id: string; name: string }[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -61,10 +61,11 @@ export default function NewCourseForm({ plans }: { plans: Plan[] }) {
 
           <label style={labelStyle}>
             <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>カテゴリ</span>
-            <select name="categoryId" style={inputStyle}>
-              <option value="strategy">strategy</option>
-              <option value="traffic">traffic</option>
-              <option value="content">content</option>
+            <select name="categoryId" style={inputStyle} defaultValue={categories[0]?.id ?? ''}>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+              <option value="">未分類</option>
             </select>
           </label>
 
