@@ -3,6 +3,7 @@ import Footer from '@/components/layout/Footer';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { getSiteSettingsQuery } from '@/lib/queries';
 import { optionalUser } from '@/lib/session';
+import { DEFAULT_SITE_NAME } from '@/lib/brand';
 
 // Reads operator/site settings out of D1, which has no binding at build time.
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic';
  */
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettingsQuery();
-  const siteName = settings?.siteName || 'N8N MARKETING';
+  const siteName = settings?.siteName || DEFAULT_SITE_NAME;
   const me = await optionalUser();
 
   return (

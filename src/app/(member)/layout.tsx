@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { getSiteSettingsQuery } from '@/lib/queries';
 import { getCourseProgressOverview } from '@/lib/courseProgress';
 import { getGamificationSummary } from '@/lib/gamification';
+import { DEFAULT_SITE_NAME } from '@/lib/brand';
 
 // Every page under here renders live, per-account data. None of it may be
 // prerendered or shared between users, and a page that does not itself call
@@ -31,7 +32,7 @@ export default async function MemberLayout({ children }: { children: React.React
   }
 
   const settings = await getSiteSettingsQuery();
-  const siteName = settings?.siteName || 'N8N MARKETING';
+  const siteName = settings?.siteName || DEFAULT_SITE_NAME;
   const [overview, summary] = await Promise.all([
     getCourseProgressOverview(session.user.id),
     getGamificationSummary(session.user.id),
