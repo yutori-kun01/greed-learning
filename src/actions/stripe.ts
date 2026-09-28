@@ -6,6 +6,8 @@ import { blogPosts, user } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 import { redirect } from 'next/navigation';
+import { getSiteSettingsQuery } from '@/lib/queries';
+import { DEFAULT_SITE_NAME } from '@/lib/brand';
 
 export async function createCheckoutSession(postId: string) {
   const me = await requireUser();
@@ -41,7 +43,7 @@ export async function createCheckoutSession(postId: string) {
           currency: 'jpy',
           product_data: {
             name: post.title,
-            description: 'N8N MARKETING 記事コンテンツ',
+            description: `${(await getSiteSettingsQuery())?.siteName || DEFAULT_SITE_NAME} 記事コンテンツ`,
           },
           unit_amount: post.price || 1000,
         },

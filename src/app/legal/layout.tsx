@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getSiteSettingsQuery } from '@/lib/queries';
+import { DEFAULT_SITE_NAME } from '@/lib/brand';
 
 // These pages read operator details out of D1, which has no binding during
 // `next build`. Prerendered, they would permanently serve the "（未設定）"
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function LegalLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettingsQuery();
-  const siteName = settings?.siteName || 'N8N MARKETING';
+  const siteName = settings?.siteName || DEFAULT_SITE_NAME;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>

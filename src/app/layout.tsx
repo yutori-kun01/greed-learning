@@ -3,10 +3,11 @@ import './globals.css'
 
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { getSiteSettingsQuery } from '@/lib/queries'
+import { DEFAULT_SITE_NAME } from '@/lib/brand';
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettingsQuery();
-  const siteName = settings?.siteName || 'N8N MARKETING';
+  const siteName = settings?.siteName || DEFAULT_SITE_NAME;
   return {
     title: siteName,
     description: '実践に直結する講座を体系的に学びましょう。',

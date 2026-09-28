@@ -4,6 +4,7 @@ import { updateSiteSettings } from '@/actions/settings';
 import ImagePicker from '@/components/ImagePicker';
 import CopyButton from '@/components/CopyButton';
 import { DEFAULT_TERMS_CONTENT, DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
+import { DEFAULT_SITE_NAME } from '@/lib/brand';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '24px' };
@@ -71,7 +72,7 @@ export default function AdminSettingsForm({ initialSettings, inviteUrl }: { init
         <h2 className="panel-title">サイトの基本情報</h2>
         <label style={labelStyle}>
           <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>サイト名 / 講座名</span>
-          <input type="text" name="siteName" style={inputStyle} defaultValue={initialSettings?.siteName || "N8N MARKETING"} required />
+          <input type="text" name="siteName" style={inputStyle} defaultValue={initialSettings?.siteName || DEFAULT_SITE_NAME} required />
         </label>
 
         <div style={labelStyle}>

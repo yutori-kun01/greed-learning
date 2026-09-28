@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Icon from '../Icon';
 import { usePathname } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
+import { DEFAULT_LOGO_URL, DEFAULT_SITE_NAME } from '@/lib/brand';
 
 type SidebarProps = {
   siteName?: string;
@@ -22,7 +23,7 @@ const NAV = [
   { href: '/settings', icon: 'settings', label: '設定' },
 ] as const;
 
-export default function Sidebar({ siteName = 'N8N MARKETING', logoUrl, currentStreak, longestStreak }: SidebarProps) {
+export default function Sidebar({ siteName = DEFAULT_SITE_NAME, logoUrl, currentStreak, longestStreak }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
 
@@ -30,14 +31,8 @@ export default function Sidebar({ siteName = 'N8N MARKETING', logoUrl, currentSt
     <aside className="sidebar">
       <div className="brand">
         <span className="brand-mark" aria-hidden="true">
-          {logoUrl ? (
-            <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          ) : (
-            <svg viewBox="0 0 40 40">
-              <path d="M8 30V11l12 13V11l12 19" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/>
-              <circle cx="20" cy="6" r="2.4" fill="currentColor"/>
-            </svg>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element -- operator-supplied host */}
+          <img src={logoUrl || DEFAULT_LOGO_URL} alt="" />
         </span>
         <span className="brand-text">{siteName}</span>
       </div>

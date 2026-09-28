@@ -284,6 +284,9 @@ export const userBadges = sqliteTable('userBadges', {
 
 export const siteSettings = sqliteTable('siteSettings', {
   id: text('id').primaryKey(),
+  // The column default predates the rebrand and is never used (every write
+  // passes siteName); changing it would force a table rebuild. The display
+  // fallback lives in src/lib/brand.ts.
   siteName: text('siteName').default('N8N MARKETING').notNull(),
   logoUrl: text('logoUrl'),
   accentColor: text('accentColor').default('gold').notNull(),

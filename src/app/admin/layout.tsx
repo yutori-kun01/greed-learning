@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import AdminSidebar from './AdminSidebar'
 import { getSiteSettingsQuery } from '@/lib/queries'
+import { DEFAULT_SITE_NAME } from '@/lib/brand';
 
 // Every page under here renders live, per-account data. None of it may be
 // prerendered or shared between users, and a page that does not itself call
@@ -30,7 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }}>
-      <AdminSidebar siteName={settings?.siteName || 'N8N MARKETING'} />
+      <AdminSidebar siteName={settings?.siteName || DEFAULT_SITE_NAME} logoUrl={settings?.logoUrl} />
       <div style={{ flex: 1, overflowX: 'auto' }}>
         <div style={{ padding: '32px 36px' }}>
           {children}
