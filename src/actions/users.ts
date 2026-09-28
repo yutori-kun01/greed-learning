@@ -1,44 +1,12 @@
 'use server';
 
 import { getDb } from '@/db';
-import { user, plans, lessonProgress } from '@/db/schema';
-import { eq, desc, count } from 'drizzle-orm';
+import { user, lessonProgress } from '@/db/schema';
+import { eq, count } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
-import { getAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/session';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
-
-async function requireAdmin() {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({ headers: reqHeaders });
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
-  return session;
-}
-
-export async function getUsers() {
-  await requireAdmin();
-
-  const users = await db().select().from(user).orderBy(desc(user.createdAt));
-  const allPlans = await db().select().from(plans);
-  const planById = new Map(allPlans.map((p: any) => [p.id, p.name]));
-
-  return users.map((u: any) => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    role: u.role,
-    status: u.status,
-    createdAt: u.createdAt,
-    lastActivityDate: u.lastActivityDate,
-    planName: u.planId ? planById.get(u.planId) || null : null,
-    subscriptionStatus: u.subscriptionStatus,
-    noteId: u.noteId,
-  }));
-}
 
 export async function getUserCompletedLessonCount(userId: string) {
   await requireAdmin();

@@ -2,38 +2,11 @@
 
 import { getDb } from '@/db';
 import { courseResources } from '@/db/schema';
-import { eq, inArray, asc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
-import { getAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/session';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
-
-async function requireAdmin() {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({ headers: reqHeaders });
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
-}
-
-export async function getCourseResources(courseId: string) {
-  try {
-    return await db().select().from(courseResources).where(eq(courseResources.courseId, courseId)).orderBy(asc(courseResources.sortOrder));
-  } catch (e) {
-    return [];
-  }
-}
-
-export async function getResourcesForCourses(courseIds: string[]) {
-  if (courseIds.length === 0) return [];
-  try {
-    return await db().select().from(courseResources).where(inArray(courseResources.courseId, courseIds)).orderBy(asc(courseResources.sortOrder));
-  } catch (e) {
-    return [];
-  }
-}
 
 export async function createCourseResource(courseId: string, formData: FormData) {
   await requireAdmin();
@@ -42,8 +15,18 @@ export async function createCourseResource(courseId: string, formData: FormData)
   if (!title) throw new Error('タイトルは必須です');
   const icon = (formData.get('icon') as string) || '📄';
   const description = formData.get('description') as string;
-  const fileUrl = formData.get('fileUrl') as string;
   const sortOrder = parseInt(formData.get('sortOrder') as string) || 0;
+
+  // Either an external link or a file already uploaded to R2 by the form.
+  const fileUrl = ((formData.get('fileUrl') as string) || '').trim() || null;
+  const objectKey = ((formData.get('objectKey') as string) || '').trim() || null;
+  const fileName = ((formData.get('fileName') as string) || '').trim() || null;
+  const rawSize = parseInt(formData.get('fileSize') as string, 10);
+  const fileSize = Number.isFinite(rawSize) && rawSize > 0 ? rawSize : null;
+
+  if (fileUrl && !/^https?:\/\//i.test(fileUrl)) {
+    throw new Error('ダウンロードURLは http:// または https:// で始まる必要があります');
+  }
 
   await db().insert(courseResources).values({
     id: crypto.randomUUID(),
@@ -51,7 +34,11 @@ export async function createCourseResource(courseId: string, formData: FormData)
     icon,
     title,
     description,
-    fileUrl,
+    // An uploaded file wins: it is the one we can gate properly.
+    fileUrl: objectKey ? null : fileUrl,
+    objectKey,
+    fileName,
+    fileSize,
     sortOrder,
     createdAt: new Date().toISOString(),
   });

@@ -7,8 +7,19 @@ const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2
 const labelStyle = { display: 'block', marginBottom: '24px' };
 const textareaStyle = { ...inputStyle, resize: 'vertical' as const, fontFamily: 'inherit', lineHeight: 1.7 };
 
+// The stored value is written straight into a CSS custom property, so only
+// literal hex colours are accepted. Rows predating that rule hold keywords
+// like "gold"; fall back rather than sending something the server rejects.
+const DEFAULT_ACCENT = '#d9b45b';
+
+function normalizeHex(value: unknown): string {
+  return typeof value === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim())
+    ? value.trim()
+    : DEFAULT_ACCENT;
+}
+
 const ACCENT_COLORS = [
-  { name: 'Gold', value: 'var(--gold)' },
+  { name: 'Gold', value: '#d9b45b' },
   { name: 'Blue', value: '#6495ed' },
   { name: 'Green', value: '#4ade80' },
   { name: 'Purple', value: '#c084fc' },
@@ -26,7 +37,7 @@ const BG_PATTERNS = [
 ];
 
 export default function AdminSettingsForm({ initialSettings }: { initialSettings: any }) {
-  const [accent, setAccent] = useState(initialSettings?.accentColor || 'var(--gold)');
+  const [accent, setAccent] = useState(normalizeHex(initialSettings?.accentColor));
   const [bgPattern, setBgPattern] = useState(initialSettings?.bgPattern || 'pattern1');
   const [termsContent, setTermsContent] = useState(initialSettings?.termsContent || DEFAULT_TERMS_CONTENT);
   const [privacyContent, setPrivacyContent] = useState(initialSettings?.privacyContent || DEFAULT_PRIVACY_CONTENT);

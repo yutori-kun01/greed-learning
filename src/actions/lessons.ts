@@ -4,20 +4,13 @@ import { getDb } from '@/db';
 import { lessons } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
-import { getAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/session';
 import { sanitizeHtml } from '@/lib/sanitize';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
 export async function createLesson(courseId: string, formData: FormData) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({ headers: reqHeaders });
-
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
+  await requireAdmin();
 
   const title = formData.get('title') as string;
   if (!title) throw new Error('タイトルは必須です');
@@ -48,13 +41,7 @@ export async function createLesson(courseId: string, formData: FormData) {
 }
 
 export async function deleteLesson(id: string, courseId: string) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({ headers: reqHeaders });
-
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
+  await requireAdmin();
 
   await db().delete(lessons).where(eq(lessons.id, id));
   revalidatePath(`/admin/courses/${courseId}/edit`);

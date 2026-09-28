@@ -9,8 +9,8 @@ import LessonList from './LessonList';
 import CourseInfoForm from './CourseInfoForm';
 import ResourceForm from './ResourceForm';
 import ResourceList from './ResourceList';
-import { getPlans } from '@/actions/plans';
-import { getCourseResources } from '@/actions/resources';
+import { getPlansForAdmin } from '@/lib/queries';
+import { getCourseResourcesForAdmin } from '@/lib/queries';
 
 export default async function AdminCourseEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,8 +21,8 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
   const course = courseList[0];
 
   const courseLessons = await db.select().from(lessons).where(eq(lessons.courseId, id)).orderBy(asc(lessons.sortOrder));
-  const plans = await getPlans();
-  const resources = await getCourseResources(id);
+  const plans = await getPlansForAdmin();
+  const resources = await getCourseResourcesForAdmin(id);
 
   return (
     <div>

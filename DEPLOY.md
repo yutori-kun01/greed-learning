@@ -51,6 +51,11 @@ npx wrangler secret put STRIPE_SECRET_KEY
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
 npx wrangler secret put RESEND_API_KEY       # https://resend.com で取得。未設定の場合、パスワード再設定メール等は送信されずログ出力のみになります
 npx wrangler secret put RESEND_FROM_EMAIL    # 例: no-reply@your-domain.com（Resend側でドメイン認証が必要）
+npx wrangler secret put R2_ACCOUNT_ID         # CloudflareのアカウントID
+npx wrangler secret put R2_ACCESS_KEY_ID      # R2 APIトークン（Object Read & Write）
+npx wrangler secret put R2_SECRET_ACCESS_KEY
+npx wrangler secret put R2_BUCKET_NAME        # 例: greed-learning-assets
+npx wrangler secret put R2_PUBLIC_URL         # 記事に貼る画像の公開URL。例: https://assets.your-domain.com
 ```
 
 `NEXT_PUBLIC_APP_URL` はビルド時に埋め込まれる値なので、`wrangler.toml` の `[vars]` に追加するか、デプロイ前に環境変数として設定してビルドしてください。
@@ -121,19 +126,80 @@ Stripeダッシュボード → 開発者 → Webhook で、デプロイ後のUR
 https://<your-domain>/api/webhooks/stripe
 ```
 
-送信するイベント：`checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
+送信するイベント：`checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`
+
+`invoice.*` の2つは**必ず追加してください**。これが無いと、継続課金の決済が失敗した会員のアクセスが継続し、支払いが復旧しても `PAST_DUE` のまま戻りません。
 
 発行された署名シークレットを `STRIPE_WEBHOOK_SECRET` として登録し直してください。
 
 ## 7. 初回セットアップ（アプリ側）
 
-1. デプロイ先のURLで `/signup` から最初のアカウントを作成してください。**最初に登録したアカウントが自動的に管理者になります**（2人目以降は一般会員です）。
-2. `/admin` にログインし、ダッシュボードの「セットアップガイド」に従って以下を設定します。
+1. 管理者にしたいメールアドレスを、Workers Secret として登録します。
+
+   ```bash
+   npx wrangler secret put BOOTSTRAP_ADMIN_EMAIL
+   ```
+
+   **このアドレスで登録したアカウントだけが管理者になります。** 設定しない場合、誰も管理者になりません（`/signup` から先着のアカウントを管理者にする方式は、公開URLを知った第三者に管理権限を奪われるため廃止しました）。
+
+2. デプロイ先のURLで `/signup` から、上記のアドレスでアカウントを作成してください。
+3. 登録できたら、このシークレットは**必ず削除**してください。
+
+   ```bash
+   npx wrangler secret delete BOOTSTRAP_ADMIN_EMAIL
+   ```
+
+4. `/admin` にログインし、ダッシュボードの「セットアップガイド」に従って以下を設定します。
    - サイト名・ロゴ・アクセントカラー（`/admin/settings`）
    - 特定商取引法に基づく表記（事業者情報）
    - 利用規約・プライバシーポリシー（デフォルトの雛形が入っています。事業内容に応じて必ず見直してください）
    - 会員プラン（`/admin/plans`）
    - 講座（`/admin/courses`）
+
+## 8. 運用
+
+### バックアップと復旧（D1）
+
+会員データ・購入履歴・進捗を預かるため、復旧手順は公開前に一度試しておいてください。
+
+**定期エクスポート**（手元にSQLとして保存）
+
+```bash
+npx wrangler d1 export greed-learning-db --remote --output=backup-$(date +%Y%m%d).sql
+```
+
+**任意時点への復旧（Time Travel）** — D1は過去30日間の任意の時点に巻き戻せます。
+
+```bash
+# 現在の復旧ポイントを確認
+npx wrangler d1 time-travel info greed-learning-db
+
+# 指定時刻の状態を確認（bookmarkが返る）
+npx wrangler d1 time-travel info greed-learning-db --timestamp=2026-01-01T00:00:00Z
+
+# その時点へ復元（取り消せません。先にexportを取ってください）
+npx wrangler d1 time-travel restore greed-learning-db --bookmark=<上で得たbookmark>
+```
+
+> 復元は**データベース全体**が対象です。特定のテーブルだけを戻すことはできないので、
+> 部分的に戻したい場合はexportしたSQLから該当行を手で戻してください。
+
+### Content-Security-Policy を強制する
+
+初期状態では CSP は **Report-Only**（違反を報告するだけでブロックしない）です。
+本番でしばらく運用し、ブラウザのコンソールに違反が出ないことを確認してから強制に切り替えてください。
+
+```bash
+npx wrangler secret put CSP_ENFORCE   # true と入力
+```
+
+違反が出たまま強制にすると、該当する画像・埋め込み・スクリプトが表示されなくなります。
+
+### メールアドレスの確認
+
+`RESEND_API_KEY` と `RESEND_FROM_EMAIL` の両方を設定すると、**新規登録時にメールアドレスの確認が必須**になります。
+未設定の場合は確認なしで登録できます（確認メールを送れないため、必須にすると誰もログインできなくなるためです）。
+本番では必ず設定し、Resend側でドメイン認証（SPF / DKIM / DMARC）まで済ませてください。
 
 ## 補足：Cloudflareへの自動デプロイについて
 

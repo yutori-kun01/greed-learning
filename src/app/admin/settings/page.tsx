@@ -1,6 +1,6 @@
 import React from 'react';
 import AdminSettingsForm from './AdminSettingsForm';
-import { getSiteSettingsQuery } from '@/actions/settings';
+import { getSiteSettingsQuery } from '@/lib/queries';
 
 export default async function AdminSettingsPage() {
   const initialSettings = await getSiteSettingsQuery();

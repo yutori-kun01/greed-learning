@@ -4,25 +4,29 @@ import { getDb } from '@/db';
 import { user, siteSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
-import { getAuth } from '@/lib/auth';
+import { requireAdmin, requireUser } from '@/lib/session';
 
 // Helper for DB instance
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
-export async function updateSiteSettings(formData: FormData) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+const DEFAULT_ACCENT = '#d9b45b';
 
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
+function normalizeAccentColor(value: string | null): string {
+  const candidate = (value || '').trim();
+  if (!candidate) return DEFAULT_ACCENT;
+  if (HEX_COLOR.test(candidate)) return candidate.toLowerCase();
+  throw new Error('アクセントカラーは #rrggbb 形式で指定してください');
+}
+
+export async function updateSiteSettings(formData: FormData) {
+  await requireAdmin();
 
   const siteName = formData.get('siteName') as string;
-  const accentColor = formData.get('accentColor') as string;
+
+  // Rendered into a CSS custom property, so anything but a literal colour
+  // would let an admin inject arbitrary CSS onto every page of the site.
+  const accentColor = normalizeAccentColor(formData.get('accentColor') as string);
   const bgPattern = formData.get('bgPattern') as string;
   const logoUrl = (formData.get('logoUrl') as string) || null;
 
@@ -64,15 +68,7 @@ export async function updateSiteSettings(formData: FormData) {
 }
 
 export async function updateUserProfile(formData: FormData) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
-
-  if (!session) {
-    throw new Error('Unauthorized');
-  }
+  const me = await requireUser();
 
   const name = formData.get('name') as string;
   const noteId = formData.get('noteId') as string;
@@ -80,17 +76,9 @@ export async function updateUserProfile(formData: FormData) {
 
   await db().update(user)
     .set({ name, noteId, xId })
-    .where(eq(user.id, session.user.id));
+    .where(eq(user.id, me.id));
 
   revalidatePath('/settings');
   return { success: true };
 }
 
-export async function getSiteSettingsQuery() {
-  try {
-    const settings = await db().select().from(siteSettings).where(eq(siteSettings.id, '1')).limit(1);
-    return settings[0] || null;
-  } catch (e) {
-    return null; // DB not ready or missing table
-  }
-}

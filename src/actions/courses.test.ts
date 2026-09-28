@@ -1,24 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createCourse, deleteCourse, getCourses } from './courses'
-import { getDb } from '@/db'
+import { createCourse, deleteCourse } from './courses'
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn()
 }))
 
 describe('Courses Actions', () => {
-  it('should list courses successfully', async () => {
-    vi.mocked(getDb).mockReturnValueOnce({
-      select: () => ({
-        from: () => ({
-          orderBy: () => Promise.resolve([{ id: 'c-1', title: 'Course 1' }])
-        })
-      })
-    } as any);
-    
-    const courses = await getCourses();
-    expect(courses).toEqual([{ id: 'c-1', title: 'Course 1' }]);
-  });
 
   it('should create a course successfully', async () => {
     const formData = new FormData();
