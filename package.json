@@ -32,7 +32,6 @@
         "@tiptap/pm": "^3.30.5",
         "@tiptap/react": "^3.30.5",
         "@tiptap/starter-kit": "^3.30.5",
-        "aws4fetch": "^1.0.20",
         "better-auth": "^1.7.1",
         "better-sqlite3": "^13.0.3",
         "browser-image-compression": "^2.0.2",

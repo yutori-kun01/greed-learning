@@ -67,9 +67,6 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.30.5
         version: 3.30.5
-      aws4fetch:
-        specifier: ^1.0.20
-        version: 1.0.20
       better-auth:
         specifier: ^1.7.1
         version: 1.7.1(@cloudflare/workers-types@5.20260826.1)(better-sqlite3@13.0.3)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260826.1)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(kysely@0.29.5))(next@16.3.3(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11)

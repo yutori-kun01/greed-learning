@@ -4,6 +4,7 @@ import { courses, lessonProgress, lessons } from '@/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 import { requireUser } from '@/lib/session';
 import { getAccessibleCourseIds } from '@/lib/access';
+import CoverArt from '@/components/CoverArt';
 
 export default async function LearningPage() {
   const me = await requireUser();
@@ -42,6 +43,8 @@ export default async function LearningPage() {
       id: courses.id,
       title: courses.title,
       badge: courses.badge,
+      number: courses.number,
+      thumbnailUrl: courses.thumbnailUrl,
       requiredPlanId: courses.requiredPlanId,
     })
     .from(courses)
@@ -78,13 +81,14 @@ export default async function LearningPage() {
         className="grid"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}
       >
-        {visible.map((course: { id: string; title: string; badge: string | null }) => {
+        {visible.map((course: { id: string; title: string; badge: string | null; number: string; thumbnailUrl: string | null }) => {
           const { total, done } = counts.get(course.id) ?? { total: 0, done: 0 };
           const percent = total > 0 ? Math.round((done / total) * 100) : 0;
 
           return (
             <div key={course.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
               <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
+                <CoverArt src={course.thumbnailUrl} title={course.title} label={course.number ? `COURSE ${course.number}` : null} />
                 {course.badge && <span className="badge">{course.badge}</span>}
               </div>
               <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>

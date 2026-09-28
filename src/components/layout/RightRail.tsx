@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Icon from '../Icon';
 import type { CourseProgressOverview } from '@/lib/courseProgress';
+import CoverArt from '@/components/CoverArt';
 
 type RailProps = { overview: CourseProgressOverview };
 
@@ -42,7 +43,7 @@ export default function RightRail({ overview }: RailProps) {
           {inProgress.slice(0, 3).map(c => (
             <li key={c.id}>
               <Link href={`/courses/${c.id}`} className="mini">
-                <span className="mini-thumb" style={{ background: 'var(--panel-3)', display: 'block' }} />
+                <span className="mini-thumb"><CoverArt src={c.thumbnailUrl} title={c.title} size="mini" /></span>
                 <div>
                   <p className="mini-title">{c.title}</p>
                   <span className="progress">
@@ -64,7 +65,7 @@ export default function RightRail({ overview }: RailProps) {
           <h3 className="panel-title">おすすめの次のステップ</h3>
           <p className="panel-note">次に取り組むのにおすすめの講座です。</p>
           <Link href={`/courses/${nextUp.id}`} className="next-card" id="next" style={{ textDecoration: 'none' }}>
-            <span className="next-thumb" style={{ background: 'var(--panel-3)', display: 'block' }} />
+            <span className="next-thumb"><CoverArt src={nextUp.thumbnailUrl} title={nextUp.title} size="mini" /></span>
             <div>
               <p className="next-title">{nextUp.title}</p>
               {nextUp.description && <p className="next-desc">{nextUp.description}</p>}

@@ -16,19 +16,27 @@ export default function ImagePicker({
   purpose,
   shape = 'square',
   hint,
+  onChange,
 }: {
   name: string;
   initialUrl?: string | null;
-  purpose: 'image' | 'avatar';
-  shape?: 'square' | 'circle';
+  purpose: 'image' | 'avatar' | 'thumbnail';
+  /** 'wide' previews at 16:9, for thumbnails. */
+  shape?: 'square' | 'circle' | 'wide';
   hint?: string;
+  /** For forms that keep their values in state instead of reading fields. */
+  onChange?: (url: string) => void;
 }) {
-  const [url, setUrl] = useState(initialUrl || '');
+  const [url, setUrlState] = useState(initialUrl || '');
+  const setUrl = (next: string) => {
+    setUrlState(next);
+    onChange?.(next);
+  };
   const [manual, setManual] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const { uploadImage, isUploading, uploadError } = useImageUpload({
     purpose,
-    maxWidthOrHeight: purpose === 'avatar' ? 400 : 512,
+    maxWidthOrHeight: purpose === 'avatar' ? 400 : purpose === 'thumbnail' ? 1600 : 1280,
   });
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,10 +47,10 @@ export default function ImagePicker({
     if (uploaded) setUrl(uploaded);
   };
 
-  const radius = shape === 'circle' ? '50%' : 12;
+  const radius = shape === 'circle' ? '50%' : shape === 'wide' ? 8 : 12;
   // Preview only what the server will accept; React refuses to render a
   // javascript: src at all and would throw mid-edit.
-  const previewable = /^https?:\/\//i.test(url);
+  const previewable = /^https?:\/\//i.test(url) || url.startsWith('/media/');
 
   return (
     <div>
@@ -50,7 +58,8 @@ export default function ImagePicker({
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
         <div
           style={{
-            width: 80, height: 80, borderRadius: radius, flexShrink: 0, overflow: 'hidden',
+            width: shape === 'wide' ? 160 : 80, height: shape === 'wide' ? 90 : 80,
+            borderRadius: radius, flexShrink: 0, overflow: 'hidden',
             background: 'var(--panel-3)', border: '1px solid var(--line)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 12,
           }}

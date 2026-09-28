@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import imageCompression from 'browser-image-compression';
 
-type UploadPurpose = 'image' | 'avatar';
+type UploadPurpose = 'image' | 'avatar' | 'thumbnail';
 
 export function useImageUpload({ purpose = 'image', maxWidthOrHeight = 1280 }: { purpose?: UploadPurpose; maxWidthOrHeight?: number } = {}) {
   const [isUploading, setIsUploading] = useState(false);
@@ -24,43 +24,20 @@ export function useImageUpload({ purpose = 'image', maxWidthOrHeight = 1280 }: {
         fileToUpload = await imageCompression(file, options);
       }
 
-      // 2. Get Presigned URL
-      const res = await fetch('/api/upload', {
+      // 2. Send the bytes to the Worker, which verifies and stores them in R2.
+      const params = new URLSearchParams({ purpose, filename: file.name });
+      const res = await fetch(`/api/upload?${params}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: fileToUpload.type,
-          // Signed into the upload URL, so it must match the body exactly.
-          size: fileToUpload.size,
-          purpose,
-        }),
-      });
-
-      if (!res.ok) {
-        const detail = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(detail?.error || 'Failed to get upload URL');
-      }
-
-      const data = await res.json();
-      const { uploadUrl, publicUrl } = data as { uploadUrl: string; publicUrl: string };
-
-      // 3. Upload directly to R2
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': fileToUpload.type,
-        },
+        headers: { 'Content-Type': fileToUpload.type || 'application/octet-stream' },
         body: fileToUpload,
       });
 
-      if (!uploadRes.ok) {
-        throw new Error('Failed to upload to storage');
+      const data = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || 'アップロードに失敗しました');
       }
 
-      return publicUrl;
+      return data.url;
     } catch (err) {
       console.error('Upload error:', err);
       setUploadError((err as Error).message);

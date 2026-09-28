@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getPublishedPostSummaries } from '@/lib/queries';
 import Icon from '@/components/Icon';
+import CoverArt from '@/components/CoverArt';
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'MEMBERS_ONLY') {
@@ -36,12 +37,14 @@ export default async function PostsPage() {
             excerpt: string | null;
             status: string;
             price: number | null;
+            coverImageUrl: string | null;
             publishedAt: string | null;
             createdAt: string;
           }) => (
             <Link href={`/posts/${post.slug}`} key={post.id} style={{ textDecoration: 'none' }}>
               <article className="card" style={{ height: '100%', cursor: 'pointer' }}>
                 <div className="thumb" style={{ aspectRatio: '1.9/1', background: 'var(--panel-2)' }}>
+                  <CoverArt src={post.coverImageUrl} title={post.title} label="ARTICLE" />
                   <StatusBadge status={post.status} />
                 </div>
                 <div className="card-body">

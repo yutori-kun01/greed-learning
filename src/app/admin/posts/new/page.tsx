@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import '@/components/editor/editor.css';
+import ImagePicker from '@/components/ImagePicker';
 
 // Dynamic import to avoid SSR issues with TipTap
 const BlockEditor = dynamic(() => import('@/components/editor/BlockEditor'), { ssr: false, loading: () => (
@@ -28,6 +29,7 @@ export default function AdminNewPostPage() {
   const [slug, setSlug] = useState('');
   const [price, setPrice] = useState('');
   const [content, setContent] = useState('');
+  const [coverImageUrl, setCoverImageUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
   const router = useRouter();
@@ -61,6 +63,7 @@ export default function AdminNewPostPage() {
       formData.append('content', content);
       formData.append('status', saveStatus || status);
       formData.append('price', price);
+      formData.append('coverImageUrl', coverImageUrl);
 
       const { createPost } = await import('@/actions/posts');
       await createPost(formData);
@@ -69,7 +72,7 @@ export default function AdminNewPostPage() {
       alert('エラーが発生しました: ' + (err as Error).message);
       setSaving(false);
     }
-  }, [title, slug, content, status, price, router]);
+  }, [title, slug, content, status, price, coverImageUrl, router]);
 
   const statusOptions = [
     { value: 'DRAFT', label: 'DRAFT — 下書き（非公開）', color: 'var(--muted)' },
@@ -123,6 +126,21 @@ export default function AdminNewPostPage() {
             </div>
             <div style={hintStyle}>英数字とハイフンのみ。タイトルから自動生成されます。</div>
           </label>
+
+          {/* Cover */}
+          <div style={labelStyle}>
+            <span style={labelTextStyle}>サムネイル（任意）</span>
+            <div style={{ marginTop: 8 }}>
+              <ImagePicker
+                name="coverImageUrl"
+                purpose="thumbnail"
+                shape="wide"
+                initialUrl={null}
+                onChange={setCoverImageUrl}
+                hint="記事一覧・記事ページ・Xでシェアしたときのカードに使われます。未設定なら自動でカバーを作ります。"
+              />
+            </div>
+          </div>
 
           {/* Status */}
           <label style={labelStyle}>

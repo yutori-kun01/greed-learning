@@ -5,7 +5,7 @@ export default async function BookmarksPage() {
   const courses = await getMyBookmarkedCourses();
   return (
     <BookmarksClientUI
-      courses={courses.map((c: any) => ({ id: c.id, title: c.title, description: c.description }))}
+      courses={courses.map((c: any) => ({ id: c.id, title: c.title, description: c.description, number: c.number, thumbnailUrl: c.thumbnailUrl }))}
     />
   );
 }

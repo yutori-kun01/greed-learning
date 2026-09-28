@@ -3,6 +3,7 @@ import Link from 'next/link'
 import React, { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCourse } from '@/actions/courses'
+import ImagePicker from '@/components/ImagePicker';
 
 type Plan = { id: string; name: string };
 
@@ -33,6 +34,16 @@ export default function NewCourseForm({ plans }: { plans: Plan[] }) {
 
       <div className="panel">
         <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 20 }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600, display: 'block', marginBottom: 10 }}>サムネイル（任意）</span>
+            <ImagePicker
+              name="thumbnailUrl"
+              purpose="thumbnail"
+              shape="wide"
+              initialUrl={null}
+              hint="横長（2:1 程度、例: 1600×800）の画像がおすすめです。未設定の場合はタイトルから自動でカバーを作ります。"
+            />
+          </div>
           <label style={labelStyle}>
             <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>講座番号</span>
             <input type="text" name="number" required style={inputStyle} placeholder="例: 01" />

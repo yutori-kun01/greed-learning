@@ -5,6 +5,7 @@ import { courses } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/session';
+import { normalizeImageUrl } from '@/lib/imageUrl';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
@@ -21,6 +22,7 @@ export async function createCourse(formData: FormData) {
   const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "ARCHIVED";
   const badge = formData.get('badge') as string;
   const requiredPlanId = (formData.get('requiredPlanId') as string) || null;
+  const thumbnailUrl = normalizeImageUrl(formData.get('thumbnailUrl'));
 
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -34,6 +36,7 @@ export async function createCourse(formData: FormData) {
     status: status || 'DRAFT',
     badge,
     requiredPlanId,
+    thumbnailUrl,
     createdAt: now,
     updatedAt: now,
   });
@@ -52,6 +55,7 @@ export async function updateCourse(id: string, formData: FormData) {
   const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "ARCHIVED";
   const badge = formData.get('badge') as string;
   const requiredPlanId = (formData.get('requiredPlanId') as string) || null;
+  const thumbnailUrl = normalizeImageUrl(formData.get('thumbnailUrl'));
 
   const now = new Date().toISOString();
 
@@ -64,6 +68,7 @@ export async function updateCourse(id: string, formData: FormData) {
       status,
       badge,
       requiredPlanId,
+      thumbnailUrl,
       updatedAt: now,
     })
     .where(eq(courses.id, id));

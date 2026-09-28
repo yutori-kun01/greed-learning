@@ -54,10 +54,11 @@ export async function getPublishedPostSummaries() {
     .orderBy(blogPosts.createdAt);
 }
 
-export async function getPostBySlug(slug: string) {
+// Memoized per request: the post page and its metadata both read it.
+export const getPostBySlug = cache(async (slug: string) => {
   const rows = await db().select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
   return rows[0] || null;
-}
+});
 
 // -------------------------------------------------------------- courses
 

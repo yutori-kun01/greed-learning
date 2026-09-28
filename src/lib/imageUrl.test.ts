@@ -12,6 +12,16 @@ describe('normalizeImageUrl', () => {
     expect(normalizeImageUrl('http://example.com/a.png')).toBe('http://example.com/a.png');
   });
 
+  it('accepts uploads served from /media', () => {
+    expect(normalizeImageUrl('/media/thumbs/u1/1700000000000-abc.png')).toBe('/media/thumbs/u1/1700000000000-abc.png');
+  });
+
+  it('rejects other relative paths and traversal', () => {
+    expect(() => normalizeImageUrl('/media/resources/u1/secret.pdf')).toThrow();
+    expect(() => normalizeImageUrl('/media/thumbs/../resources/x.pdf')).toThrow();
+    expect(() => normalizeImageUrl('/api/something')).toThrow();
+  });
+
   it('rejects script and data URLs', () => {
     expect(() => normalizeImageUrl('javascript:alert(1)')).toThrow();
     expect(() => normalizeImageUrl('data:image/svg+xml,<svg onload=alert(1)>')).toThrow();
