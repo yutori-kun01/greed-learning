@@ -73,7 +73,7 @@ export default function NewCourseForm({ plans }: { plans: Plan[] }) {
           <label style={labelStyle}>
             <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>公開範囲</span>
             <select name="requiredPlanId" style={inputStyle} defaultValue="">
-              <option value="">全ての有料会員に公開</option>
+              <option value="">登録済みの全会員に公開</option>
               {plans.map(plan => (
                 <option key={plan.id} value={plan.id}>{plan.name} 会員限定</option>
               ))}

@@ -17,6 +17,8 @@ type Plan = {
   description: string | null;
   price: number;
   interval: string;
+  /** Null for a plan an admin assigns by hand (no billing). */
+  stripePriceId?: string | null;
 };
 
 export default function MemberSettingsForm({
@@ -261,12 +263,18 @@ export default function MemberSettingsForm({
             <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'var(--gold-dim)', border: '1px solid rgba(217,180,91,.3)' }}>
               <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>現在のプラン</p>
               <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--gold-2)' }}>{currentPlan.name}</p>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>
-                ¥{currentPlan.price.toLocaleString()} / {currentPlan.interval === 'year' ? '年' : '月'}
-              </p>
-              <form action={createBillingPortalSession} style={{ marginTop: 12 }}>
-                <button type="submit" className="btn btn-ghost">お支払い方法・解約の管理</button>
-              </form>
+              {currentPlan.stripePriceId ? (
+                <>
+                  <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>
+                    ¥{currentPlan.price.toLocaleString()} / {currentPlan.interval === 'year' ? '年' : '月'}
+                  </p>
+                  <form action={createBillingPortalSession} style={{ marginTop: 12 }}>
+                    <button type="submit" className="btn btn-ghost">お支払い方法・解約の管理</button>
+                  </form>
+                </>
+              ) : (
+                <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>運営から付与されたプランです（お支払いは不要です）。</p>
+              )}
             </div>
           ) : subscriptionStatus === 'PAST_DUE' ? (
             <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)' }}>
@@ -276,11 +284,11 @@ export default function MemberSettingsForm({
               </form>
             </div>
           ) : (
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>現在ご契約中のプランはありません。以下から選択してください。</p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>現在ご契約中のプランはありません。{plans.length > 0 && '以下から選択してください。'}</p>
           )}
 
           {plans.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--muted)' }}>現在ご利用可能なプランはありません。</p>
+            currentPlan ? null : <p style={{ fontSize: 13, color: 'var(--muted)' }}>現在ご利用可能なプランはありません。</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
               {plans.map(plan => {
