@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import Icon from '../Icon';
 import { ThemeToggle } from '../ThemeToggle';
 import { useSession, signOut } from '@/lib/auth-client';
@@ -21,14 +22,9 @@ export default function Topbar() {
         <p>実践に直結する講座を体系的に学び、成果につなげましょう。</p>
       </div>
       <div className="topbar-tools">
-        <label className="search">
-          <Icon name="search" />
-          <input id="search" type="search" placeholder="講座を検索..." autoComplete="off" />
-          <kbd>⌘K</kbd>
-        </label>
-        <button className="btn btn-gold" type="button">
+        <Link href="/learning" className="btn btn-gold">
           <Icon name="history" />学習履歴
-        </button>
+        </Link>
         <ThemeToggle />
         
         {session?.user ? (

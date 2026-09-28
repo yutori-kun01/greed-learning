@@ -9,12 +9,14 @@ export default function LessonForm({ courseId }: { courseId: string }) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    // React clears currentTarget once the handler yields, so reading it after
+    // the await threw and reported a saved lesson as a failure.
+    const form = e.currentTarget;
     try {
-      const formData = new FormData(e.currentTarget);
-      await createLesson(courseId, formData);
-      e.currentTarget.reset();
+      await createLesson(courseId, new FormData(form));
+      form.reset();
     } catch (err) {
-      alert('エラーが発生しました');
+      alert('エラーが発生しました: ' + (err as Error).message);
     } finally {
       setLoading(false);
     }

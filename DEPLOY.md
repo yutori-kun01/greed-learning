@@ -1,5 +1,22 @@
 # デプロイ手順（自分のCloudflareアカウントへ）
 
+## 最短手順：自分専用で動かす（GitHub Actions経由）
+
+手元での作業は不要です。GitHubの **Settings → Secrets and variables → Actions** に以下を登録し、Actions タブから `Deploy to Cloudflare` を「Run workflow」するだけです。
+
+1. **Secrets**
+   - `CLOUDFLARE_API_TOKEN` … Cloudflare → My Profile → API Tokens →「Edit Cloudflare Workers」テンプレートに **D1: Edit** を追加して発行（期限切れ・削除済みのトークンだとPreflightで止まります）
+   - `CLOUDFLARE_ACCOUNT_ID`
+   - `BETTER_AUTH_SECRET` … `openssl rand -base64 32` の出力
+   - `BOOTSTRAP_ADMIN_EMAIL` … 自分のメールアドレス
+   - `ALLOWED_SIGNUP_EMAILS` … 自分のメールアドレス（これで他人は登録できません）
+2. **Variables**
+   - `NEXT_PUBLIC_APP_URL` … `https://greed-learning.<サブドメイン>.workers.dev`
+3. `wrangler.toml` の `database_id` が、自分のアカウントの `greed-learning-db` のIDと一致していること（`npx wrangler d1 list` で確認。無ければ手順2で作成）
+4. デプロイ後、`/signup` から上記メールアドレスで登録 → 自動的に管理者になります
+
+Stripe・メール（Resend）・R2は後から追加できます（未設定でもアプリは動きます）。以下は各項目の詳細です。
+
 このアプリは Next.js + Cloudflare Workers（D1 / R2）で動きます。テナント分離はしていないので、**利用者ごとに自分のCloudflareアカウントへ1つデプロイする**構成を想定しています。
 
 ## 0. 前提
@@ -103,6 +120,11 @@ Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 | `RESEND_API_KEY` | 任意 | パスワード再設定メール等に使用。未設定の場合は送信されずログ出力のみ |
 | `RESEND_FROM_EMAIL` | 任意 | 例: `no-reply@your-domain.com`（Resend側でドメイン認証が必要） |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 任意 | Googleログインを使う場合 |
+| `BOOTSTRAP_ADMIN_EMAIL` | **必須（初回）** | 管理者にするメールアドレス。これが無いと誰も `/admin` に入れません（手順7） |
+| `ALLOWED_SIGNUP_EMAILS` | 任意 | 登録を許可するメールアドレス（カンマ区切り）。**設定すると、それ以外のアドレスでは登録できなくなります**（Googleログイン経由も同様）。自分専用・招待制で運用するときに使います。`BOOTSTRAP_ADMIN_EMAIL` は常に許可されます |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | 任意 | 画像・特典ファイルのアップロードに使用。R2 → 「R2 APIトークンの管理」で Object Read & Write のトークンを発行。アカウントIDは `CLOUDFLARE_ACCOUNT_ID`、バケット名は `greed-learning-assets` が自動で使われます |
+
+**Variables** に `R2_PUBLIC_URL`（記事に貼る画像の公開URL。R2バケットの「パブリック開発URL（r2.dev）」を有効にした時のURL、または独自ドメイン）も登録すると、エディタの画像アップロードが使えるようになります。
 
 登録していないものは**同期時にスキップされるだけ**で、既存の値が消えることはありません。そのため「まずは認証だけ設定して起動 → 後からStripeを追加」という進め方ができます。値がログに出力されることはなく、同期されたシークレット名のみが表示されます。
 
@@ -143,7 +165,7 @@ https://<your-domain>/api/webhooks/stripe
    **このアドレスで登録したアカウントだけが管理者になります。** 設定しない場合、誰も管理者になりません（`/signup` から先着のアカウントを管理者にする方式は、公開URLを知った第三者に管理権限を奪われるため廃止しました）。
 
 2. デプロイ先のURLで `/signup` から、上記のアドレスでアカウントを作成してください。
-3. 登録できたら、このシークレットは**必ず削除**してください。
+3. 登録できたら、このシークレットは削除して構いません（メールアドレスは一意なので、登録済みのアドレスで第三者が管理者になることはありません）。GitHubから同期している場合は、GitHub側のSecretを消してから次の方法で削除します（GitHub側に残っていると次回デプロイで再登録されます）。
 
    ```bash
    npx wrangler secret delete BOOTSTRAP_ADMIN_EMAIL

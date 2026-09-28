@@ -7,6 +7,8 @@ import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getSiteSettingsQuery } from '@/lib/queries';
+import { getCourseProgressOverview } from '@/lib/courseProgress';
+import { getGamificationSummary } from '@/lib/gamification';
 
 // Every page under here renders live, per-account data. None of it may be
 // prerendered or shared between users, and a page that does not itself call
@@ -30,15 +32,24 @@ export default async function MemberLayout({ children }: { children: React.React
 
   const settings = await getSiteSettingsQuery();
   const siteName = settings?.siteName || 'N8N MARKETING';
+  const [overview, summary] = await Promise.all([
+    getCourseProgressOverview(session.user.id),
+    getGamificationSummary(session.user.id),
+  ]);
 
   return (
     <div className="app">
-      <Sidebar siteName={siteName} logoUrl={settings?.logoUrl} />
+      <Sidebar
+        siteName={siteName}
+        logoUrl={settings?.logoUrl}
+        currentStreak={summary.currentStreak}
+        longestStreak={summary.longestStreak}
+      />
       <div className="main">
         <Topbar />
         <div className="content">
           {children}
-          <RightRail />
+          <RightRail overview={overview} />
         </div>
         <Footer siteName={siteName} />
       </div>

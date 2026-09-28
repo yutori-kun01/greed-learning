@@ -1,7 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db";
+import { APIError } from "better-auth/api";
 import { sendEmail } from "@/lib/email";
+import { isSignupAllowed } from "@/lib/signupPolicy";
 
 const emailIsConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
 
@@ -97,6 +99,15 @@ export function getAuth(d1: D1Database) {
           // URL before the operator does, so it's gated on an address the
           // operator sets explicitly and removes once they've signed up.
           before: async (newUser) => {
+            if (!isSignupAllowed(newUser.email, {
+              ALLOWED_SIGNUP_EMAILS: process.env.ALLOWED_SIGNUP_EMAILS,
+              BOOTSTRAP_ADMIN_EMAIL: process.env.BOOTSTRAP_ADMIN_EMAIL,
+            })) {
+              throw new APIError("FORBIDDEN", {
+                message: "このサイトは招待制です。登録が許可されたメールアドレスでのみアカウントを作成できます。",
+              });
+            }
+
             const bootstrapEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
             if (bootstrapEmail && newUser.email.trim().toLowerCase() === bootstrapEmail) {
               return { data: { ...newUser, role: "ADMIN" } };

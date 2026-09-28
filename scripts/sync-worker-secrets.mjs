@@ -27,6 +27,16 @@ const SECRET_NAMES = [
   'RESEND_FROM_EMAIL',
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
+  // Without this nobody becomes admin on a fresh deployment (see DEPLOY.md).
+  'BOOTSTRAP_ADMIN_EMAIL',
+  // Set to restrict signup to listed addresses (a private deployment).
+  'ALLOWED_SIGNUP_EMAILS',
+  // Editor image and perk file uploads (S3-compatible R2 API).
+  'R2_ACCOUNT_ID',
+  'R2_ACCESS_KEY_ID',
+  'R2_SECRET_ACCESS_KEY',
+  'R2_BUCKET_NAME',
+  'R2_PUBLIC_URL',
 ]
 
 const present = {}

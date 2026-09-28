@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      # The repository's current default branch. Drop this line once the
+      # default branch has been renamed to main.
+      - claude/attachment-image-design-tkv2mx
   workflow_dispatch: {}
 
 concurrency:
@@ -39,6 +42,18 @@ jobs:
             echo "::warning::Variable NEXT_PUBLIC_APP_URL is not set. The deploy will still work, but absolute URLs (auth callbacks, OG tags, Stripe redirects) fall back to request-derived values. Set it to your production URL and re-run."
           fi
           [ "$missing" -eq 0 ] || exit 1
+
+          # An expired, revoked or mistyped token otherwise surfaces later as
+          # "D1 database not found", which sends people after the wrong fix.
+          # User tokens and account-owned tokens verify at different paths.
+          verify() {
+            curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$1" 2>/dev/null | grep -q '"status":"active"'
+          }
+          if ! verify "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+             && ! verify "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/tokens/verify"; then
+            echo "::error::CLOUDFLARE_API_TOKEN is invalid, expired or revoked (Cloudflare rejected it). Create a new token (My Profile → API Tokens → 'Edit Cloudflare Workers' template, plus D1 Edit) and replace the repository secret."
+            exit 1
+          fi
 
       # No `version:` here on purpose — package.json's "packageManager" field
       # is the single source of truth. Specifying both makes action-setup abort
@@ -127,3 +142,11 @@ jobs:
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          BOOTSTRAP_ADMIN_EMAIL: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
+          ALLOWED_SIGNUP_EMAILS: ${{ secrets.ALLOWED_SIGNUP_EMAILS }}
+          # R2_ACCOUNT_ID is the same account the Worker deploys to.
+          R2_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: greed-learning-assets
+          R2_PUBLIC_URL: ${{ vars.R2_PUBLIC_URL }}
