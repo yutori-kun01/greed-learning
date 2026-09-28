@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useTransition } from 'react';
-import { updateSiteSettings } from '@/actions/settings';
+import { sendTestEmail, updateSiteSettings } from '@/actions/settings';
+import { useRouter } from 'next/navigation';
 import ImagePicker from '@/components/ImagePicker';
 import CopyButton from '@/components/CopyButton';
 import { DEFAULT_TERMS_CONTENT, DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
@@ -39,7 +40,21 @@ const BG_PATTERNS = [
   { id: 'pattern6', label: 'メッシュ (Mesh)' },
 ];
 
-export default function AdminSettingsForm({ initialSettings, inviteUrl }: { initialSettings: any; inviteUrl: string }) {
+type EmailStatus =
+  | { configured: false }
+  | { configured: true; source: 'settings' | 'env'; keyHint: string; from: string };
+
+export default function AdminSettingsForm({
+  initialSettings,
+  inviteUrl,
+  emailStatus,
+}: {
+  initialSettings: any;
+  inviteUrl: string;
+  emailStatus: EmailStatus;
+}) {
+  const router = useRouter();
+  const [testing, setTesting] = useState(false);
   const [accent, setAccent] = useState(normalizeHex(initialSettings?.accentColor));
   const [bgPattern, setBgPattern] = useState(initialSettings?.bgPattern || 'pattern1');
   const [termsContent, setTermsContent] = useState(initialSettings?.termsContent || DEFAULT_TERMS_CONTENT);
@@ -48,7 +63,8 @@ export default function AdminSettingsForm({ initialSettings, inviteUrl }: { init
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     formData.set('accentColor', accent);
     formData.set('bgPattern', bgPattern);
     formData.set('termsContent', termsContent);
@@ -58,10 +74,30 @@ export default function AdminSettingsForm({ initialSettings, inviteUrl }: { init
       try {
         const result = await updateSiteSettings(formData);
         alert(result.success ? '設定を保存しました' : result.error);
+        if (result.success) {
+          // The key is write-only; don't leave it sitting in the field.
+          const keyInput = form.elements.namedItem('resendApiKey') as HTMLInputElement | null;
+          if (keyInput) keyInput.value = '';
+          const clearBox = form.elements.namedItem('resendApiKeyClear') as HTMLInputElement | null;
+          if (clearBox) clearBox.checked = false;
+          // Re-read the email status (and anything else derived server-side).
+          router.refresh();
+        }
       } catch {
         alert('設定を保存できませんでした');
       }
     });
+  };
+
+  const handleTestEmail = async () => {
+    setTesting(true);
+    try {
+      const result = await sendTestEmail();
+      alert(result.success ? 'テストメールを送信しました。管理者のメールアドレスの受信箱を確認してください。' : result.error);
+    } catch {
+      alert('テストメールを送信できませんでした');
+    }
+    setTesting(false);
   };
 
   return (
@@ -84,6 +120,60 @@ export default function AdminSettingsForm({ initialSettings, inviteUrl }: { init
             hint="正方形の画像がおすすめです。未設定の場合は標準アイコンを表示します。保存ボタンで反映されます。"
           />
         </div>
+      </div>
+
+      <div className="panel" style={{ marginTop: 24 }}>
+        <h2 className="panel-title">メール送信（Resend）</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.7 }}>
+          パスワード再設定メール・お問い合わせの通知に使います。
+          <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold-2)' }}>ResendのAPIキー</a>
+          と、Resendで認証したドメインの送信元アドレスを設定してください。
+        </p>
+        <p style={{ fontSize: 13, marginBottom: 16 }}>
+          状態：
+          {emailStatus.configured ? (
+            <span style={{ color: '#6fd0a0' }}>
+              設定済み（APIキー末尾 …{emailStatus.keyHint}／送信元 {emailStatus.from}
+              {emailStatus.source === 'env' ? '／GitHub Secretsの値を使用中' : ''}）
+            </span>
+          ) : (
+            <span style={{ color: '#ef4444' }}>未設定（メールは送信されません）</span>
+          )}
+        </p>
+        <label style={labelStyle}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>APIキー</span>
+          <input
+            type="password"
+            name="resendApiKey"
+            style={inputStyle}
+            placeholder={emailStatus.configured && emailStatus.source === 'settings' ? '変更する場合のみ入力（空欄なら現在のキーを維持）' : 're_ で始まるキー'}
+            autoComplete="off"
+          />
+          <span style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginTop: 6 }}>
+            保存したキーは暗号化して保管され、この画面にも表示されません。
+          </span>
+        </label>
+        {emailStatus.configured && emailStatus.source === 'settings' && (
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, marginBottom: 24, cursor: 'pointer' }}>
+            <input type="checkbox" name="resendApiKeyClear" />
+            保存済みのAPIキーを削除する
+          </label>
+        )}
+        <label style={labelStyle}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>送信元メールアドレス</span>
+          <input
+            type="text"
+            name="resendFromEmail"
+            style={inputStyle}
+            defaultValue={initialSettings?.resendFromEmail || ''}
+            placeholder="例: TAIDA MARKETING <no-reply@your-domain.com>"
+            autoComplete="off"
+          />
+        </label>
+        <button type="button" className="btn btn-ghost" disabled={testing || !emailStatus.configured} onClick={handleTestEmail}>
+          {testing ? '送信中...' : '自分宛てにテストメールを送る'}
+        </button>
+        <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 12 }}>保存してから押してください</span>
       </div>
 
       <div className="panel" style={{ marginTop: 24 }}>
