@@ -104,10 +104,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if ! npx wrangler d1 info greed-learning-db; then
-            echo "::error::D1 database 'greed-learning-db' was not found in this Cloudflare account, or the API token lacks D1 permission. Run 'npx wrangler d1 create greed-learning-db' and put the printed database_id into wrangler.toml."
+          # Look the database up by name across the account. `wrangler d1 info`
+          # resolves through wrangler.toml's database_id, so it cannot tell "no
+          # database" from "database_id points somewhere else" — it fails the
+          # same way for both, and would never see a mismatched id.
+          if ! npx wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"; then
+            echo "::error::Could not list D1 databases. Check that CLOUDFLARE_API_TOKEN has D1 Edit permission."
             exit 1
           fi
+          node scripts/check-d1-binding.mjs "$RUNNER_TEMP/d1-list.json" wrangler.toml
           if ! npx wrangler r2 bucket info greed-learning-assets >/dev/null 2>&1; then
             echo "R2 bucket 'greed-learning-assets' not found — creating it."
             npx wrangler r2 bucket create greed-learning-assets
