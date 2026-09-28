@@ -1,4 +1,5 @@
 import React from 'react';
+import { requireAdmin } from '@/lib/session';
 import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { blogPosts } from '@/db/schema';
@@ -6,6 +7,9 @@ import { eq } from 'drizzle-orm';
 import EditPostForm from './EditPostForm';
 
 export default async function AdminPostEditPage({ params }: { params: Promise<{ id: string }> }) {
+  // The layout's redirect streams in parallel with this page, so check here
+  // too rather than run admin queries for a non-admin first.
+  await requireAdmin();
   const { id } = await params;
   const db = getDb(process.env.DB as unknown as D1Database);
 

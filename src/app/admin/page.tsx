@@ -1,4 +1,5 @@
 import React from 'react';
+import { requireAdmin } from '@/lib/session';
 import Link from 'next/link';
 import { getDb } from '@/db';
 import { user, courses, purchases, plans } from '@/db/schema';
@@ -19,6 +20,9 @@ async function checkStripeConnection() {
 }
 
 export default async function AdminDashboard() {
+  // The layout's redirect streams in parallel with this page, so check here
+  // too rather than run admin queries for a non-admin first.
+  await requireAdmin();
   const db = getDb(process.env.DB as unknown as D1Database);
 
   // Real stats

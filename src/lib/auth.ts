@@ -49,12 +49,17 @@ export function getAuth(d1: D1Database) {
       // with D1 so limits actually hold under real traffic.
       storage: "database",
     },
-    socialProviders: {
-      google: {
-        clientId: process.env.GOOGLE_CLIENT_ID || "",
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      },
-    },
+    // Registered only when configured: an empty Google provider logged a
+    // warning on every request and offered a sign-in that could not work.
+    socialProviders:
+      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+        ? {
+            google: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            },
+          }
+        : {},
     user: {
       changeEmail: {
         enabled: true,
