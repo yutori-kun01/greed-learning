@@ -619,3 +619,58 @@ button, select, input { font: inherit; color: inherit; }
 
 /* ライトモードではゴールドが濃くなるため、ボタン文字は白にする */
 .light .btn-gold { color: #fff; }
+
+/* ============================================================
+   サムネイル（アップロード画像 / 自動生成カバー）
+   親要素（.thumb など）がサイズと比率を決め、ここは中身を埋めるだけ。
+   ============================================================ */
+.cover-art-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cover-art {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  gap: 6px;
+  padding: 14px 16px;
+  overflow: hidden;
+  color: #fff;
+}
+.cover-art::after {
+  /* Soft wave highlight echoing the logo. */
+  content: "";
+  position: absolute; right: -20%; top: -35%;
+  width: 80%; height: 120%;
+  background: radial-gradient(closest-side, rgba(255,255,255,.14), transparent);
+  pointer-events: none;
+}
+.cover-art-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  opacity: .8;
+}
+.cover-art-title {
+  font-size: 15px; font-weight: 700; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 8px rgba(0,0,0,.35);
+  max-width: 85%;
+}
+.cover-art-mark {
+  position: absolute; top: 12px; right: 12px;
+  width: 26px; height: 26px;
+  background: #fff; border-radius: 7px; padding: 3px;
+  box-sizing: border-box; object-fit: contain;
+}
+.cover-art-mini { display: block; }
+.mini-thumb, .next-thumb { position: relative; display: block; flex: none; }
+.thumb:has(.cover-art)::after { display: none; }
+.thumb .badge { z-index: 1; }
+.lesson-thumb {
+  position: relative; display: block; flex: none;
+  width: 96px; aspect-ratio: 16 / 9;
+  border-radius: 8px; overflow: hidden;
+  margin-right: 16px;
+}
+@media (max-width: 680px) { .lesson-thumb { display: none; } }

@@ -1,28 +1,28 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin, requireUser } from '@/lib/session';
-import { getR2Config, signUpload } from '@/lib/r2';
+import { buildObjectKey, getBucket, mediaUrl } from '@/lib/storage';
+import { sniffImage } from '@/lib/imageSniff';
 
 /**
- * Mints a presigned PUT so the browser can upload straight to R2.
+ * Receives one file as the raw request body and writes it to R2 through the
+ * Worker's bucket binding.
  *
- * Two purposes with different limits: images embedded in the editor, and
- * files distributed as course perks. Both are admin-only — this is an
- * authoring endpoint, and leaving it open to any signed-in member turned the
- * bucket into free storage and a way to serve arbitrary HTML from it.
+ *   POST /api/upload?purpose=<purpose>&filename=<name>
+ *   Content-Type: <file type>
+ *   <file bytes>
+ *
+ * Images are identified by their bytes, not the declared type, and stored
+ * under that type, so nothing but a real JPEG/PNG/GIF/WebP is ever served
+ * from /media. Perk files go under resources/, which /media does not serve.
  */
 
-const IMAGE_TYPES: Record<string, string> = {
+// Perks are documents and archives. Deliberately excludes text/html and
+// javascript: anything a browser would render as a page.
+const RESOURCE_TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
   'image/gif': 'gif',
-};
-
-// Perks are documents and archives. Deliberately excludes text/html and
-// javascript: anything served back to a browser as a page is a phishing and
-// XSS vector, even from a signed URL.
-const RESOURCE_TYPES: Record<string, string> = {
-  ...IMAGE_TYPES,
   'application/pdf': 'pdf',
   'application/zip': 'zip',
   'application/x-zip-compressed': 'zip',
@@ -35,87 +35,85 @@ const RESOURCE_TYPES: Record<string, string> = {
   'video/mp4': 'mp4',
 };
 
-const LIMITS = {
-  image: { types: IMAGE_TYPES, maxBytes: 8 * 1024 * 1024, prefix: 'editor', adminOnly: true },
-  resource: { types: RESOURCE_TYPES, maxBytes: 200 * 1024 * 1024, prefix: 'resources', adminOnly: true },
-  // A member's own profile picture: the one upload open to non-admins, so it
-  // is images only, small, and keyed under the uploader's id.
-  avatar: { types: IMAGE_TYPES, maxBytes: 2 * 1024 * 1024, prefix: 'avatars', adminOnly: false },
+const MB = 1024 * 1024;
+
+const PURPOSES = {
+  // Images inside post and lesson bodies.
+  image: { kind: 'image', maxBytes: 8 * MB, prefix: 'editor', adminOnly: true },
+  // Course, lesson and post thumbnails, and the site logo.
+  thumbnail: { kind: 'image', maxBytes: 8 * MB, prefix: 'thumbs', adminOnly: true },
+  // A member's own profile picture: the one upload open to non-admins.
+  avatar: { kind: 'image', maxBytes: 2 * MB, prefix: 'avatars', adminOnly: false },
+  // Course perks. Workers accept request bodies up to 100MB on the free plan.
+  resource: { kind: 'file', maxBytes: 95 * MB, prefix: 'resources', adminOnly: true },
 } as const;
 
-type Purpose = keyof typeof LIMITS;
+type Purpose = keyof typeof PURPOSES;
+
+function fail(error: string, status = 400) {
+  return NextResponse.json({ error }, { status });
+}
 
 export async function POST(req: Request) {
+  const url = new URL(req.url);
+  const purposeParam = url.searchParams.get('purpose') ?? 'image';
+  // hasOwn, not `in`: "toString" would otherwise resolve through the prototype.
+  if (!Object.hasOwn(PURPOSES, purposeParam)) return fail('不明なアップロード種別です');
+  const purpose = PURPOSES[purposeParam as Purpose];
+
+  let uploaderId: string;
   try {
-    const body = await req.json();
-    const { filename, contentType, size, purpose } = body as {
-      filename?: string;
-      contentType?: string;
-      size?: number;
-      purpose?: Purpose;
-    };
+    uploaderId = (purpose.adminOnly ? await requireAdmin() : await requireUser()).id;
+  } catch {
+    return fail('Unauthorized', 401);
+  }
 
-    // hasOwn, not `in`: "toString" would otherwise resolve through the prototype.
-    const limits = LIMITS[purpose && Object.hasOwn(LIMITS, purpose) ? purpose : 'image'];
-    const uploader = limits.adminOnly ? await requireAdmin() : await requireUser();
+  const size = Number(req.headers.get('content-length'));
+  if (!Number.isInteger(size) || size <= 0) return fail('ファイルが空です');
+  if (size > purpose.maxBytes) {
+    return fail(`ファイルサイズは ${Math.floor(purpose.maxBytes / MB)}MB 以下にしてください`, 413);
+  }
+  if (!req.body) return fail('ファイルが空です');
 
-    if (!filename || !contentType) {
-      return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 });
+  const bucket = getBucket();
+  if (!bucket) return fail('ファイル保存先（R2）が利用できません', 500);
+
+  const fileName = (url.searchParams.get('filename') ?? 'file').slice(0, 200);
+
+  try {
+    if (purpose.kind === 'image') {
+      const bytes = new Uint8Array(await req.arrayBuffer());
+      if (bytes.byteLength > purpose.maxBytes) {
+        return fail(`ファイルサイズは ${Math.floor(purpose.maxBytes / MB)}MB 以下にしてください`, 413);
+      }
+      const image = sniffImage(bytes);
+      if (!image) return fail('JPEG・PNG・GIF・WebP の画像を選んでください');
+
+      const key = buildObjectKey(purpose.prefix, uploaderId, image.ext);
+      await bucket.put(key, bytes, {
+        httpMetadata: { contentType: image.mime, cacheControl: 'public, max-age=31536000, immutable' },
+      });
+      return NextResponse.json({ url: mediaUrl(key), objectKey: key });
     }
 
-    const ext = limits.types[contentType];
-    if (!ext) {
-      return NextResponse.json(
-        { error: `この形式はアップロードできません（${contentType}）` },
-        { status: 400 }
-      );
-    }
+    const declared = (req.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+    const ext = RESOURCE_TYPES[declared];
+    if (!ext) return fail(`この形式はアップロードできません（${declared || '不明'}）`);
 
-    if (!Number.isInteger(size) || size! <= 0 || size! > limits.maxBytes) {
-      return NextResponse.json(
-        { error: `ファイルサイズは ${Math.floor(limits.maxBytes / 1024 / 1024)}MB 以下にしてください` },
-        { status: 400 }
-      );
-    }
-
-    const config = getR2Config();
-    if (!config) {
-      return NextResponse.json(
-        { error: 'R2が設定されていません（R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET_NAME）' },
-        { status: 500 }
-      );
-    }
-
-    // The base name is cosmetic; stripping everything but word characters
-    // keeps dots and slashes out of the key entirely.
-    const base =
-      filename.replace(/\.[^.]*$/, '').replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 40) || 'file';
-    const objectKey = `${limits.prefix}/${uploader.id}/${Date.now()}-${base}.${ext}`;
-
-    // Images are shown straight from the bucket's public hostname; without it
-    // the upload would succeed and leave nothing to display.
-    if (limits.types === IMAGE_TYPES && !process.env.R2_PUBLIC_URL) {
-      return NextResponse.json(
-        { error: '画像の公開URL（R2_PUBLIC_URL）が設定されていません' },
-        { status: 500 }
-      );
-    }
-
-    const uploadUrl = await signUpload(config, objectKey, contentType, size!);
-
-    return NextResponse.json({
-      uploadUrl,
-      objectKey,
-      // Only meaningful for editor images, which are served from the bucket's
-      // public hostname. Perk files are fetched through the download route.
-      publicUrl: process.env.R2_PUBLIC_URL ? `${process.env.R2_PUBLIC_URL}/${objectKey}` : null,
+    // Streamed rather than buffered: a perk can be close to the Worker's
+    // memory limit. R2 needs the length up front, which FixedLengthStream
+    // provides and also enforces.
+    const { readable, writable } = new FixedLengthStream(size);
+    const piping = req.body.pipeTo(writable);
+    const key = buildObjectKey(purpose.prefix, uploaderId, ext);
+    await bucket.put(key, readable, {
+      httpMetadata: { contentType: declared },
+      customMetadata: { fileName },
     });
+    await piping;
+    return NextResponse.json({ objectKey: key, fileName, fileSize: size });
   } catch (error) {
-    const message = (error as Error).message;
-    if (message === 'Unauthorized' || message === 'このアカウントは停止されています') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Presigned URL error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[upload] failed', error);
+    return fail('アップロードに失敗しました', 500);
   }
 }

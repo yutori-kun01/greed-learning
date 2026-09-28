@@ -113,6 +113,9 @@ export const lessons = sqliteTable("lessons", {
   title: text("title").notNull(),
   description: text("description"),
   videoUrl: text("videoUrl"),
+  // Optional. Without one, lessons fall back to the YouTube frame of their
+  // video, then to a generated cover (src/components/CoverArt.tsx).
+  thumbnailUrl: text("thumbnailUrl"),
   content: text("content"),
   duration: integer("duration").default(0),
   sortOrder: integer("sortOrder").default(0).notNull(),

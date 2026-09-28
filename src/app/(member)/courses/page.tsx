@@ -45,6 +45,7 @@ export default async function CoursesPage() {
       minutes: c.totalDuration || 0,
       cat: c.categoryId || 'strategy',
       badge: c.badge || null,
+      thumbnailUrl: c.thumbnailUrl || null,
       locked: !accessibleIds.has(c.id),
       bookmarked: bookmarkedIds.has(c.id),
     };

@@ -4,15 +4,15 @@ import { courseResources, courses } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { requireUser } from '@/lib/session';
 import { canAccessCourse } from '@/lib/access';
-import { getR2Config, signDownload } from '@/lib/r2';
+import { getBucket } from '@/lib/storage';
 
 /**
  * The only way a member reaches a perk.
  *
  * Access is re-checked here rather than trusted from the page that rendered
  * the link, and the destination is never written into the HTML — an R2 file
- * is handed out as a signed URL valid for two minutes, and an external link
- * is only revealed to someone who has access right now.
+ * is streamed from the bucket by this route (never from a public URL), and an
+ * external link is only revealed to someone who has access right now.
  */
 export async function GET(
   _req: Request,
@@ -56,12 +56,25 @@ export async function GET(
   }
 
   if (resource.objectKey) {
-    const config = getR2Config();
-    if (!config) {
-      return NextResponse.json({ error: 'R2 is not configured' }, { status: 500 });
+    const bucket = getBucket();
+    if (!bucket) {
+      return NextResponse.json({ error: 'Storage unavailable' }, { status: 503 });
     }
-    const url = await signDownload(config, resource.objectKey, resource.fileName);
-    return NextResponse.redirect(url, 302);
+    const object = await bucket.get(resource.objectKey);
+    if (!object) {
+      return NextResponse.json({ error: 'ファイルが見つかりません' }, { status: 404 });
+    }
+    const name = resource.fileName || resource.objectKey.split('/').pop() || 'download';
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',
+        'Content-Length': String(object.size),
+        // Always a download, never rendered inline from this origin.
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(name)}`,
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'private, no-store',
+      },
+    });
   }
 
   if (resource.fileUrl) {

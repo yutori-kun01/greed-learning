@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
@@ -9,6 +10,7 @@ import { optionalUser } from '@/lib/session';
 import { createCheckoutSession } from '@/actions/stripe';
 import XShareLink from '@/components/XShareLink';
 import { splitAtPaywall } from '@/lib/paywall';
+import CoverArt from '@/components/CoverArt';
 
 function Gate({
   title,
@@ -37,6 +39,34 @@ function Gate({
       </div>
     </div>
   );
+}
+
+/**
+ * Share-card metadata for X and other link previews. Only posts anyone may
+ * open are described; a members-only post shares nothing but the site name.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
+  if (!post || (post.status !== 'PUBLISHED' && post.status !== 'PAID')) return {};
+
+  const base = process.env.NEXT_PUBLIC_APP_URL || '';
+  const image = post.coverImageUrl
+    ? post.coverImageUrl.startsWith('/') ? `${base}${post.coverImageUrl}` : post.coverImageUrl
+    : null;
+
+  return {
+    title: post.title,
+    description: post.excerpt ?? undefined,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt ?? undefined,
+      type: 'article',
+      url: base ? `${base}/posts/${post.slug}` : undefined,
+      images: image ? [image] : undefined,
+    },
+    twitter: { card: image ? 'summary_large_image' : 'summary', title: post.title, images: image ? [image] : undefined },
+  };
 }
 
 export default async function PostDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -128,6 +158,9 @@ export default async function PostDetailPage({ params }: { params: Promise<{ slu
 
   return (
     <article style={{ maxWidth: 760, margin: '0 auto', paddingBottom: 64 }}>
+      <div className="thumb" style={{ aspectRatio: '1.9/1', borderRadius: 'var(--radius)', marginBottom: 28, background: 'var(--panel-2)' }}>
+        <CoverArt src={post.coverImageUrl} title={post.title} label="ARTICLE" />
+      </div>
       <div style={{ marginBottom: 40, borderBottom: '1px solid var(--line)', paddingBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.4, marginBottom: 16 }}>
           {post.title}

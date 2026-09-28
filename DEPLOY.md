@@ -62,11 +62,6 @@ npx wrangler secret put STRIPE_SECRET_KEY
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
 npx wrangler secret put RESEND_API_KEY       # https://resend.com で取得。未設定の場合、パスワード再設定メール等は送信されずログ出力のみになります
 npx wrangler secret put RESEND_FROM_EMAIL    # 例: no-reply@your-domain.com（Resend側でドメイン認証が必要）
-npx wrangler secret put R2_ACCOUNT_ID         # CloudflareのアカウントID
-npx wrangler secret put R2_ACCESS_KEY_ID      # R2 APIトークン（Object Read & Write）
-npx wrangler secret put R2_SECRET_ACCESS_KEY
-npx wrangler secret put R2_BUCKET_NAME        # 例: greed-learning-assets
-npx wrangler secret put R2_PUBLIC_URL         # 記事に貼る画像の公開URL。例: https://assets.your-domain.com
 ```
 
 `NEXT_PUBLIC_APP_URL` はビルド時に埋め込まれる値なので、`wrangler.toml` の `[vars]` に追加するか、デプロイ前に環境変数として設定してビルドしてください。
@@ -116,9 +111,8 @@ Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 任意 | Googleログインを使う場合 |
 | `BOOTSTRAP_ADMIN_EMAIL` | **必須（初回）** | 管理者にするメールアドレス。これが無いと誰も `/admin` に入れません（手順7） |
 | `TURNSTILE_SECRET_KEY` | 推奨 | Cloudflare Turnstile（ボット対策）のシークレットキー。設定するとログイン・登録・パスワード再設定・パスコード入力でボットチェックが必須になります。Variables の `TURNSTILE_SITE_KEY` と組で設定します |
-| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | 任意 | 画像・特典ファイルのアップロードに使用。R2 → 「R2 APIトークンの管理」で Object Read & Write のトークンを発行。アカウントIDは `CLOUDFLARE_ACCOUNT_ID`、バケット名は `greed-learning-assets` が自動で使われます |
 
-**Variables** に `R2_PUBLIC_URL`（記事に貼る画像の公開URL。R2バケットの「パブリック開発URL（r2.dev）」を有効にした時のURL、または独自ドメイン）も登録すると、エディタの画像アップロードが使えるようになります。
+画像・特典ファイルは、Workerに紐づいたR2バケット（`wrangler.toml` の `R2_ASSETS`）へ直接保存されるため、**R2のAPIキーや公開URLの設定は不要**です。
 
 登録していないものは**同期時にスキップされるだけ**で、既存の値が消えることはありません。そのため「まずは認証だけ設定して起動 → 後からStripeを追加」という進め方ができます。値がログに出力されることはなく、同期されたシークレット名のみが表示されます。
 

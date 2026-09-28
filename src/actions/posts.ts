@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/session';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { normalizeImageUrl } from '@/lib/imageUrl';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
@@ -36,12 +37,13 @@ function readForm(formData: FormData) {
     status,
     price: Number.isFinite(price) ? price : 0,
     content: sanitizeHtml(formData.get('content') as string),
+    coverImageUrl: normalizeImageUrl(formData.get('coverImageUrl')),
   };
 }
 
 export async function createPost(formData: FormData) {
   const admin = await requireAdmin();
-  const { title, slug, status, price, content } = readForm(formData);
+  const { title, slug, status, price, content, coverImageUrl } = readForm(formData);
 
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -53,6 +55,7 @@ export async function createPost(formData: FormData) {
     content,
     status,
     price,
+    coverImageUrl,
     authorId: admin.id,
     createdAt: now,
     updatedAt: now,
@@ -65,7 +68,7 @@ export async function createPost(formData: FormData) {
 
 export async function updatePost(id: string, formData: FormData) {
   await requireAdmin();
-  const { title, slug, status, price, content } = readForm(formData);
+  const { title, slug, status, price, content, coverImageUrl } = readForm(formData);
 
   const existing = await db().select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
   const now = new Date().toISOString();
@@ -78,6 +81,7 @@ export async function updatePost(id: string, formData: FormData) {
       content,
       status,
       price,
+      coverImageUrl,
       updatedAt: now,
       publishedAt: existing[0]?.publishedAt || (status !== 'DRAFT' ? now : null),
     })

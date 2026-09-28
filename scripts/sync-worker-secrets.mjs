@@ -33,12 +33,6 @@ const SECRET_NAMES = [
   // public; it is synced alongside so the app reads both at runtime.
   'TURNSTILE_SITE_KEY',
   'TURNSTILE_SECRET_KEY',
-  // Editor image and perk file uploads (S3-compatible R2 API).
-  'R2_ACCOUNT_ID',
-  'R2_ACCESS_KEY_ID',
-  'R2_SECRET_ACCESS_KEY',
-  'R2_BUCKET_NAME',
-  'R2_PUBLIC_URL',
 ]
 
 const present = {}

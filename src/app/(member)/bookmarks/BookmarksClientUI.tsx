@@ -3,11 +3,14 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { toggleBookmark } from '@/actions/bookmarks';
+import CoverArt from '@/components/CoverArt';
 
 type BookmarkedCourse = {
   id: string;
   title: string;
   description: string | null;
+  number?: string | null;
+  thumbnailUrl?: string | null;
 };
 
 export default function BookmarksClientUI({ courses }: { courses: BookmarkedCourse[] }) {
@@ -32,6 +35,7 @@ export default function BookmarksClientUI({ courses }: { courses: BookmarkedCour
         {items.map(c => (
           <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)', position: 'relative' }}>
+              <CoverArt src={c.thumbnailUrl} title={c.title} label={c.number ? `COURSE ${c.number}` : null} />
               <button
                 onClick={() => removeBookmark(c.id)}
                 style={{

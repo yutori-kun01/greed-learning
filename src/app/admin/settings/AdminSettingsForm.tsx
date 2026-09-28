@@ -115,7 +115,7 @@ export default function AdminSettingsForm({
           <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600, display: 'block', marginBottom: 10 }}>ロゴ画像 (任意)</span>
           <ImagePicker
             name="logoUrl"
-            purpose="image"
+            purpose="thumbnail"
             initialUrl={initialSettings?.logoUrl}
             hint="正方形の画像がおすすめです。未設定の場合は標準アイコンを表示します。保存ボタンで反映されます。"
           />

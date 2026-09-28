@@ -27,28 +27,17 @@ export default function ResourceForm({ courseId }: { courseId: string }) {
     setError(null);
     setUploading(true);
     try {
-      const res = await fetch('/api/upload', {
+      const params = new URLSearchParams({ purpose: 'resource', filename: file.name });
+      const res = await fetch(`/api/upload?${params}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type || 'application/octet-stream',
-          size: file.size,
-          purpose: 'resource',
-        }),
-      });
-
-      const data = (await res.json()) as { uploadUrl?: string; objectKey?: string; error?: string };
-      if (!res.ok || !data.uploadUrl || !data.objectKey) {
-        throw new Error(data.error || 'アップロードURLの取得に失敗しました');
-      }
-
-      const put = await fetch(data.uploadUrl, {
-        method: 'PUT',
         headers: { 'Content-Type': file.type || 'application/octet-stream' },
         body: file,
       });
-      if (!put.ok) throw new Error('ファイルのアップロードに失敗しました');
+
+      const data = (await res.json().catch(() => null)) as { objectKey?: string; error?: string } | null;
+      if (!res.ok || !data?.objectKey) {
+        throw new Error(data?.error || 'ファイルのアップロードに失敗しました');
+      }
 
       setUploaded({ objectKey: data.objectKey, fileName: file.name, fileSize: file.size });
     } catch (err) {

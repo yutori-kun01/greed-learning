@@ -4,6 +4,7 @@ import { getCourseProgressOverview } from '@/lib/courseProgress';
 import { getGamificationSummary } from '@/lib/gamification';
 import LevelCard from '@/components/gamification/LevelCard';
 import BadgeShelf from '@/components/gamification/BadgeShelf';
+import CoverArt from '@/components/CoverArt';
 
 export default async function DashboardPage() {
   const me = await requireUser();
@@ -60,6 +61,7 @@ export default async function DashboardPage() {
             inProgress.map((c) => (
               <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
+                  <CoverArt src={c.thumbnailUrl} title={c.title} label={c.number ? `COURSE ${c.number}` : null} />
                   {c.badge && <span className="badge badge-gold">{c.badge}</span>}
                 </div>
                 <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -87,6 +89,7 @@ export default async function DashboardPage() {
             {nextUp.map((c) => (
               <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
+                  <CoverArt src={c.thumbnailUrl} title={c.title} label={c.number ? `COURSE ${c.number}` : null} />
                   {c.badge && <span className="badge badge-gold">{c.badge}</span>}
                 </div>
                 <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>

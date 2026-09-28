@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Icon from '@/components/Icon';
 import Link from 'next/link';
 import BookmarkButton from '@/components/BookmarkButton';
+import CoverArt from '@/components/CoverArt';
 
 const CATEGORIES = [
   { id: 'all', label: 'すべて' },
@@ -21,6 +22,7 @@ type Course = {
   minutes: number;
   cat: string;
   badge: string | null;
+  thumbnailUrl?: string | null;
   locked?: boolean;
   bookmarked?: boolean;
 };
@@ -66,6 +68,7 @@ export default function CoursesClientUI({ courses }: { courses: Course[] }) {
           <Link href={`/courses/${c.id}`} key={c.id}>
             <article className="card" tabIndex={0} style={{ height: '100%' }}>
               <div className="thumb">
+                <CoverArt src={c.thumbnailUrl} title={c.title} label={c.number ? `COURSE ${c.number}` : null} />
                 {c.badge && <span className={`badge ${c.badge === 'NEW' ? 'badge-blue' : 'badge-gold'}`}>{c.badge}</span>}
                 {c.locked && (
                   <span

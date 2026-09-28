@@ -26,6 +26,7 @@ export default async function AdminPostEditPage({ params }: { params: Promise<{ 
         content: post.content,
         status: post.status,
         price: post.price,
+        coverImageUrl: post.coverImageUrl,
       }}
     />
   );

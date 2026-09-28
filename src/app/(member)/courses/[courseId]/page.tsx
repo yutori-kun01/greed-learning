@@ -10,6 +10,8 @@ import Icon from '@/components/Icon';
 import { canAccessCourse } from '@/lib/access';
 import { getMyBookmarkedCourseIds } from '@/lib/queries';
 import BookmarkButton from '@/components/BookmarkButton';
+import CoverArt from '@/components/CoverArt';
+import { lessonThumbnail } from '@/lib/thumbnails';
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = await params;
@@ -81,6 +83,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
         <span style={{ marginLeft: '8px' }}>{course.title}</span>
       </div>
 
+      <div className="thumb" style={{ aspectRatio: '2.2/1', borderRadius: 'var(--radius)', marginBottom: 20, background: 'var(--panel-2)' }}>
+        <CoverArt src={course.thumbnailUrl} title={course.title} label={course.number ? `COURSE ${course.number}` : null} />
+      </div>
+
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <h1 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--text)' }}>{course.title}</h1>
@@ -141,6 +147,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
                   }}>
                     {isCompleted ? '✓' : (idx + 1)}
                   </div>
+
+                  <span className="lesson-thumb">
+                    <CoverArt src={lessonThumbnail(lesson)} title={lesson.title} size="mini" />
+                  </span>
                   
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '15px', color: isCompleted ? 'var(--text)' : 'var(--text-2)', fontWeight: 500, marginBottom: '4px' }}>

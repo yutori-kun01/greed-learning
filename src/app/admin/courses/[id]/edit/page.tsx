@@ -51,6 +51,7 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
               status: course.status,
               badge: course.badge,
               requiredPlanId: course.requiredPlanId,
+              thumbnailUrl: course.thumbnailUrl,
             }}
             plans={plans}
           />

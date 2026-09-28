@@ -11,6 +11,8 @@ export type CourseProgress = {
   title: string;
   badge: string | null;
   description: string | null;
+  number: string;
+  thumbnailUrl: string | null;
   total: number;
   done: number;
   percent: number;
@@ -42,6 +44,8 @@ export const getCourseProgressOverview = cache(
         title: courses.title,
         badge: courses.badge,
         description: courses.description,
+        number: courses.number,
+        thumbnailUrl: courses.thumbnailUrl,
         requiredPlanId: courses.requiredPlanId,
       })
       .from(courses)
@@ -73,13 +77,15 @@ export const getCourseProgressOverview = cache(
     }
 
     const withProgress: CourseProgress[] = visible.map(
-      (course: { id: string; title: string; badge: string | null; description: string | null }) => {
+      (course: { id: string; title: string; badge: string | null; description: string | null; number: string; thumbnailUrl: string | null }) => {
         const c = counts.get(course.id) ?? { total: 0, done: 0 };
         return {
           id: course.id,
           title: course.title,
           badge: course.badge,
           description: course.description,
+          number: course.number,
+          thumbnailUrl: course.thumbnailUrl,
           ...c,
           percent: c.total > 0 ? Math.round((c.done / c.total) * 100) : 0,
         };

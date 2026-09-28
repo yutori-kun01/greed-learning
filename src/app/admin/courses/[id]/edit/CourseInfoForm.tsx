@@ -2,6 +2,7 @@
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateCourse } from '@/actions/courses';
+import ImagePicker from '@/components/ImagePicker';
 
 const inputStyle: React.CSSProperties = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' };
 const labelStyle: React.CSSProperties = { display: 'block', marginBottom: '16px' };
@@ -15,6 +16,7 @@ type Course = {
   status: string;
   badge: string | null;
   requiredPlanId: string | null;
+  thumbnailUrl: string | null;
 };
 
 type Plan = { id: string; name: string };
@@ -41,6 +43,16 @@ export default function CourseInfoForm({ course, plans = [] }: { course: Course;
 
   return (
     <form onSubmit={handleSubmit}>
+      <div style={{ marginBottom: 20 }}>
+        <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600, display: 'block', marginBottom: 10 }}>サムネイル（任意）</span>
+        <ImagePicker
+          name="thumbnailUrl"
+          purpose="thumbnail"
+          shape="wide"
+          initialUrl={course.thumbnailUrl}
+          hint="横長（2:1 程度、例: 1600×800）の画像がおすすめです。未設定の場合はタイトルから自動でカバーを作ります。"
+        />
+      </div>
       <label style={labelStyle}>
         <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>講座番号</span>
         <input type="text" name="number" required style={inputStyle} defaultValue={course.number} />

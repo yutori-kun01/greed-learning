@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { updatePost } from '@/actions/posts';
 import '@/components/editor/editor.css';
+import ImagePicker from '@/components/ImagePicker';
 
 const BlockEditor = dynamic(() => import('@/components/editor/BlockEditor'), { ssr: false, loading: () => (
   <div style={{ minHeight: 400, background: 'var(--panel)', borderRadius: 12, border: '1px solid var(--line-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 13 }}>
@@ -36,6 +37,7 @@ type Post = {
   content: string;
   status: string;
   price: number | null;
+  coverImageUrl: string | null;
 };
 
 export default function EditPostForm({ post }: { post: Post }) {
@@ -44,6 +46,7 @@ export default function EditPostForm({ post }: { post: Post }) {
   const [slug, setSlug] = useState(post.slug);
   const [price, setPrice] = useState(post.price ? String(post.price) : '');
   const [content, setContent] = useState(post.content);
+  const [coverImageUrl, setCoverImageUrl] = useState(post.coverImageUrl ?? '');
   const [saving, setSaving] = useState(false);
 
   const router = useRouter();
@@ -62,6 +65,7 @@ export default function EditPostForm({ post }: { post: Post }) {
       formData.append('content', content);
       formData.append('status', saveStatus || status);
       formData.append('price', price);
+      formData.append('coverImageUrl', coverImageUrl);
 
       await updatePost(post.id, formData);
       router.push('/admin/posts');
@@ -70,7 +74,7 @@ export default function EditPostForm({ post }: { post: Post }) {
       alert('エラーが発生しました: ' + (err as Error).message);
       setSaving(false);
     }
-  }, [title, slug, content, status, price, post.id, router]);
+  }, [title, slug, content, status, price, coverImageUrl, post.id, router]);
 
   const currentStatus = statusOptions.find(s => s.value === status);
 
@@ -107,6 +111,20 @@ export default function EditPostForm({ post }: { post: Post }) {
             </div>
             <div style={hintStyle}>英数字とハイフンのみ。</div>
           </label>
+
+          <div style={{ ...labelStyle, gridColumn: '1 / -1' }}>
+            <span style={labelTextStyle}>サムネイル（任意）</span>
+            <div style={{ marginTop: 8 }}>
+              <ImagePicker
+                name="coverImageUrl"
+                purpose="thumbnail"
+                shape="wide"
+                initialUrl={post.coverImageUrl}
+                onChange={setCoverImageUrl}
+                hint="記事一覧・記事ページ・Xでシェアしたときのカードに使われます。未設定なら自動でカバーを作ります。"
+              />
+            </div>
+          </div>
 
           <label style={labelStyle}>
             <span style={labelTextStyle}>公開ステータス</span>

@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
-// Note: local dev does not proxy live Cloudflare bindings (D1/R2). getDb()
-// falls back to a local SQLite file when the D1 binding isn't present, and
-// R2 uploads go through R2's S3-compatible API with explicit credentials
-// (see src/app/api/upload/route.ts) — neither depends on a dev-platform
-// binding proxy, so none is set up here.
+// Note: `next dev` does not proxy Cloudflare bindings. getDb() falls back to
+// a local SQLite file without D1, and uploads (which use the R2 binding) are
+// unavailable there — run the built Worker with `wrangler dev` to test them.
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -26,7 +24,7 @@ const csp = `
   img-src 'self' blob: data: https:;
   media-src 'self' https:;
   frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://challenges.cloudflare.com;
-  connect-src 'self' https://*.r2.cloudflarestorage.com https://challenges.cloudflare.com;
+  connect-src 'self' https://challenges.cloudflare.com;
   object-src 'none';
   base-uri 'self';
   form-action 'self';

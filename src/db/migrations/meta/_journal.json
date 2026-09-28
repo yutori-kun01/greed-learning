@@ -92,6 +92,13 @@
       "when": 1790569334860,
       "tag": "0012_resend_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1790570408641,
+      "tag": "0013_lesson_thumbnail",
+      "breakpoints": true
     }
   ]
 }
