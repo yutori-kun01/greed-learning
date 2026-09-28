@@ -1,7 +1,7 @@
-import { getPlansForAdmin } from '@/lib/queries'
+import { getCategories, getPlansForAdmin } from '@/lib/queries'
 import NewCourseForm from './NewCourseForm'
 
 export default async function AdminNewCoursePage() {
-  const plans = await getPlansForAdmin()
-  return <NewCourseForm plans={plans} />
+  const [plans, categories] = await Promise.all([getPlansForAdmin(), getCategories()])
+  return <NewCourseForm plans={plans} categories={categories} />
 }

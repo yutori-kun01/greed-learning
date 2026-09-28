@@ -106,6 +106,15 @@ export const courses = sqliteTable("courses", {
   updatedAt: text("updatedAt").notNull(),
 });
 
+// Course categories, managed in /admin/categories. courses.categoryId holds
+// one of these ids; a course whose id matches nothing shows as 未分類.
+export const categories = sqliteTable("categories", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  sortOrder: integer("sortOrder").default(0).notNull(),
+  createdAt: text("createdAt").notNull(),
+});
+
 export const lessons = sqliteTable("lessons", {
   id: text("id").primaryKey(),
   courseId: text("courseId").references(() => courses.id, { onDelete: "cascade" }).notNull(),

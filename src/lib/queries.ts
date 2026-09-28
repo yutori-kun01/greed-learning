@@ -11,6 +11,7 @@ import {
   plans,
   siteSettings,
   user,
+  categories,
 } from '@/db/schema';
 import { eq, inArray, asc, ne, desc, and, isNotNull } from 'drizzle-orm';
 import { requireAdmin, requireUser } from '@/lib/session';
@@ -168,6 +169,18 @@ let warnedAboutSettings = false;
 
 // generateMetadata and the layout body both read this, and so does every
 // nested layout — one query per request rather than one per caller.
+/** Course categories in display order. Not secret; used by members and admin. */
+export const getCategories = cache(async () => {
+  try {
+    return await db()
+      .select({ id: categories.id, name: categories.name, sortOrder: categories.sortOrder })
+      .from(categories)
+      .orderBy(asc(categories.sortOrder), asc(categories.createdAt));
+  } catch {
+    return [];
+  }
+});
+
 export const getSiteSettingsQuery = cache(async () => {
   try {
     const rows = await db().select().from(siteSettings).where(eq(siteSettings.id, '1')).limit(1);

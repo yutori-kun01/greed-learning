@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { getAccessibleCourseIds } from '@/lib/access';
-import { getMyBookmarkedCourseIds } from '@/lib/queries';
+import { getCategories, getMyBookmarkedCourseIds } from '@/lib/queries';
 import CoursesClientUI from './CoursesClientUI';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -43,7 +43,7 @@ export default async function CoursesPage() {
       progress,
       lessons: c.lessonCount || 0,
       minutes: c.totalDuration || 0,
-      cat: c.categoryId || 'strategy',
+      cat: c.categoryId || '',
       badge: c.badge || null,
       thumbnailUrl: c.thumbnailUrl || null,
       locked: !accessibleIds.has(c.id),
@@ -51,5 +51,6 @@ export default async function CoursesPage() {
     };
   });
 
-  return <CoursesClientUI courses={formattedCourses} />;
+  const categories = await getCategories();
+  return <CoursesClientUI courses={formattedCourses} categories={categories} />;
 }

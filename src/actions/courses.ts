@@ -18,7 +18,7 @@ export async function createCourse(formData: FormData) {
     throw new Error('タイトルは必須です');
   }
   const description = formData.get('description') as string;
-  const categoryId = formData.get('categoryId') as string;
+  const categoryId = (formData.get('categoryId') as string) || null;
   const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "ARCHIVED";
   const badge = formData.get('badge') as string;
   const requiredPlanId = (formData.get('requiredPlanId') as string) || null;
@@ -51,7 +51,7 @@ export async function updateCourse(id: string, formData: FormData) {
   const number = formData.get('number') as string;
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
-  const categoryId = formData.get('categoryId') as string;
+  const categoryId = (formData.get('categoryId') as string) || null;
   const status = formData.get('status') as "DRAFT" | "PUBLISHED" | "ARCHIVED";
   const badge = formData.get('badge') as string;
   const requiredPlanId = (formData.get('requiredPlanId') as string) || null;

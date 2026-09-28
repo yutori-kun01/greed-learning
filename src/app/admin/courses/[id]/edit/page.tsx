@@ -10,7 +10,7 @@ import LessonList from './LessonList';
 import CourseInfoForm from './CourseInfoForm';
 import ResourceForm from './ResourceForm';
 import ResourceList from './ResourceList';
-import { getPlansForAdmin } from '@/lib/queries';
+import { getCategories, getPlansForAdmin } from '@/lib/queries';
 import { getCourseResourcesForAdmin } from '@/lib/queries';
 
 export default async function AdminCourseEditPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +26,7 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
 
   const courseLessons = await db.select().from(lessons).where(eq(lessons.courseId, id)).orderBy(asc(lessons.sortOrder));
   const plans = await getPlansForAdmin();
+  const categories = await getCategories();
   const resources = await getCourseResourcesForAdmin(id);
 
   return (
@@ -54,6 +55,7 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
               thumbnailUrl: course.thumbnailUrl,
             }}
             plans={plans}
+            categories={categories}
           />
         </div>
 

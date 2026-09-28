@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import React from 'react'
-import { getCoursesForAdmin } from '@/lib/queries'
+import { getCategories, getCoursesForAdmin } from '@/lib/queries'
 import DeleteCourseButton from './DeleteCourseButton'
 
 export default async function AdminCoursesPage() {
@@ -8,6 +8,7 @@ export default async function AdminCoursesPage() {
   const badgeDraft = { background: 'var(--line-2)', color: 'var(--muted)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
 
   const courses = await getCoursesForAdmin()
+  const categoryName = new Map((await getCategories()).map((c: { id: string; name: string }) => [c.id, c.name]))
 
   return (
     <div>
@@ -37,7 +38,7 @@ export default async function AdminCoursesPage() {
               <tr key={course.id}>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{course.number}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{course.title}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{course.categoryId}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{(course.categoryId && categoryName.get(course.categoryId)) || '未分類'}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{course.lessonCount || 0}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <span style={course.status === 'PUBLISHED' ? badgePublished : badgeDraft}>
