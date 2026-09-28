@@ -15,16 +15,43 @@ function getStripe() {
   });
 }
 
-export async function createPlan(formData: FormData) {
+export type CreatePlanResult = { success: true; planId: string } | { success: false; error: string };
+
+/**
+ * Two kinds of plan:
+ * - manual: no Stripe at all. The admin assigns it to members by hand (会員
+ *   管理), which is how courses are opened to chosen members without payments.
+ * - stripe: a recurring Stripe price that members can subscribe to themselves.
+ *
+ * Validation failures are returned, not thrown — Next.js hides thrown
+ * messages in production.
+ */
+export async function createPlan(formData: FormData): Promise<CreatePlanResult> {
   await requireAdmin();
 
-  const name = formData.get('name') as string;
-  const description = formData.get('description') as string;
+  const name = ((formData.get('name') as string) || '').trim();
+  const description = (formData.get('description') as string) || null;
+  const billing = formData.get('billing') === 'stripe' ? 'stripe' : 'manual';
   const price = parseInt(formData.get('price') as string, 10) || 0;
   const interval = (formData.get('interval') as string) === 'year' ? 'year' : 'month';
 
-  if (!name) throw new Error('プラン名は必須です');
-  if (price <= 0) throw new Error('価格は1円以上で設定してください');
+  if (!name) return { success: false, error: 'プラン名は必須です' };
+
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  if (billing === 'manual') {
+    await db().insert(plans).values({
+      id, name, description, price: 0, interval, isActive: true, createdAt,
+    });
+    revalidatePath('/admin/plans');
+    return { success: true, planId: id };
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return { success: false, error: 'Stripeが未設定のため販売プランは作成できません。「手動付与」を選んでください' };
+  }
+  if (price <= 0) return { success: false, error: '販売プランの価格は1円以上で設定してください' };
 
   const stripe = getStripe();
   const product = await stripe.products.create({ name, description: description || undefined });
@@ -35,7 +62,6 @@ export async function createPlan(formData: FormData) {
     recurring: { interval },
   });
 
-  const id = crypto.randomUUID();
   try {
     await db().insert(plans).values({
       id,
@@ -46,7 +72,7 @@ export async function createPlan(formData: FormData) {
       stripeProductId: product.id,
       stripePriceId: stripePrice.id,
       isActive: true,
-      createdAt: new Date().toISOString(),
+      createdAt,
     });
   } catch (err) {
     // The price and product already exist in Stripe at this point. Leaving

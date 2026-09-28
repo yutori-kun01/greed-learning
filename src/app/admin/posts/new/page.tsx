@@ -143,7 +143,7 @@ export default function AdminNewPostPage() {
               <span style={labelTextStyle}>価格 (円) <span style={{ color: '#ef4444' }}>*</span></span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                 <span style={{ fontSize: 13, color: 'var(--muted)' }}>¥</span>
-                <input type="number" style={{ ...inputStyle, marginTop: 0, flex: 1 }} placeholder="例: 1980" value={price} onChange={e => setPrice(e.target.value)} min={0} step={100} />
+                <input type="number" style={{ ...inputStyle, marginTop: 0, flex: 1 }} placeholder="例: 1980" value={price} onChange={e => setPrice(e.target.value)} min={0} step={1} />
               </div>
               <div style={hintStyle}>Stripeと連携後、実際の決済が有効になります。</div>
             </label>

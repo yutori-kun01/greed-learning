@@ -12,7 +12,7 @@ import {
   siteSettings,
   user,
 } from '@/db/schema';
-import { eq, inArray, asc, ne, desc } from 'drizzle-orm';
+import { eq, inArray, asc, ne, desc, and, isNotNull } from 'drizzle-orm';
 import { requireAdmin, requireUser } from '@/lib/session';
 
 /**
@@ -89,7 +89,9 @@ export async function getActivePlans() {
       sortOrder: plans.sortOrder,
     })
     .from(plans)
-    .where(eq(plans.isActive, true))
+    // Only plans members can buy. Manual plans are assigned by an admin and
+    // have no Stripe price to check out with.
+    .where(and(eq(plans.isActive, true), isNotNull(plans.stripePriceId)))
     .orderBy(plans.sortOrder);
 }
 

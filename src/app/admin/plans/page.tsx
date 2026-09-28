@@ -35,8 +35,8 @@ export default async function AdminPlansPage() {
             ) : plans.map((plan: any) => (
               <tr key={plan.id}>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{plan.name}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>¥{plan.price.toLocaleString()}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{plan.interval === 'year' ? '年払い' : '月払い'}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{plan.stripePriceId ? `¥${plan.price.toLocaleString()}` : '無料'}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{plan.stripePriceId ? (plan.interval === 'year' ? '年払い' : '月払い') : '手動付与'}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <span style={plan.isActive ? badgeActive : badgeInactive}>{plan.isActive ? '有効' : '無効'}</span>
                 </td>
