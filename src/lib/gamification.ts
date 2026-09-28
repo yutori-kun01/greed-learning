@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import { getDb } from '@/db';
 import { lessonProgress, lessons, pointEvents, user, userBadges } from '@/db/schema';
 import { and, eq, inArray, desc } from 'drizzle-orm';
@@ -224,17 +225,36 @@ export type GamificationSummary = {
   recentEvents: Array<{ type: string; points: number; createdAt: string }>;
 };
 
-export async function getGamificationSummary(userId: string): Promise<GamificationSummary> {
-  const rows = await db()
-    .select({
-      totalPoints: user.totalPoints,
-      currentStreak: user.currentStreak,
-      longestStreak: user.longestStreak,
-      lastActivityDate: user.lastActivityDate,
-    })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1);
+// The member layout and the dashboard both need this in the same request;
+// cache() makes the second call reuse the first instead of repeating it.
+export const getGamificationSummary = cache(async (userId: string): Promise<GamificationSummary> => {
+  // None of these depend on each other, so issue them together rather than
+  // paying one D1 round trip after another.
+  const [rows, badgeRows, recentEvents, completedLessons, completedCourses] = await Promise.all([
+    db()
+      .select({
+        totalPoints: user.totalPoints,
+        currentStreak: user.currentStreak,
+        longestStreak: user.longestStreak,
+        lastActivityDate: user.lastActivityDate,
+      })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1),
+    db()
+      .select()
+      .from(userBadges)
+      .where(eq(userBadges.userId, userId))
+      .orderBy(desc(userBadges.earnedAt)),
+    db()
+      .select({ type: pointEvents.type, points: pointEvents.points, createdAt: pointEvents.createdAt })
+      .from(pointEvents)
+      .where(eq(pointEvents.userId, userId))
+      .orderBy(desc(pointEvents.createdAt))
+      .limit(10),
+    countCompletedLessons(userId),
+    countCompletedCourses(userId),
+  ]);
   const me = rows[0];
 
   const totalPoints = me?.totalPoints ?? 0;
@@ -243,12 +263,6 @@ export async function getGamificationSummary(userId: string): Promise<Gamificati
   // abandoned weeks ago would still display. Show it only while it is live.
   const stillActive = isStreakAlive(me?.lastActivityDate, tokyoDateString());
 
-  const badgeRows = await db()
-    .select()
-    .from(userBadges)
-    .where(eq(userBadges.userId, userId))
-    .orderBy(desc(userBadges.earnedAt));
-
   const badges: EarnedBadge[] = badgeRows
     .map((row: { badgeId: string; earnedAt: string }) => {
       const definition = BADGES_BY_ID.get(row.badgeId);
@@ -256,21 +270,14 @@ export async function getGamificationSummary(userId: string): Promise<Gamificati
     })
     .filter((b: EarnedBadge | null): b is EarnedBadge => b !== null);
 
-  const recentEvents = await db()
-    .select({ type: pointEvents.type, points: pointEvents.points, createdAt: pointEvents.createdAt })
-    .from(pointEvents)
-    .where(eq(pointEvents.userId, userId))
-    .orderBy(desc(pointEvents.createdAt))
-    .limit(10);
-
   return {
     totalPoints,
     level: levelFromPoints(totalPoints),
     currentStreak: stillActive ? (me?.currentStreak ?? 0) : 0,
     longestStreak: me?.longestStreak ?? 0,
-    completedLessons: await countCompletedLessons(userId),
-    completedCourses: await countCompletedCourses(userId),
+    completedLessons,
+    completedCourses,
     badges,
     recentEvents,
   };
-}
+});

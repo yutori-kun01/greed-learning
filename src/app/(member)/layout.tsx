@@ -3,8 +3,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import RightRail from '@/components/layout/RightRail';
 import Footer from '@/components/layout/Footer';
-import { getAuth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { currentUser } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { getSiteSettingsQuery } from '@/lib/queries';
 import { getCourseProgressOverview } from '@/lib/courseProgress';
@@ -18,25 +17,23 @@ import { DEFAULT_SITE_NAME } from '@/lib/brand';
 export const dynamic = 'force-dynamic';
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
+  // The cached lookup, so the page's requireUser() reuses this one instead of
+  // asking D1 for the session a second time.
+  const user = await currentUser();
 
-  if (!session) {
+  if (!user) {
     redirect('/login');
   }
-  if ((session.user as any).status === 'SUSPENDED') {
+  if (user.status === 'SUSPENDED') {
     redirect('/login?suspended=1');
   }
 
-  const settings = await getSiteSettingsQuery();
-  const siteName = settings?.siteName || DEFAULT_SITE_NAME;
-  const [overview, summary] = await Promise.all([
-    getCourseProgressOverview(session.user.id),
-    getGamificationSummary(session.user.id),
+  const [settings, overview, summary] = await Promise.all([
+    getSiteSettingsQuery(),
+    getCourseProgressOverview(user.id),
+    getGamificationSummary(user.id),
   ]);
+  const siteName = settings?.siteName || DEFAULT_SITE_NAME;
 
   return (
     <div className="app">
