@@ -53,8 +53,12 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
     formData.set('privacyContent', privacyContent);
 
     startTransition(async () => {
-      await updateSiteSettings(formData);
-      alert('設定を保存しました');
+      try {
+        const result = await updateSiteSettings(formData);
+        alert(result.success ? '設定を保存しました' : result.error);
+      } catch {
+        alert('設定を保存できませんでした');
+      }
     });
   };
 

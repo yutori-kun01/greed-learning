@@ -103,10 +103,10 @@ export default function MemberSettingsForm({
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       try {
-        await updateUserProfile(formData);
-        alert('プロフィールを保存しました');
-      } catch (err: any) {
-        alert(err.message || 'エラーが発生しました');
+        const result = await updateUserProfile(formData);
+        alert(result.success ? 'プロフィールを保存しました' : result.error);
+      } catch {
+        alert('プロフィールを保存できませんでした');
       }
     });
   };

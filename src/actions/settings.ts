@@ -7,6 +7,15 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireUser } from '@/lib/session';
 import { normalizeImageUrl } from '@/lib/imageUrl';
 
+// Next.js replaces the message of anything thrown from a Server Action with a
+// generic one in production, so input the user can fix is reported as a
+// value, and throwing is kept for authorization failures only.
+export type SaveResult = { success: true } | { success: false; error: string };
+
+function invalid(error: unknown): SaveResult {
+  return { success: false, error: (error as Error).message };
+}
+
 // Helper for DB instance
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
@@ -20,16 +29,22 @@ function normalizeAccentColor(value: string | null): string {
   throw new Error('アクセントカラーは #rrggbb 形式で指定してください');
 }
 
-export async function updateSiteSettings(formData: FormData) {
+export async function updateSiteSettings(formData: FormData): Promise<SaveResult> {
   await requireAdmin();
 
   const siteName = formData.get('siteName') as string;
 
   // Rendered into a CSS custom property, so anything but a literal colour
   // would let an admin inject arbitrary CSS onto every page of the site.
-  const accentColor = normalizeAccentColor(formData.get('accentColor') as string);
+  let accentColor: string;
+  let logoUrl: string | null;
+  try {
+    accentColor = normalizeAccentColor(formData.get('accentColor') as string);
+    logoUrl = normalizeImageUrl(formData.get('logoUrl'));
+  } catch (error) {
+    return invalid(error);
+  }
   const bgPattern = formData.get('bgPattern') as string;
-  const logoUrl = normalizeImageUrl(formData.get('logoUrl'));
 
   const operatorName = (formData.get('operatorName') as string) || null;
   const operatorRepresentative = (formData.get('operatorRepresentative') as string) || null;
@@ -68,14 +83,19 @@ export async function updateSiteSettings(formData: FormData) {
   return { success: true };
 }
 
-export async function updateUserProfile(formData: FormData) {
+export async function updateUserProfile(formData: FormData): Promise<SaveResult> {
   const me = await requireUser();
 
   const name = ((formData.get('name') as string) || '').trim();
-  if (!name) throw new Error('表示名を入力してください');
+  if (!name) return { success: false, error: '表示名を入力してください' };
   const noteId = formData.get('noteId') as string;
   const xId = formData.get('xId') as string;
-  const image = normalizeImageUrl(formData.get('image'));
+  let image: string | null;
+  try {
+    image = normalizeImageUrl(formData.get('image'));
+  } catch (error) {
+    return invalid(error);
+  }
 
   await db().update(user)
     .set({ name, noteId, xId, image })

@@ -40,6 +40,9 @@ export default function ImagePicker({
   };
 
   const radius = shape === 'circle' ? '50%' : 12;
+  // Preview only what the server will accept; React refuses to render a
+  // javascript: src at all and would throw mid-edit.
+  const previewable = /^https?:\/\//i.test(url);
 
   return (
     <div>
@@ -52,7 +55,7 @@ export default function ImagePicker({
             display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 12,
           }}
         >
-          {url ? (
+          {previewable ? (
             // eslint-disable-next-line @next/next/no-img-element -- arbitrary R2/external hosts, not configured for next/image
             <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
