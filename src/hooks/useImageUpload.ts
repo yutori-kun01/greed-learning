@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import imageCompression from 'browser-image-compression';
 
-export function useImageUpload() {
+type UploadPurpose = 'image' | 'avatar';
+
+export function useImageUpload({ purpose = 'image', maxWidthOrHeight = 1280 }: { purpose?: UploadPurpose; maxWidthOrHeight?: number } = {}) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -12,8 +14,8 @@ export function useImageUpload() {
     try {
       // 1. Compress image
       const options = {
-        maxSizeMB: 5,
-        maxWidthOrHeight: 1280,
+        maxSizeMB: purpose === 'avatar' ? 1.5 : 5,
+        maxWidthOrHeight,
         useWebWorker: true,
       };
       
@@ -33,7 +35,7 @@ export function useImageUpload() {
           contentType: fileToUpload.type,
           // Signed into the upload URL, so it must match the body exactly.
           size: fileToUpload.size,
-          purpose: 'image',
+          purpose,
         }),
       });
 

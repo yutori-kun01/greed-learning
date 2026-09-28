@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/session';
+import { requireAdmin, requireUser } from '@/lib/session';
 import { getR2Config, signUpload } from '@/lib/r2';
 
 /**
@@ -36,23 +36,28 @@ const RESOURCE_TYPES: Record<string, string> = {
 };
 
 const LIMITS = {
-  image: { types: IMAGE_TYPES, maxBytes: 8 * 1024 * 1024, prefix: 'editor' },
-  resource: { types: RESOURCE_TYPES, maxBytes: 200 * 1024 * 1024, prefix: 'resources' },
+  image: { types: IMAGE_TYPES, maxBytes: 8 * 1024 * 1024, prefix: 'editor', adminOnly: true },
+  resource: { types: RESOURCE_TYPES, maxBytes: 200 * 1024 * 1024, prefix: 'resources', adminOnly: true },
+  // A member's own profile picture: the one upload open to non-admins, so it
+  // is images only, small, and keyed under the uploader's id.
+  avatar: { types: IMAGE_TYPES, maxBytes: 2 * 1024 * 1024, prefix: 'avatars', adminOnly: false },
 } as const;
+
+type Purpose = keyof typeof LIMITS;
 
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin();
-
     const body = await req.json();
     const { filename, contentType, size, purpose } = body as {
       filename?: string;
       contentType?: string;
       size?: number;
-      purpose?: 'image' | 'resource';
+      purpose?: Purpose;
     };
 
-    const limits = LIMITS[purpose === 'resource' ? 'resource' : 'image'];
+    // hasOwn, not `in`: "toString" would otherwise resolve through the prototype.
+    const limits = LIMITS[purpose && Object.hasOwn(LIMITS, purpose) ? purpose : 'image'];
+    const uploader = limits.adminOnly ? await requireAdmin() : await requireUser();
 
     if (!filename || !contentType) {
       return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 });
@@ -85,7 +90,16 @@ export async function POST(req: Request) {
     // keeps dots and slashes out of the key entirely.
     const base =
       filename.replace(/\.[^.]*$/, '').replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 40) || 'file';
-    const objectKey = `${limits.prefix}/${admin.id}/${Date.now()}-${base}.${ext}`;
+    const objectKey = `${limits.prefix}/${uploader.id}/${Date.now()}-${base}.${ext}`;
+
+    // Images are shown straight from the bucket's public hostname; without it
+    // the upload would succeed and leave nothing to display.
+    if (limits.types === IMAGE_TYPES && !process.env.R2_PUBLIC_URL) {
+      return NextResponse.json(
+        { error: '画像の公開URL（R2_PUBLIC_URL）が設定されていません' },
+        { status: 500 }
+      );
+    }
 
     const uploadUrl = await signUpload(config, objectKey, contentType, size!);
 
@@ -97,7 +111,8 @@ export async function POST(req: Request) {
       publicUrl: process.env.R2_PUBLIC_URL ? `${process.env.R2_PUBLIC_URL}/${objectKey}` : null,
     });
   } catch (error) {
-    if ((error as Error).message === 'Unauthorized') {
+    const message = (error as Error).message;
+    if (message === 'Unauthorized' || message === 'このアカウントは停止されています') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     console.error('Presigned URL error:', error);

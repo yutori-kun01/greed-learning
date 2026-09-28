@@ -5,6 +5,7 @@ import { user, siteSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireUser } from '@/lib/session';
+import { normalizeImageUrl } from '@/lib/imageUrl';
 
 // Helper for DB instance
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -28,7 +29,7 @@ export async function updateSiteSettings(formData: FormData) {
   // would let an admin inject arbitrary CSS onto every page of the site.
   const accentColor = normalizeAccentColor(formData.get('accentColor') as string);
   const bgPattern = formData.get('bgPattern') as string;
-  const logoUrl = (formData.get('logoUrl') as string) || null;
+  const logoUrl = normalizeImageUrl(formData.get('logoUrl'));
 
   const operatorName = (formData.get('operatorName') as string) || null;
   const operatorRepresentative = (formData.get('operatorRepresentative') as string) || null;
@@ -70,12 +71,14 @@ export async function updateSiteSettings(formData: FormData) {
 export async function updateUserProfile(formData: FormData) {
   const me = await requireUser();
 
-  const name = formData.get('name') as string;
+  const name = ((formData.get('name') as string) || '').trim();
+  if (!name) throw new Error('表示名を入力してください');
   const noteId = formData.get('noteId') as string;
   const xId = formData.get('xId') as string;
+  const image = normalizeImageUrl(formData.get('image'));
 
   await db().update(user)
-    .set({ name, noteId, xId })
+    .set({ name, noteId, xId, image })
     .where(eq(user.id, me.id));
 
   revalidatePath('/settings');

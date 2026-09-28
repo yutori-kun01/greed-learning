@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useTransition } from 'react';
 import { updateSiteSettings } from '@/actions/settings';
+import ImagePicker from '@/components/ImagePicker';
 import { DEFAULT_TERMS_CONTENT, DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
@@ -68,11 +69,15 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
           <input type="text" name="siteName" style={inputStyle} defaultValue={initialSettings?.siteName || "N8N MARKETING"} required />
         </label>
 
-        <label style={labelStyle}>
-          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>ロゴ画像URL (任意)</span>
-          <input type="text" name="logoUrl" style={inputStyle} defaultValue={initialSettings?.logoUrl || ''} placeholder="https://... (未設定の場合は標準アイコンを表示)" />
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>正方形の画像URLを指定してください。アップロード機能は今後対応予定です。</p>
-        </label>
+        <div style={labelStyle}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600, display: 'block', marginBottom: 10 }}>ロゴ画像 (任意)</span>
+          <ImagePicker
+            name="logoUrl"
+            purpose="image"
+            initialUrl={initialSettings?.logoUrl}
+            hint="正方形の画像がおすすめです。未設定の場合は標準アイコンを表示します。保存ボタンで反映されます。"
+          />
+        </div>
       </div>
 
       <div className="panel" style={{ marginTop: 24 }}>
