@@ -1,9 +1,15 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db";
-import { user as userTable } from "@/db/schema";
-import { count } from "drizzle-orm";
+import { APIError } from "better-auth/api";
 import { sendEmail } from "@/lib/email";
+import { captcha } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
+import { siteSettings } from "@/db/schema";
+import { isSignupAllowed } from "@/lib/signupPolicy";
+import { SIGNUP_PASS_COOKIE, readCookie, verifySignupPass } from "@/lib/signupPass";
+
+const emailIsConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
 
 export function getAuth(d1: D1Database) {
   const db = getDb(d1);
@@ -17,6 +23,11 @@ export function getAuth(d1: D1Database) {
     },
     emailAndPassword: {
       enabled: true,
+      // Turning this on without a working sender would lock every new account
+      // out permanently — the verification mail would only ever be logged.
+      // So it follows the Resend configuration: set RESEND_API_KEY and
+      // RESEND_FROM_EMAIL and signups must confirm their address.
+      requireEmailVerification: emailIsConfigured,
       sendResetPassword: async ({ user, url }) => {
         await sendEmail({
           to: user.email,
@@ -26,6 +37,8 @@ export function getAuth(d1: D1Database) {
       },
     },
     emailVerification: {
+      sendOnSignUp: emailIsConfigured,
+      autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
         await sendEmail({
           to: user.email,
@@ -34,26 +47,36 @@ export function getAuth(d1: D1Database) {
         });
       },
     },
+    // Cloudflare Turnstile on sign-in, sign-up and password-reset requests.
+    // Registered only once the secret is configured, so local development
+    // and a first deploy without Turnstile keys still work.
+    plugins: process.env.TURNSTILE_SECRET_KEY
+      ? [captcha({ provider: "cloudflare-turnstile", secretKey: process.env.TURNSTILE_SECRET_KEY })]
+      : [],
     rateLimit: {
       enabled: true,
       // Memory storage doesn't survive across Workers isolates; back it
       // with D1 so limits actually hold under real traffic.
       storage: "database",
     },
-    socialProviders: {
-      google: {
-        clientId: process.env.GOOGLE_CLIENT_ID || "",
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      },
-    },
+    // Registered only when configured: an empty Google provider logged a
+    // warning on every request and offered a sign-in that could not work.
+    socialProviders:
+      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+        ? {
+            google: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            },
+          }
+        : {},
     user: {
       changeEmail: {
         enabled: true,
-        // This app doesn't require email verification at signup (emailVerified
-        // is always false), so gating email changes on a verified-email check
-        // would lock every user out of ever changing their address. Apply the
-        // change immediately and, when sendVerificationEmail below is
-        // configured, follow up with a "verify your new address" email.
+        // Accounts created before email delivery was configured have
+        // emailVerified false and no way to change it, so gating email
+        // changes on a verified address would strand them. Apply the change
+        // and confirm it by mail instead.
         updateEmailWithoutVerification: true,
         sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
           await sendEmail({
@@ -85,13 +108,38 @@ export function getAuth(d1: D1Database) {
     databaseHooks: {
       user: {
         create: {
-          // Self-hosted deployments have no seed data — the very first
-          // account to sign up becomes the admin so the operator can
-          // reach /admin without touching the database by hand.
-          before: async (user) => {
-            const result = await db.select({ value: count() }).from(userTable);
-            if (result[0]?.value === 0) {
-              return { data: { ...user, role: "ADMIN" } };
+          // Self-hosted deployments have no seed data, so the first operator
+          // needs some way into /admin. Granting ADMIN to whoever signs up
+          // first would hand the site to any visitor who reaches the public
+          // URL before the operator does, so it's gated on an address the
+          // operator sets explicitly and removes once they've signed up.
+          before: async (newUser, context) => {
+            const cookieHeader =
+              context?.request?.headers.get("cookie") ?? context?.headers?.get("cookie") ?? null;
+            const settings = await db
+              .select({ signupPasscode: siteSettings.signupPasscode })
+              .from(siteSettings)
+              .where(eq(siteSettings.id, "1"))
+              .limit(1);
+            const hasValidPasscodePass = await verifySignupPass(
+              readCookie(cookieHeader, SIGNUP_PASS_COOKIE),
+              process.env.BETTER_AUTH_SECRET ?? "",
+              settings[0]?.signupPasscode
+            );
+
+            if (!isSignupAllowed(
+              newUser.email,
+              { BOOTSTRAP_ADMIN_EMAIL: process.env.BOOTSTRAP_ADMIN_EMAIL },
+              { hasValidPasscodePass }
+            )) {
+              throw new APIError("FORBIDDEN", {
+                message: "登録にはパスコードが必要です。招待URLを開き、パスコードを入力してからアカウントを作成してください。",
+              });
+            }
+
+            const bootstrapEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+            if (bootstrapEmail && newUser.email.trim().toLowerCase() === bootstrapEmail) {
+              return { data: { ...newUser, role: "ADMIN" } };
             }
           },
         },
@@ -103,7 +151,7 @@ export function getAuth(d1: D1Database) {
   // (Uncomment this and set ENABLE_DEV_BYPASS=true in .env if you need to test without logging in)
   if (process.env.NODE_ENV === 'development' && process.env.ENABLE_DEV_BYPASS === 'true') {
     const originalGetSession = auth.api.getSession;
-    // @ts-ignore - Dev only override
+    // @ts-expect-error - dev-only override, deliberately not the full endpoint type
     auth.api.getSession = async (opts: any) => {
       const session = await originalGetSession(opts);
       if (!session) {

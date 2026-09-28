@@ -3,6 +3,9 @@ name: Deploy to Cloudflare
 on:
   push:
     branches:
+      - main
+      # The repository's current default branch. Drop this line once the
+      # default branch has been renamed to main.
       - claude/attachment-image-design-tkv2mx
   workflow_dispatch: {}
 
@@ -25,8 +28,23 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BOOTSTRAP_ADMIN_EMAIL: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
         run: |
           missing=0
+          if [ -z "$BETTER_AUTH_SECRET" ]; then
+            echo "::error::Secret BETTER_AUTH_SECRET is not set. Without it nobody can sign in. See docs/SETUP_GUIDE.md step 5."
+            missing=1
+          fi
+          if [ -z "$BOOTSTRAP_ADMIN_EMAIL" ]; then
+            echo "::warning::Secret BOOTSTRAP_ADMIN_EMAIL is not set. On a fresh site nobody can become admin or open signup until it is. See docs/SETUP_GUIDE.md step 7."
+          fi
+          if { [ -n "$TURNSTILE_SITE_KEY" ] && [ -z "$TURNSTILE_SECRET_KEY" ]; } || { [ -z "$TURNSTILE_SITE_KEY" ] && [ -n "$TURNSTILE_SECRET_KEY" ]; }; then
+            echo "::error::Set both Variable TURNSTILE_SITE_KEY and Secret TURNSTILE_SECRET_KEY, or neither. With only one, the bot check cannot work."
+            missing=1
+          fi
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::error::Secret CLOUDFLARE_API_TOKEN is not set. Settings → Secrets and variables → Actions → New repository secret."
             missing=1
@@ -39,6 +57,18 @@ jobs:
             echo "::warning::Variable NEXT_PUBLIC_APP_URL is not set. The deploy will still work, but absolute URLs (auth callbacks, OG tags, Stripe redirects) fall back to request-derived values. Set it to your production URL and re-run."
           fi
           [ "$missing" -eq 0 ] || exit 1
+
+          # An expired, revoked or mistyped token otherwise surfaces later as
+          # "D1 database not found", which sends people after the wrong fix.
+          # User tokens and account-owned tokens verify at different paths.
+          verify() {
+            curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$1" 2>/dev/null | grep -q '"status":"active"'
+          }
+          if ! verify "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+             && ! verify "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/tokens/verify"; then
+            echo "::error::CLOUDFLARE_API_TOKEN is invalid, expired or revoked (Cloudflare rejected it). Create a new token (My Profile → API Tokens → 'Edit Cloudflare Workers' template, plus D1 Edit) and replace the repository secret."
+            exit 1
+          fi
 
       # No `version:` here on purpose — package.json's "packageManager" field
       # is the single source of truth. Specifying both makes action-setup abort
@@ -57,11 +87,9 @@ jobs:
         run: npx tsc --noEmit -p .
 
       - name: Lint
-        # Non-blocking: the codebase has ~80 pre-existing no-explicit-any
-        # errors by convention (not regressions), so a hard gate here would
-        # block every deploy. Still runs so issues are visible in the log.
-        run: pnpm run lint
-        continue-on-error: true
+        # Blocking. Pre-existing no-explicit-any uses are warnings (see
+        # eslint.config.mjs), so this fails only on real errors.
+        run: pnpm run lint --max-warnings=-1
 
       - name: Test
         run: pnpm run test
@@ -91,10 +119,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if ! npx wrangler d1 info greed-learning-db; then
-            echo "::error::D1 database 'greed-learning-db' was not found in this Cloudflare account, or the API token lacks D1 permission. Run 'npx wrangler d1 create greed-learning-db' and put the printed database_id into wrangler.toml."
+          # Look the database up by name across the account. `wrangler d1 info`
+          # resolves through wrangler.toml's database_id, so it cannot tell "no
+          # database" from "database_id points somewhere else" — it fails the
+          # same way for both, and would never see a mismatched id.
+          if ! npx wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"; then
+            echo "::error::Could not list D1 databases. Check that CLOUDFLARE_API_TOKEN has D1 Edit permission."
             exit 1
           fi
+          node scripts/check-d1-binding.mjs "$RUNNER_TEMP/d1-list.json" wrangler.toml
           if ! npx wrangler r2 bucket info greed-learning-assets >/dev/null 2>&1; then
             echo "R2 bucket 'greed-learning-assets' not found — creating it."
             npx wrangler r2 bucket create greed-learning-assets
@@ -129,3 +162,12 @@ jobs:
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          BOOTSTRAP_ADMIN_EMAIL: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          # R2_ACCOUNT_ID is the same account the Worker deploys to.
+          R2_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: greed-learning-assets
+          R2_PUBLIC_URL: ${{ vars.R2_PUBLIC_URL }}

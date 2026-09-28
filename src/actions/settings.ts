@@ -4,27 +4,54 @@ import { getDb } from '@/db';
 import { user, siteSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
-import { getAuth } from '@/lib/auth';
+import { requireAdmin, requireUser } from '@/lib/session';
+import { normalizeImageUrl } from '@/lib/imageUrl';
+
+// Next.js replaces the message of anything thrown from a Server Action with a
+// generic one in production, so input the user can fix is reported as a
+// value, and throwing is kept for authorization failures only.
+export type SaveResult = { success: true } | { success: false; error: string };
+
+function invalid(error: unknown): SaveResult {
+  return { success: false, error: (error as Error).message };
+}
 
 // Helper for DB instance
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
-export async function updateSiteSettings(formData: FormData) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+const DEFAULT_ACCENT = '#d9b45b';
 
-  if (!session || (session.user as any).role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
+function normalizeAccentColor(value: string | null): string {
+  const candidate = (value || '').trim();
+  if (!candidate) return DEFAULT_ACCENT;
+  if (HEX_COLOR.test(candidate)) return candidate.toLowerCase();
+  throw new Error('アクセントカラーは #rrggbb 形式で指定してください');
+}
+
+export async function updateSiteSettings(formData: FormData): Promise<SaveResult> {
+  await requireAdmin();
 
   const siteName = formData.get('siteName') as string;
-  const accentColor = formData.get('accentColor') as string;
+
+  // Rendered into a CSS custom property, so anything but a literal colour
+  // would let an admin inject arbitrary CSS onto every page of the site.
+  // Blank closes signup. A short code is guessable even with the attempt
+  // limit, so require a little length.
+  const signupPasscode = ((formData.get('signupPasscode') as string) || '').trim() || null;
+  if (signupPasscode && signupPasscode.length < 6) {
+    return { success: false, error: '登録用パスコードは6文字以上にしてください' };
+  }
+
+  let accentColor: string;
+  let logoUrl: string | null;
+  try {
+    accentColor = normalizeAccentColor(formData.get('accentColor') as string);
+    logoUrl = normalizeImageUrl(formData.get('logoUrl'));
+  } catch (error) {
+    return invalid(error);
+  }
   const bgPattern = formData.get('bgPattern') as string;
-  const logoUrl = (formData.get('logoUrl') as string) || null;
 
   const operatorName = (formData.get('operatorName') as string) || null;
   const operatorRepresentative = (formData.get('operatorRepresentative') as string) || null;
@@ -48,6 +75,7 @@ export async function updateSiteSettings(formData: FormData) {
     tokushohoExtra,
     termsContent,
     privacyContent,
+    signupPasscode,
     updatedAt: new Date().toISOString(),
   };
 
@@ -63,34 +91,25 @@ export async function updateSiteSettings(formData: FormData) {
   return { success: true };
 }
 
-export async function updateUserProfile(formData: FormData) {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
+export async function updateUserProfile(formData: FormData): Promise<SaveResult> {
+  const me = await requireUser();
 
-  if (!session) {
-    throw new Error('Unauthorized');
-  }
-
-  const name = formData.get('name') as string;
+  const name = ((formData.get('name') as string) || '').trim();
+  if (!name) return { success: false, error: '表示名を入力してください' };
   const noteId = formData.get('noteId') as string;
   const xId = formData.get('xId') as string;
+  let image: string | null;
+  try {
+    image = normalizeImageUrl(formData.get('image'));
+  } catch (error) {
+    return invalid(error);
+  }
 
   await db().update(user)
-    .set({ name, noteId, xId })
-    .where(eq(user.id, session.user.id));
+    .set({ name, noteId, xId, image })
+    .where(eq(user.id, me.id));
 
   revalidatePath('/settings');
   return { success: true };
 }
 
-export async function getSiteSettingsQuery() {
-  try {
-    const settings = await db().select().from(siteSettings).where(eq(siteSettings.id, '1')).limit(1);
-    return settings[0] || null;
-  } catch (e) {
-    return null; // DB not ready or missing table
-  }
-}

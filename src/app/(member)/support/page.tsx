@@ -1,20 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { sendSupportMessage } from '@/actions/support';
 
 type SendStatus = 'idle' | 'sending' | 'sent' | 'error';
 
 export default function SupportPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [message, setMessage] = useState('');
+  const [sendError, setSendError] = useState('');
   const [status, setStatus] = useState<SendStatus>('idle');
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const faqs = [
     { q: 'パスワードを忘れてしまいました', a: 'ログイン画面の「パスワード再設定」から手続きを行ってください。' },
-    { q: '退会方法を教えてください', a: 'アカウント設定ページの一番下にある「退会する」ボタンからお手続きいただけます。' },
+    { q: '退会方法を教えてください', a: '下のフォームからご連絡ください。有料プランの解約は「設定 → プラン」の「お支払い情報を管理」からいつでも行えます。' },
     { q: 'コースの視聴期限はありますか？', a: '会員である限り、すべてのコースを無期限でご視聴いただけます。' },
-    { q: '領収書の発行は可能ですか？', a: 'マイページの「請求履歴」よりPDF形式でダウンロード可能です。' },
+    { q: '領収書の発行は可能ですか？', a: '「設定 → プラン」の「お支払い情報を管理」から、Stripeの請求履歴と領収書をダウンロードできます。' },
     { q: '動画が再生されません', a: 'ブラウザのキャッシュをクリアするか、別のブラウザでお試しください。' }
   ];
 
@@ -65,52 +66,41 @@ export default function SupportPage() {
         ) : (
           <form
             style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              const nextErrors: Record<string, string> = {};
-              if (!form.name.trim()) nextErrors.name = 'お名前を入力してください';
-              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'メールアドレスの形式が正しくありません';
-              if (!form.message.trim()) nextErrors.message = 'お問い合わせ内容を入力してください';
-              setErrors(nextErrors);
-              if (Object.keys(nextErrors).length > 0) return;
-
+              if (!message.trim()) {
+                setSendError('お問い合わせ内容を入力してください');
+                return;
+              }
+              setSendError('');
               setStatus('sending');
-              setTimeout(() => {
-                setStatus('sent');
-              }, 900);
+              try {
+                const result = await sendSupportMessage(message);
+                if (result.ok) {
+                  setStatus('sent');
+                } else {
+                  setSendError(result.error);
+                  setStatus('error');
+                }
+              } catch {
+                setSendError('送信に失敗しました。時間をおいて再度お試しください');
+                setStatus('error');
+              }
             }}
           >
-            <div>
-              <label style={{ fontSize: '13px', color: 'var(--text-2)' }}>お名前</label>
-              <input
-                type="text"
-                style={inputStyle}
-                placeholder="山田 太郎"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-              {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.name}</p>}
-            </div>
-            <div>
-              <label style={{ fontSize: '13px', color: 'var(--text-2)' }}>メールアドレス</label>
-              <input
-                type="email"
-                style={inputStyle}
-                placeholder="example@domain.com"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-              {errors.email && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.email}</p>}
-            </div>
+            <p style={{ color: 'var(--muted)', fontSize: '12px', margin: 0 }}>
+              ご登録のお名前・メールアドレスで送信され、返信もそのアドレス宛に届きます。
+            </p>
             <div>
               <label style={{ fontSize: '13px', color: 'var(--text-2)' }}>お問い合わせ内容</label>
               <textarea
                 style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }}
                 placeholder="こちらにご記入ください..."
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                value={message}
+                maxLength={5000}
+                onChange={(e) => setMessage(e.target.value)}
               />
-              {errors.message && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.message}</p>}
+              {sendError && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{sendError}</p>}
             </div>
             <button type="submit" className="btn btn-gold" style={{ alignSelf: 'flex-start', marginTop: '8px' }} disabled={status === 'sending'}>
               {status === 'sending' ? '送信中...' : '送信する'}

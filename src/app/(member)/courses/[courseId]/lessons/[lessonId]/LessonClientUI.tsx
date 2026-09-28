@@ -1,6 +1,8 @@
 'use client';
 import React, { useTransition, useState } from 'react';
 import { toggleLessonComplete } from '@/actions/progress';
+import RewardToast from '@/components/gamification/RewardToast';
+import type { Reward } from '@/lib/gamification';
 
 export default function LessonClientUI({ 
   lessonId, 
@@ -15,17 +17,23 @@ export default function LessonClientUI({
 }) {
   const [isPending, startTransition] = useTransition();
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
+  const [reward, setReward] = useState<Reward | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleToggle = () => {
     const newState = !isCompleted;
     setIsCompleted(newState); // Optimistic update
-    
+    setError(null);
+
     startTransition(async () => {
       try {
-        await toggleLessonComplete(lessonId, newState);
+        const result = await toggleLessonComplete(lessonId, newState);
+        // Only present the first time a lesson is completed; re-completing
+        // awards nothing, so there is nothing to announce.
+        if (result.reward) setReward(result.reward);
       } catch (err) {
         setIsCompleted(!newState); // Revert on failure
-        alert('エラーが発生しました');
+        setError((err as Error).message || 'エラーが発生しました');
       }
     });
   };
@@ -75,8 +83,14 @@ export default function LessonClientUI({
           >
             {isPending ? '更新中...' : (isCompleted ? '✅ 完了済み' : '完了マークをつける')}
           </button>
+
+          {error && (
+            <p style={{ color: '#ef4444', fontSize: 12, marginTop: 12, marginBottom: 0 }}>{error}</p>
+          )}
         </div>
       </div>
+
+      {reward && <RewardToast reward={reward} onDismiss={() => setReward(null)} />}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, blob } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ========================
 //  Better Auth Required
@@ -23,6 +23,10 @@ export const user = sqliteTable("user", {
   noteId: text("noteId"),
   xId: text("xId"),
   themePreference: text("themePreference", { enum: ["dark", "light"] }).default("dark").notNull(),
+
+  // Lifetime points. Never spent, so it only ever increases; pointEvents is
+  // the ledger it is derived from.
+  totalPoints: integer("totalPoints").default(0).notNull(),
 
   // Subscription / membership
   planId: text("planId").references(() => plans.id),
@@ -113,7 +117,9 @@ export const lessons = sqliteTable("lessons", {
   duration: integer("duration").default(0),
   sortOrder: integer("sortOrder").default(0).notNull(),
   createdAt: text("createdAt").notNull(),
-});
+}, (t) => [
+  index("lessons_courseId_idx").on(t.courseId),
+]);
 
 // ========================
 //  Membership Plans (Stripe Subscriptions)
@@ -142,10 +148,21 @@ export const courseResources = sqliteTable("courseResources", {
   icon: text("icon").default('📄').notNull(),
   title: text("title").notNull(),
   description: text("description"),
+
+  // A resource is delivered either as an external link (Notion, a video) or
+  // as a file held in R2. objectKey is never exposed to the browser: members
+  // are sent through a download route that checks course access and mints a
+  // short-lived signed URL, so a forwarded link does not leak the file.
   fileUrl: text("fileUrl"),
+  objectKey: text("objectKey"),
+  fileName: text("fileName"),
+  fileSize: integer("fileSize"),
+
   sortOrder: integer("sortOrder").default(0).notNull(),
   createdAt: text("createdAt").notNull(),
-});
+}, (t) => [
+  index("courseResources_courseId_idx").on(t.courseId),
+]);
 
 // ========================
 //  Bookmarks
@@ -156,7 +173,10 @@ export const bookmarks = sqliteTable("bookmarks", {
   userId: text("userId").references(() => user.id, { onDelete: "cascade" }).notNull(),
   courseId: text("courseId").references(() => courses.id, { onDelete: "cascade" }).notNull(),
   createdAt: text("createdAt").notNull(),
-});
+}, (t) => [
+  // One bookmark per member per course; also the index the bookmarks page uses.
+  uniqueIndex("bookmarks_userId_courseId_unique").on(t.userId, t.courseId),
+]);
 
 export const enrollments = sqliteTable("enrollments", {
   id: text("id").primaryKey(),
@@ -165,7 +185,9 @@ export const enrollments = sqliteTable("enrollments", {
   progress: real("progress").default(0).notNull(),
   startedAt: text("startedAt").notNull(),
   completedAt: text("completedAt"),
-});
+}, (t) => [
+  uniqueIndex("enrollments_userId_courseId_unique").on(t.userId, t.courseId),
+]);
 
 export const lessonProgress = sqliteTable("lessonProgress", {
   id: text("id").primaryKey(),
@@ -174,7 +196,11 @@ export const lessonProgress = sqliteTable("lessonProgress", {
   isCompleted: integer("isCompleted", { mode: "boolean" }).default(false).notNull(),
   watchedSeconds: integer("watchedSeconds").default(0).notNull(),
   completedAt: text("completedAt"),
-});
+}, (t) => [
+  // The progress upsert reads by this pair before writing; unique also stops
+  // a concurrent toggle creating two rows for one lesson.
+  uniqueIndex("lessonProgress_userId_lessonId_unique").on(t.userId, t.lessonId),
+]);
 
 // ========================
 //  Blog & Content
@@ -202,11 +228,55 @@ export const purchases = sqliteTable('purchases', {
   id: text('id').primaryKey(),
   userId: text('userId').references(() => user.id, { onDelete: 'cascade' }).notNull(),
   postId: text('postId').references(() => blogPosts.id, { onDelete: 'cascade' }).notNull(),
-  stripeSessionId: text('stripeSessionId').notNull(),
+  // Unique: Stripe redelivers checkout.session.completed until it gets a 2xx,
+  // and one Checkout Session must never grant access twice.
+  stripeSessionId: text('stripeSessionId').notNull().unique(),
   amount: integer('amount').notNull(),
   purchasedAt: text('purchasedAt').notNull(),
+}, (t) => [
+  index('purchases_userId_postId_idx').on(t.userId, t.postId),
+]);
+
+// One row per Stripe event id we have finished processing. The row is written
+// before handling and removed again if handling throws, so a redelivery of a
+// failed event is still retried while a redelivery of a successful one is not.
+export const webhookEvents = sqliteTable('webhookEvents', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  receivedAt: text('receivedAt').notNull(),
 });
 
+
+// ========================
+//  Gamification
+// ========================
+
+// Append-only ledger of every point award. user.totalPoints is the running
+// sum; keeping the individual events means a member can be shown what they
+// earned and why, and the total can be rebuilt if it ever drifts.
+export const pointEvents = sqliteTable('pointEvents', {
+  id: text('id').primaryKey(),
+  userId: text('userId').references(() => user.id, { onDelete: 'cascade' }).notNull(),
+  type: text('type', {
+    enum: ['LESSON_COMPLETE', 'COURSE_COMPLETE', 'STREAK_BONUS'],
+  }).notNull(),
+  points: integer('points').notNull(),
+  courseId: text('courseId'),
+  lessonId: text('lessonId'),
+  createdAt: text('createdAt').notNull(),
+}, (t) => [
+  index('pointEvents_userId_createdAt_idx').on(t.userId, t.createdAt),
+]);
+
+export const userBadges = sqliteTable('userBadges', {
+  id: text('id').primaryKey(),
+  userId: text('userId').references(() => user.id, { onDelete: 'cascade' }).notNull(),
+  badgeId: text('badgeId').notNull(),
+  earnedAt: text('earnedAt').notNull(),
+}, (t) => [
+  // A badge is earned once.
+  uniqueIndex('userBadges_userId_badgeId_unique').on(t.userId, t.badgeId),
+]);
 
 // ========================
 //  Site Settings (Admin)
@@ -229,6 +299,10 @@ export const siteSettings = sqliteTable('siteSettings', {
   tokushohoExtra: text('tokushohoExtra'),
   termsContent: text('termsContent'),
   privacyContent: text('privacyContent'),
+
+  // Shared code a new member must enter on /signup before the account form
+  // appears. Null means signup is closed (see src/lib/signupPolicy.ts).
+  signupPasscode: text('signupPasscode'),
 
   updatedAt: text('updatedAt').notNull(),
 });

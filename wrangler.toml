@@ -10,6 +10,13 @@ main = ".open-next/worker.js"
 compatibility_date = "2025-03-25"
 compatibility_flags = ["nodejs_compat"]
 
+# wrangler's esbuild defaults to keep_names, which wraps functions in a
+# `__name()` helper. next-themes serializes its anti-flash function into an
+# inline <script> via toString(), so that helper reached the browser, where
+# it does not exist: "ReferenceError: __name is not defined" on every page and
+# the saved theme was never applied before paint.
+keep_names = false
+
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"

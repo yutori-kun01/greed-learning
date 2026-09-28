@@ -2,10 +2,29 @@
 import React from 'react';
 import Link from 'next/link';
 import Icon from '../Icon';
+import { usePathname } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 
-export default function Sidebar({ siteName = 'N8N MARKETING', logoUrl }: { siteName?: string; logoUrl?: string | null }) {
+type SidebarProps = {
+  siteName?: string;
+  logoUrl?: string | null;
+  currentStreak: number;
+  longestStreak: number;
+};
+
+const NAV = [
+  { href: '/dashboard', icon: 'home', label: 'ダッシュボード' },
+  { href: '/courses', icon: 'book', label: '講座一覧' },
+  { href: '/learning', icon: 'play', label: '学習中の講座' },
+  { href: '/bookmarks', icon: 'bookmark', label: 'ブックマーク' },
+  { href: '/resources', icon: 'gift', label: 'リソース・特典' },
+  { href: '/support', icon: 'life', label: 'サポート' },
+  { href: '/settings', icon: 'settings', label: '設定' },
+] as const;
+
+export default function Sidebar({ siteName = 'N8N MARKETING', logoUrl, currentStreak, longestStreak }: SidebarProps) {
   const { data: session } = useSession();
+  const pathname = usePathname();
 
   return (
     <aside className="sidebar">
@@ -24,31 +43,19 @@ export default function Sidebar({ siteName = 'N8N MARKETING', logoUrl }: { siteN
       </div>
 
       <nav className="nav">
-        <Link href="/dashboard" className="nav-item">
-          <Icon name="home" />ダッシュボード
-        </Link>
-        <Link href="/courses" className="nav-item is-active" aria-current="page">
-          <Icon name="book" />講座一覧
-        </Link>
-        <Link href="/learning" className="nav-item">
-          <Icon name="play" />学習中の講座
-        </Link>
-        <Link href="/bookmarks" className="nav-item">
-          <Icon name="bookmark" />ブックマーク
-        </Link>
-        <Link href="/resources" className="nav-item">
-          <Icon name="gift" />リソース・特典
-        </Link>
-        <a href="https://discord.gg/INVITE_CODE" target="_blank" rel="noopener noreferrer" className="nav-item">
-          <Icon name="users" />Discord コミュニティ
-          <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--muted)' }}>↗</span>
-        </a>
-        <Link href="/support" className="nav-item">
-          <Icon name="life" />サポート
-        </Link>
-        <Link href="/settings" className="nav-item">
-          <Icon name="settings" />設定
-        </Link>
+        {NAV.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={active ? 'nav-item is-active' : 'nav-item'}
+              aria-current={active ? 'page' : undefined}
+            >
+              <Icon name={item.icon} />{item.label}
+            </Link>
+          );
+        })}
         {session?.user && (session.user as any).role === 'ADMIN' && (
           <Link href="/admin" className="nav-item" style={{ marginTop: 'auto', borderTop: '1px solid var(--line)' }}>
             <Icon name="lock" />管理者ダッシュボード
@@ -58,21 +65,9 @@ export default function Sidebar({ siteName = 'N8N MARKETING', logoUrl }: { siteN
 
       <div className="side-cards">
         <section className="side-card">
-          <p className="side-card-label">今月の学習時間</p>
-          <p className="side-card-value">18.6<span>時間</span></p>
-          <p className="side-card-sub">先月比<span className="up">▲ +32.4%</span></p>
-          <div className="spark">
-            <div className="spark-col"><span style={{ height: '52%' }}></span><em>W1</em></div>
-            <div className="spark-col"><span style={{ height: '70%' }}></span><em>W2</em></div>
-            <div className="spark-col"><span className="dim" style={{ height: '44%' }}></span><em>W3</em></div>
-            <div className="spark-col"><span style={{ height: '88%' }}></span><em>W4</em></div>
-          </div>
-        </section>
-
-        <section className="side-card">
           <p className="side-card-label">連続学習日数</p>
-          <p className="side-card-value">14<span>日</span></p>
-          <p className="side-card-sub">ベスト記録 27 日</p>
+          <p className="side-card-value">{currentStreak}<span>日</span></p>
+          <p className="side-card-sub">ベスト記録 {longestStreak} 日</p>
         </section>
       </div>
     </aside>

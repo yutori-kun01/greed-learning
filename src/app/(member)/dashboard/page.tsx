@@ -1,86 +1,105 @@
 import Link from 'next/link';
-import { getAuth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { getDb } from '@/db';
-import { user, lessonProgress, courses } from '@/db/schema';
-import { eq, count } from 'drizzle-orm';
+import { requireUser } from '@/lib/session';
+import { getCourseProgressOverview } from '@/lib/courseProgress';
+import { getGamificationSummary } from '@/lib/gamification';
+import LevelCard from '@/components/gamification/LevelCard';
+import BadgeShelf from '@/components/gamification/BadgeShelf';
 
 export default async function DashboardPage() {
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
+  const me = await requireUser();
+  const summary = await getGamificationSummary(me.id);
 
-  if (!session) {
-    return null; // Handled by proxy
-  }
-
-  const db = getDb(process.env.DB as unknown as D1Database);
-
-  // Fetch real stats
-  const userData = await db.select().from(user).where(eq(user.id, session.user.id)).limit(1);
-  const currentUser = userData[0];
-
-  const completedLessons = await db.select({ value: count() })
-    .from(lessonProgress)
-    .where(eq(lessonProgress.userId, session.user.id));
-
-  const totalCompleted = completedLessons[0]?.value || 0;
-
-  // Recent active courses (mocked logic for now as we don't have enrollments table yet, just fetch top 3 courses)
-  const activeCourses = await db.select().from(courses).limit(3);
+  const overview = await getCourseProgressOverview(me.id);
+  const inProgress = overview.inProgress.slice(0, 3);
+  const nextUp = overview.notStarted.slice(0, 3);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div className="panel">
-        <h1 className="panel-title">ようこそ、{currentUser?.name || session.user.name}さん</h1>
+        <h1 className="panel-title">ようこそ、{me.name}さん</h1>
         <p style={{ color: 'var(--muted)', fontSize: '14px', marginTop: '8px' }}>
-          本日の学習目標に向かって頑張りましょう。
+          {summary.currentStreak > 0
+            ? `${summary.currentStreak}日連続で学習中です。今日も続けましょう。`
+            : '今日から学習を始めて、連続記録をつくりましょう。'}
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+      <LevelCard summary={summary} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{totalCompleted}</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{summary.completedLessons}</div>
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>完了したレッスン</div>
         </div>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{currentUser?.currentStreak || 0}</div>
-          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>連続学習日数</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{summary.completedCourses}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>完走した講座</div>
         </div>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>0</div>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{summary.currentStreak}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+            連続学習日数{summary.longestStreak > 0 && `（最長 ${summary.longestStreak}日）`}
+          </div>
+        </div>
+        <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
+          <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{summary.totalPoints.toLocaleString()}</div>
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>獲得ポイント</div>
         </div>
       </div>
 
+      <BadgeShelf earned={summary.badges} />
+
       <div>
-        <h2 className="section-title">学習中のコース</h2>
-        <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-          {activeCourses.length === 0 ? (
-            <div style={{ color: 'var(--muted)', fontSize: 13 }}>現在学習中のコースはありません。</div>
-          ) : activeCourses.map((c: any, i: number) => (
-            <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-              <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
-                {c.badge && <span className={`badge badge-gold`}>{c.badge}</span>}
-              </div>
-              <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <h3 className="card-title" style={{ marginBottom: '16px' }}>{c.title}</h3>
-                <div className="progress">
-                  <div className="bar"><span style={{ width: `0%` }}></span></div>
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', marginBottom: '16px' }}>
-                  進捗: 0%
-                </div>
-                <Link href={`/courses/${c.id}`} className="btn btn-gold btn-block" style={{ marginTop: 'auto', textAlign: 'center' }}>
-                  学習を続ける
-                </Link>
-              </div>
+        <h2 className="section-title">学習中の講座</h2>
+        <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+          {inProgress.length === 0 ? (
+            <div style={{ color: 'var(--muted)', fontSize: 13 }}>
+              現在学習中の講座はありません。
             </div>
-          ))}
+          ) : (
+            inProgress.map((c) => (
+              <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
+                  {c.badge && <span className="badge badge-gold">{c.badge}</span>}
+                </div>
+                <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  <h3 className="card-title" style={{ marginBottom: '16px' }}>{c.title}</h3>
+                  <div className="progress">
+                    <div className="bar"><span style={{ width: `${c.percent}%` }}></span></div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', marginBottom: '16px' }}>
+                    {c.done} / {c.total} レッスン完了（{c.percent}%）
+                  </div>
+                  <Link href={`/courses/${c.id}`} className="btn btn-gold btn-block" style={{ marginTop: 'auto', textAlign: 'center' }}>
+                    学習を続ける
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
+
+      {nextUp.length > 0 && (
+        <div>
+          <h2 className="section-title">次に始める講座</h2>
+          <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+            {nextUp.map((c) => (
+              <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)' }}>
+                  {c.badge && <span className="badge badge-gold">{c.badge}</span>}
+                </div>
+                <div className="card-body" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  <h3 className="card-title" style={{ marginBottom: '16px' }}>{c.title}</h3>
+                  <Link href={`/courses/${c.id}`} className="btn btn-ghost btn-block" style={{ marginTop: 'auto', textAlign: 'center' }}>
+                    講座を見る
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

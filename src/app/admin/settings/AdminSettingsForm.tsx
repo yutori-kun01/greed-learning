@@ -1,14 +1,27 @@
 'use client';
 import React, { useState, useTransition } from 'react';
 import { updateSiteSettings } from '@/actions/settings';
+import ImagePicker from '@/components/ImagePicker';
+import CopyButton from '@/components/CopyButton';
 import { DEFAULT_TERMS_CONTENT, DEFAULT_PRIVACY_CONTENT } from '@/lib/legalDefaults';
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' as const };
 const labelStyle = { display: 'block', marginBottom: '24px' };
 const textareaStyle = { ...inputStyle, resize: 'vertical' as const, fontFamily: 'inherit', lineHeight: 1.7 };
 
+// The stored value is written straight into a CSS custom property, so only
+// literal hex colours are accepted. Rows predating that rule hold keywords
+// like "gold"; fall back rather than sending something the server rejects.
+const DEFAULT_ACCENT = '#d9b45b';
+
+function normalizeHex(value: unknown): string {
+  return typeof value === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim())
+    ? value.trim()
+    : DEFAULT_ACCENT;
+}
+
 const ACCENT_COLORS = [
-  { name: 'Gold', value: 'var(--gold)' },
+  { name: 'Gold', value: '#d9b45b' },
   { name: 'Blue', value: '#6495ed' },
   { name: 'Green', value: '#4ade80' },
   { name: 'Purple', value: '#c084fc' },
@@ -25,8 +38,8 @@ const BG_PATTERNS = [
   { id: 'pattern6', label: 'メッシュ (Mesh)' },
 ];
 
-export default function AdminSettingsForm({ initialSettings }: { initialSettings: any }) {
-  const [accent, setAccent] = useState(initialSettings?.accentColor || 'var(--gold)');
+export default function AdminSettingsForm({ initialSettings, inviteUrl }: { initialSettings: any; inviteUrl: string }) {
+  const [accent, setAccent] = useState(normalizeHex(initialSettings?.accentColor));
   const [bgPattern, setBgPattern] = useState(initialSettings?.bgPattern || 'pattern1');
   const [termsContent, setTermsContent] = useState(initialSettings?.termsContent || DEFAULT_TERMS_CONTENT);
   const [privacyContent, setPrivacyContent] = useState(initialSettings?.privacyContent || DEFAULT_PRIVACY_CONTENT);
@@ -41,8 +54,12 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
     formData.set('privacyContent', privacyContent);
 
     startTransition(async () => {
-      await updateSiteSettings(formData);
-      alert('設定を保存しました');
+      try {
+        const result = await updateSiteSettings(formData);
+        alert(result.success ? '設定を保存しました' : result.error);
+      } catch {
+        alert('設定を保存できませんでした');
+      }
     });
   };
 
@@ -57,10 +74,41 @@ export default function AdminSettingsForm({ initialSettings }: { initialSettings
           <input type="text" name="siteName" style={inputStyle} defaultValue={initialSettings?.siteName || "N8N MARKETING"} required />
         </label>
 
-        <label style={labelStyle}>
-          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>ロゴ画像URL (任意)</span>
-          <input type="text" name="logoUrl" style={inputStyle} defaultValue={initialSettings?.logoUrl || ''} placeholder="https://... (未設定の場合は標準アイコンを表示)" />
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>正方形の画像URLを指定してください。アップロード機能は今後対応予定です。</p>
+        <div style={labelStyle}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600, display: 'block', marginBottom: 10 }}>ロゴ画像 (任意)</span>
+          <ImagePicker
+            name="logoUrl"
+            purpose="image"
+            initialUrl={initialSettings?.logoUrl}
+            hint="正方形の画像がおすすめです。未設定の場合は標準アイコンを表示します。保存ボタンで反映されます。"
+          />
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginTop: 24 }}>
+        <h2 className="panel-title">会員登録（招待）</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.7 }}>
+          下の招待URLとパスコードを伝えた人だけが、アカウントを作成できます。パスコードを空にすると新規登録を停止します。
+          パスコードを変更すると、入力済みでまだ登録していない人も入力し直しになります。
+        </p>
+        <div style={labelStyle}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>招待URL</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+            <code style={{ flex: 1, background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: 6, padding: '10px 14px', fontSize: 13, overflowX: 'auto', whiteSpace: 'nowrap' }}>{inviteUrl}</code>
+            <CopyButton text={inviteUrl} />
+          </div>
+        </div>
+        <label style={{ ...labelStyle, marginBottom: 0 }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>登録用パスコード（6文字以上）</span>
+          <input
+            type="text"
+            name="signupPasscode"
+            style={inputStyle}
+            defaultValue={initialSettings?.signupPasscode || ''}
+            placeholder="空欄 = 新規登録を停止"
+            autoComplete="off"
+            minLength={6}
+          />
         </label>
       </div>
 

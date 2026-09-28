@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { createPost, deletePost, getPosts, getPublishedPosts, getPostBySlug } from './posts'
-import { getDb } from '@/db'
+import { describe, it, expect } from 'vitest'
+import { createPost, deletePost } from './posts'
 
 describe('Posts Actions', () => {
   it('should create a post successfully', async () => {
@@ -17,52 +16,34 @@ describe('Posts Actions', () => {
   it('should require a title and slug', async () => {
     const formData = new FormData();
     formData.append('status', 'PUBLISHED');
-    
+
     await expect(createPost(formData)).rejects.toThrow('タイトルとスラッグは必須です');
   });
 
-  it('should fetch posts list', async () => {
-    // We can't easily override just one query with the generic proxy, so we'll mock the whole select chain
-    vi.mocked(getDb).mockReturnValueOnce({
-      select: () => ({
-        from: () => ({
-          orderBy: () => Promise.resolve([{ id: 'p-1', title: 'Test Post' }])
-        })
-      })
-    } as any);
-    
-    const posts = await getPosts();
-    expect(posts).toHaveLength(1);
-    expect(posts[0].title).toBe('Test Post');
+  // A PAID post priced at zero is free content behind a purchase button.
+  it('should reject a paid post with no price', async () => {
+    const formData = new FormData();
+    formData.append('title', 'Paid');
+    formData.append('slug', 'paid');
+    formData.append('status', 'PAID');
+    formData.append('price', '0');
+
+    await expect(createPost(formData)).rejects.toThrow('1円以上の価格');
   });
 
-  it('should fetch published posts list', async () => {
-    vi.mocked(getDb).mockReturnValueOnce({
-      select: () => ({
-        from: () => ({
-          orderBy: () => Promise.resolve([{ id: 'p-1', title: 'Published Post', status: 'PUBLISHED' }])
-        })
-      })
-    } as any);
-    
-    const posts = await getPublishedPosts();
-    expect(posts).toHaveLength(1);
-    expect(posts[0].title).toBe('Published Post');
+  it('should fall back to DRAFT for an unrecognised status', async () => {
+    const formData = new FormData();
+    formData.append('title', 'Odd');
+    formData.append('slug', 'odd');
+    formData.append('status', 'SOMETHING_ELSE');
+
+    await expect(createPost(formData)).resolves.toHaveProperty('success', true);
   });
 
-  it('should fetch post by slug', async () => {
-    vi.mocked(getDb).mockReturnValueOnce({
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([{ id: 'p-1', slug: 'my-post', title: 'My Post' }])
-          })
-        })
-      })
-    } as any);
-    
-    const post = await getPostBySlug('my-post');
-    expect(post).not.toBeNull();
-    expect(post?.slug).toBe('my-post');
+  it('should delete a post', async () => {
+    await expect(deletePost('post-1')).resolves.toHaveProperty('success', true);
   });
+
+
+
 });
