@@ -307,6 +307,12 @@ export const siteSettings = sqliteTable('siteSettings', {
   // appears. Null means signup is closed (see src/lib/signupPolicy.ts).
   signupPasscode: text('signupPasscode'),
 
+  // Transactional email via Resend, editable from サイト設定. The API key is
+  // stored encrypted (src/lib/secretBox.ts) and never sent back to a page.
+  // When unset, RESEND_API_KEY / RESEND_FROM_EMAIL from the Worker env apply.
+  resendApiKeyEnc: text('resendApiKeyEnc'),
+  resendFromEmail: text('resendFromEmail'),
+
   updatedAt: text('updatedAt').notNull(),
 });
 

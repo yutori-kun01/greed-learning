@@ -111,7 +111,7 @@ Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 | `BETTER_AUTH_SECRET` | **必須** | セッション署名用の鍵。`openssl rand -base64 32` の出力など。**未設定だとログイン・サインアップが全て失敗します。**一度決めたら変更しないでください（変更すると全ユーザーのログインが切れます） |
 | `STRIPE_SECRET_KEY` | 任意 | 決済を使う場合。未設定でもアプリは起動します |
 | `STRIPE_WEBHOOK_SECRET` | 任意 | 手順6で取得する署名シークレット |
-| `RESEND_API_KEY` | 任意 | パスワード再設定メール等に使用。未設定の場合は送信されずログ出力のみ |
+| `RESEND_API_KEY` | 任意 | パスワード再設定メール等に使用。**管理画面の「サイト設定 → メール送信（Resend）」からも設定でき、そちらが優先されます**（APIキーは暗号化してDBに保存）。どちらも未設定の場合は送信されずログ出力のみ |
 | `RESEND_FROM_EMAIL` | 任意 | 例: `no-reply@your-domain.com`（Resend側でドメイン認証が必要） |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 任意 | Googleログインを使う場合 |
 | `BOOTSTRAP_ADMIN_EMAIL` | **必須（初回）** | 管理者にするメールアドレス。これが無いと誰も `/admin` に入れません（手順7） |

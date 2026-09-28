@@ -7,6 +7,7 @@ import { desc, count, sum, gte } from 'drizzle-orm';
 import { getSiteSettingsQuery } from '@/lib/queries';
 import Stripe from 'stripe';
 import CommandLine from '@/components/CommandLine';
+import { getEmailConfig } from '@/lib/email';
 
 async function checkStripeConnection() {
   if (!process.env.STRIPE_SECRET_KEY) return false;
@@ -49,7 +50,7 @@ export default async function AdminDashboard() {
   const totalPlans = plansResult[0].value;
   const stripeConnected = await checkStripeConnection();
 
-  const emailConfigured = !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
+  const emailConfigured = (await getEmailConfig()) !== null;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://<your-domain>';
 
   const checklist: {
@@ -73,15 +74,7 @@ export default async function AdminDashboard() {
         { command: 'npx wrangler secret put STRIPE_WEBHOOK_SECRET', note: `Stripeダッシュボード → 開発者 → Webhook でエンドポイントを追加した際に発行される署名シークレットを貼り付けてください。エンドポイントURL: ${appUrl}/api/webhooks/stripe` },
       ],
     },
-    {
-      label: 'メール送信（パスワード再設定等）を設定する',
-      done: emailConfigured,
-      href: 'https://resend.com/api-keys',
-      commands: [
-        { command: 'npx wrangler secret put RESEND_API_KEY', note: 'https://resend.com/api-keys で発行したAPIキーを貼り付けてください' },
-        { command: 'npx wrangler secret put RESEND_FROM_EMAIL', note: '例: no-reply@your-domain.com （Resend側で送信ドメインの認証が必要です）' },
-      ],
-    },
+    { label: 'メール送信（パスワード再設定等）を設定する（サイト設定 → メール送信）', done: emailConfigured, href: '/admin/settings' },
     { label: '会員プランを作成する（有料販売する場合）', done: totalPlans > 0, href: '/admin/plans', optional: true },
     { label: '講座を作成する', done: totalCourses > 0, href: '/admin/courses' },
   ];

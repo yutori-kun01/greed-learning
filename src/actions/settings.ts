@@ -6,6 +6,8 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireUser } from '@/lib/session';
 import { normalizeImageUrl } from '@/lib/imageUrl';
+import { sealSecret } from '@/lib/secretBox';
+import { sendEmailDetailed } from '@/lib/email';
 
 // Next.js replaces the message of anything thrown from a Server Action with a
 // generic one in production, so input the user can fix is reported as a
@@ -34,8 +36,6 @@ export async function updateSiteSettings(formData: FormData): Promise<SaveResult
 
   const siteName = formData.get('siteName') as string;
 
-  // Rendered into a CSS custom property, so anything but a literal colour
-  // would let an admin inject arbitrary CSS onto every page of the site.
   // Blank closes signup. A short code is guessable even with the attempt
   // limit, so require a little length.
   const signupPasscode = ((formData.get('signupPasscode') as string) || '').trim() || null;
@@ -46,6 +46,8 @@ export async function updateSiteSettings(formData: FormData): Promise<SaveResult
   let accentColor: string;
   let logoUrl: string | null;
   try {
+    // Rendered into a CSS custom property, so anything but a literal colour
+    // would let an admin inject arbitrary CSS onto every page of the site.
     accentColor = normalizeAccentColor(formData.get('accentColor') as string);
     logoUrl = normalizeImageUrl(formData.get('logoUrl'));
   } catch (error) {
@@ -62,6 +64,24 @@ export async function updateSiteSettings(formData: FormData): Promise<SaveResult
   const termsContent = (formData.get('termsContent') as string) || null;
   const privacyContent = (formData.get('privacyContent') as string) || null;
 
+  // Resend. The key is write-only: a blank field keeps the stored key, the
+  // clear checkbox removes it, and a new value replaces it (encrypted).
+  const resendFromEmail = ((formData.get('resendFromEmail') as string) || '').trim() || null;
+  if (resendFromEmail && !/^[^<>\s]*@[^<>\s]+$|^[^<>]*<[^<>\s]+@[^<>\s]+>$/.test(resendFromEmail)) {
+    return { success: false, error: '送信元メールアドレスは no-reply@example.com か「表示名 <no-reply@example.com>」の形式で入力してください' };
+  }
+  const newResendKey = ((formData.get('resendApiKey') as string) || '').trim();
+  const clearResendKey = formData.get('resendApiKeyClear') === 'on';
+  let resendApiKeyEnc: string | null | undefined;
+  if (clearResendKey) {
+    resendApiKeyEnc = null;
+  } else if (newResendKey) {
+    if (!newResendKey.startsWith('re_')) {
+      return { success: false, error: 'ResendのAPIキーは「re_」で始まる文字列です。コピーした内容を確認してください' };
+    }
+    resendApiKeyEnc = await sealSecret(newResendKey, process.env.BETTER_AUTH_SECRET ?? '');
+  }
+
   const values = {
     siteName,
     accentColor,
@@ -76,6 +96,8 @@ export async function updateSiteSettings(formData: FormData): Promise<SaveResult
     termsContent,
     privacyContent,
     signupPasscode,
+    resendFromEmail,
+    ...(resendApiKeyEnc !== undefined ? { resendApiKeyEnc } : {}),
     updatedAt: new Date().toISOString(),
   };
 
@@ -113,3 +135,16 @@ export async function updateUserProfile(formData: FormData): Promise<SaveResult>
   return { success: true };
 }
 
+
+/** Sends a test message to the signed-in admin with the saved email settings. */
+export async function sendTestEmail(): Promise<SaveResult> {
+  const admin = await requireAdmin();
+  const result = await sendEmailDetailed({
+    to: admin.email,
+    subject: 'テストメール（メール送信の設定確認）',
+    html: '<p>このメールが届いていれば、メール送信（Resend）の設定は正しく動作しています。</p>',
+  });
+  return result.ok
+    ? { success: true }
+    : { success: false, error: result.error };
+}
