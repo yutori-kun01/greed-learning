@@ -9,7 +9,7 @@ import { headers } from 'next/headers';
 import Icon from '@/components/Icon';
 import { canAccessCourse } from '@/lib/access';
 import { getCourseTagMap, getMyBookmarkedCourseIds, getTags } from '@/lib/queries';
-import { getCourseJourney } from '@/lib/journeyState';
+import { canPreviewUnpublished, getCourseJourney } from '@/lib/journeyState';
 import { describeRequirement } from '@/lib/journey';
 import BookmarkButton from '@/components/BookmarkButton';
 import CoverArt from '@/components/CoverArt';
@@ -31,6 +31,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   const courseList = await db.select().from(courses).where(eq(courses.id, courseId)).limit(1);
   if (courseList.length === 0) return notFound();
   const course = courseList[0];
+
+  // Drafts and archived courses do not exist for members; admins may preview.
+  const previewing = course.status !== 'PUBLISHED';
+  if (previewing && !(await canPreviewUnpublished())) return notFound();
 
   const journey = await getCourseJourney(userId, courseId);
   // A hidden course does not exist as far as the member can tell — checked
@@ -125,6 +129,12 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
         <span style={{ opacity: 0.5 }}>/</span>
         <span style={{ marginLeft: '8px' }}>{course.title}</span>
       </div>
+
+      {previewing && (
+        <div className="panel" style={{ marginBottom: 16, padding: '10px 16px', fontSize: 13, color: 'var(--gold-2)', borderColor: 'rgba(217,180,91,.45)' }}>
+          👀 管理者プレビュー：この講座は{course.status === 'DRAFT' ? '下書き' : 'アーカイブ'}のため、会員には表示されていません。
+        </div>
+      )}
 
       <div className="thumb" style={{ aspectRatio: '2.2/1', borderRadius: 'var(--radius)', marginBottom: 20, background: 'var(--panel-2)' }}>
         <CoverArt src={course.thumbnailUrl} title={course.title} label={course.number ? `COURSE ${course.number}` : null} />

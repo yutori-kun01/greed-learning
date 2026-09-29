@@ -139,7 +139,11 @@ export async function getMyBookmarkedCourses() {
   const rows = await db().select().from(bookmarks).where(eq(bookmarks.userId, user.id));
   const courseIds = rows.map((r: { courseId: string }) => r.courseId);
   if (courseIds.length === 0) return [];
-  return db().select().from(courses).where(inArray(courses.id, courseIds));
+  // A bookmarked course that has since been unpublished drops off the list.
+  return db()
+    .select()
+    .from(courses)
+    .where(and(inArray(courses.id, courseIds), eq(courses.status, 'PUBLISHED')));
 }
 
 // ---------------------------------------------------------------- users

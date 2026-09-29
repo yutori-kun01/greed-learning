@@ -5,7 +5,7 @@ import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { getAccessibleCourseIds } from '@/lib/access';
 import { getCategories, getCourseTagMap, getMyBookmarkedCourseIds, getTags } from '@/lib/queries';
-import { getCourseJourneys, type CourseJourney } from '@/lib/journeyState';
+import { canPreviewUnpublished, getCourseJourneys, type CourseJourney } from '@/lib/journeyState';
 import { describeRequirement } from '@/lib/journey';
 import CoursesClientUI from './CoursesClientUI';
 
@@ -18,7 +18,12 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   const session = await auth.api.getSession({ headers: reqHeaders });
   const userId = session?.user?.id;
 
-  const allCourses = await db().select().from(courses).orderBy(courses.createdAt);
+  // Members only ever see published courses; an admin previewing the member
+  // view also sees drafts, marked as such.
+  const preview = await canPreviewUnpublished();
+  const allCourses = (await db().select().from(courses).orderBy(courses.createdAt)).filter(
+    (c: typeof courses.$inferSelect) => preview || c.status === 'PUBLISHED'
+  );
   const allLessons = await db().select().from(lessons);
   const userProgress = userId
     ? await db().select().from(lessonProgress).where(eq(lessonProgress.userId, userId))
@@ -52,7 +57,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
       lessons: c.lessonCount || 0,
       minutes: c.totalDuration || 0,
       cat: c.categoryId || '',
-      badge: c.badge || null,
+      badge: c.status === 'PUBLISHED' ? c.badge || null : c.status === 'DRAFT' ? '下書き' : 'アーカイブ',
       thumbnailUrl: c.thumbnailUrl || null,
       locked: !accessibleIds.has(c.id),
       bookmarked: bookmarkedIds.has(c.id),

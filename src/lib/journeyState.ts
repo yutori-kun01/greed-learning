@@ -13,6 +13,7 @@ import {
 } from '@/db/schema';
 import { and, asc, eq } from 'drizzle-orm';
 import { canAccessCourse, getAccessibleCourseIds } from '@/lib/access';
+import { optionalUser } from '@/lib/session';
 import {
   OPEN,
   evaluateUnlock,
@@ -141,16 +142,27 @@ export async function getCourseJourney(userId: string, courseId: string): Promis
 }
 
 /**
- * Plan access *and* journey unlock: whether the member may read the course
- * right now. Everything that serves course content goes through this.
+ * Admins may open draft and archived courses to preview them from the member
+ * view; nobody else sees a course that is not published.
+ */
+export async function canPreviewUnpublished(): Promise<boolean> {
+  return (await optionalUser())?.role === 'ADMIN';
+}
+
+/**
+ * Published (or previewed by an admin), plan access *and* journey unlock:
+ * whether the member may read the course right now. Everything that serves
+ * course content goes through this.
  */
 export async function canOpenCourse(
   d1: D1Database,
   userId: string,
   course: { id: string; requiredPlanId: string | null }
 ): Promise<boolean> {
+  const journey = await getCourseJourney(userId, course.id);
+  if (!journey.published && !(await canPreviewUnpublished())) return false;
   if (!(await canAccessCourse(d1, userId, course))) return false;
-  return (await getCourseJourney(userId, course.id)).unlocked;
+  return journey.unlocked;
 }
 
 /** Batch version of canOpenCourse. */
@@ -161,7 +173,13 @@ export async function getOpenCourseIds(
 ): Promise<Set<string>> {
   const accessible = await getAccessibleCourseIds(d1, userId, list);
   const journeys = await getCourseJourneys(userId);
-  return new Set([...accessible].filter((id) => journeyOf(journeys, id).unlocked));
+  const preview = await canPreviewUnpublished();
+  return new Set(
+    [...accessible].filter((id) => {
+      const journey = journeyOf(journeys, id);
+      return (journey.published || preview) && journey.unlocked;
+    })
+  );
 }
 
 // ------------------------------------------------------------------ rewards

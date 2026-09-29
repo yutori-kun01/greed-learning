@@ -2,7 +2,8 @@
 
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { createReward, deleteReward, updateReward, type RewardResult } from '@/actions/rewards';
+import { createReward, deleteReward, updatePointSettings, updateReward, type RewardResult } from '@/actions/rewards';
+import type { PointValues } from '@/lib/points';
 
 type Reward = {
   id: string;
@@ -117,7 +118,72 @@ function RewardForm({ reward, onDone, submit }: { reward?: Reward; onDone: () =>
   );
 }
 
-export default function RewardManager({ rewards, points }: { rewards: Reward[]; points: Record<string, number> }) {
+const POINT_ROWS: Array<{ key: keyof PointValues; name: string; label: string; note: string }> = [
+  { key: 'DAILY_LOGIN', name: 'pointsDailyLogin', label: '毎日のログイン', note: '1日1回（日本時間）' },
+  { key: 'LESSON_COMPLETE', name: 'pointsLessonComplete', label: 'レッスン完了', note: '各レッスンの初回完了時' },
+  { key: 'COURSE_COMPLETE', name: 'pointsCourseComplete', label: '講座読了ボーナス', note: '講座の全レッスン完了時' },
+  { key: 'STREAK_MILESTONE', name: 'pointsStreakMilestone', label: '連続学習の節目', note: '3・7・14・30・60・100日' },
+];
+
+function PointSettingsForm({ points, defaults }: { points: PointValues; defaults: PointValues }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [saved, setSaved] = useState(false);
+
+  return (
+    <form
+      className="panel"
+      style={{ marginBottom: 24 }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        setSaved(false);
+        startTransition(async () => {
+          try {
+            const result = await updatePointSettings(fd);
+            if (!result.success) {
+              alert(result.error);
+              return;
+            }
+            setSaved(true);
+            router.refresh();
+          } catch {
+            alert('保存に失敗しました');
+          }
+        });
+      }}
+    >
+      <h2 className="panel-title">ポイントの付与数</h2>
+      <p style={{ ...hint, marginBottom: 14 }}>
+        会員は学習とログインでポイントを貯めます。ポイントは消費されず、累計だけが増えます。0にするとその付与は止まり、空欄にすると初期値に戻ります。変更はこれからの付与に適用され、獲得済みのポイントは変わりません。
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 14 }}>
+        {POINT_ROWS.map((row) => (
+          <label key={row.key}>
+            <span style={labelText}>{row.label}</span>
+            <input
+              type="number"
+              name={row.name}
+              min={0}
+              max={10000}
+              step={1}
+              style={inputStyle}
+              defaultValue={points[row.key]}
+              placeholder={`初期値 ${defaults[row.key]}`}
+            />
+            <span style={{ ...hint, display: 'block' }}>{row.note}（初期値 {defaults[row.key]}pt）</span>
+          </label>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button type="submit" className="btn btn-gold" disabled={isPending}>{isPending ? '保存中...' : 'ポイント設定を保存'}</button>
+        {saved && !isPending && <span style={{ color: '#8ce0a8', fontSize: 13 }}>保存しました</span>}
+      </div>
+    </form>
+  );
+}
+
+export default function RewardManager({ rewards, points, defaults }: { rewards: Reward[]; points: PointValues; defaults: PointValues }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -126,16 +192,11 @@ export default function RewardManager({ rewards, points }: { rewards: Reward[]; 
   return (
     <div style={{ maxWidth: 860 }}>
       <h1 className="section-title">特典・ポイント交換</h1>
-      <div className="panel" style={{ marginBottom: 24, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.8 }}>
-        会員は学習とログインでポイントを貯めます（消費されず累計のみ増えます）。
-        <br />
-        ・毎日のログイン <b style={{ color: 'var(--gold-2)' }}>+{points.DAILY_LOGIN}pt</b>
-        ・レッスン完了 <b style={{ color: 'var(--gold-2)' }}>+{points.LESSON_COMPLETE}pt</b>
-        ・講座読了ボーナス <b style={{ color: 'var(--gold-2)' }}>+{points.COURSE_COMPLETE}pt</b>
-        ・連続学習の節目 <b style={{ color: 'var(--gold-2)' }}>+{points.STREAK_MILESTONE}pt</b>
-        <br />
+      <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.7 }}>
         ここで作った特典は、会員の「特典・ポイント」ページに並びます。講座そのものを段階的に開放したいときは、講座の編集画面の「解放条件」を使ってください。
-      </div>
+      </p>
+
+      <PointSettingsForm points={points} defaults={defaults} />
 
       <div className="panel" style={{ marginBottom: 24 }}>
         <h2 className="panel-title">新しい特典を追加</h2>

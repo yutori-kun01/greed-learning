@@ -1,11 +1,11 @@
 import React from 'react';
 import { requireAdmin } from '@/lib/session';
-import { getRewardsForAdmin } from '@/lib/queries';
-import { POINTS } from '@/lib/points';
+import { getRewardsForAdmin, getSiteSettingsQuery } from '@/lib/queries';
+import { POINTS, resolvePointValues } from '@/lib/points';
 import RewardManager from './RewardManager';
 
 export default async function AdminRewardsPage() {
   await requireAdmin();
-  const rewards = await getRewardsForAdmin();
-  return <RewardManager rewards={rewards} points={POINTS} />;
+  const [rewards, settings] = await Promise.all([getRewardsForAdmin(), getSiteSettingsQuery()]);
+  return <RewardManager rewards={rewards} points={resolvePointValues(settings)} defaults={POINTS} />;
 }

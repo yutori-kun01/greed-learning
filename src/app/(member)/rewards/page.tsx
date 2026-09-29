@@ -1,18 +1,19 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/session';
-import { getGamificationSummary } from '@/lib/gamification';
+import { getGamificationSummary, getPointValues } from '@/lib/gamification';
 import { getCourseJourneys, getMemberRewards } from '@/lib/journeyState';
 import { describeRequirement } from '@/lib/journey';
-import { POINTS, POINT_EVENT_LABELS } from '@/lib/points';
+import { POINT_EVENT_LABELS } from '@/lib/points';
 import LevelCard from '@/components/gamification/LevelCard';
 import RewardsClientUI from './RewardsClientUI';
 
 export default async function RewardsPage() {
   const me = await requireUser();
-  const [summary, rewards, journeys] = await Promise.all([
+  const [summary, rewards, journeys, points] = await Promise.all([
     getGamificationSummary(me.id),
     getMemberRewards(me.id),
     getCourseJourneys(me.id),
+    getPointValues(),
   ]);
 
   // Courses still waiting on the journey, hidden ones excluded — they are
@@ -38,10 +39,13 @@ export default async function RewardsPage() {
       <div className="panel">
         <h2 className="panel-title">ポイントの貯め方</h2>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
-          <EarnRow label="毎日のログイン" points={POINTS.DAILY_LOGIN} note={loggedInToday ? '今日は獲得済み ✓' : '今日のぶんを獲得できます'} />
-          <EarnRow label="レッスン完了" points={POINTS.LESSON_COMPLETE} />
-          <EarnRow label="講座読了ボーナス" points={POINTS.COURSE_COMPLETE} />
-          <EarnRow label="連続学習の節目" points={POINTS.STREAK_MILESTONE} note="3・7・14・30日…" />
+          {/* An award the admin turned off (0pt) is not advertised. */}
+          {points.DAILY_LOGIN > 0 && (
+            <EarnRow label="毎日のログイン" points={points.DAILY_LOGIN} note={loggedInToday ? '今日は獲得済み ✓' : '今日のぶんを獲得できます'} />
+          )}
+          {points.LESSON_COMPLETE > 0 && <EarnRow label="レッスン完了" points={points.LESSON_COMPLETE} />}
+          {points.COURSE_COMPLETE > 0 && <EarnRow label="講座読了ボーナス" points={points.COURSE_COMPLETE} />}
+          {points.STREAK_MILESTONE > 0 && <EarnRow label="連続学習の節目" points={points.STREAK_MILESTONE} note="3・7・14・30日…" />}
         </ul>
       </div>
 

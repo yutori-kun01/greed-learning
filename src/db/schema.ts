@@ -393,6 +393,13 @@ export const siteSettings = sqliteTable('siteSettings', {
   resendApiKeyEnc: text('resendApiKeyEnc'),
   resendFromEmail: text('resendFromEmail'),
 
+  // Points awarded per action, editable from 特典・ポイント交換. Null means
+  // the default in src/lib/points.ts; 0 turns that award off.
+  pointsDailyLogin: integer('pointsDailyLogin'),
+  pointsLessonComplete: integer('pointsLessonComplete'),
+  pointsCourseComplete: integer('pointsCourseComplete'),
+  pointsStreakMilestone: integer('pointsStreakMilestone'),
+
   updatedAt: text('updatedAt').notNull(),
 });
 

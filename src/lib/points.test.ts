@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   BADGES,
+  MAX_POINTS_PER_AWARD,
   POINTS,
+  parsePointValue,
+  resolvePointValues,
   isStreakAlive,
   levelFromPoints,
   nextStreak,
@@ -173,5 +176,49 @@ describe('qualifyingBadgeIds', () => {
 describe('POINTS', () => {
   it('values finishing a course well above a single lesson', () => {
     expect(POINTS.COURSE_COMPLETE).toBeGreaterThan(POINTS.LESSON_COMPLETE);
+  });
+});
+
+describe('resolvePointValues', () => {
+  it('uses the defaults when nothing is configured', () => {
+    expect(resolvePointValues(null)).toEqual({
+      DAILY_LOGIN: POINTS.DAILY_LOGIN,
+      LESSON_COMPLETE: POINTS.LESSON_COMPLETE,
+      COURSE_COMPLETE: POINTS.COURSE_COMPLETE,
+      STREAK_MILESTONE: POINTS.STREAK_MILESTONE,
+    });
+  });
+
+  it('takes configured values, including 0 to switch an award off', () => {
+    const values = resolvePointValues({ pointsDailyLogin: 0, pointsLessonComplete: 25, pointsCourseComplete: null });
+    expect(values.DAILY_LOGIN).toBe(0);
+    expect(values.LESSON_COMPLETE).toBe(25);
+    expect(values.COURSE_COMPLETE).toBe(POINTS.COURSE_COMPLETE);
+  });
+
+  it('clamps stored values it should never have been given', () => {
+    const values = resolvePointValues({ pointsDailyLogin: -3, pointsLessonComplete: 99999999 });
+    expect(values.DAILY_LOGIN).toBe(0);
+    expect(values.LESSON_COMPLETE).toBe(MAX_POINTS_PER_AWARD);
+  });
+});
+
+describe('parsePointValue', () => {
+  it('treats blank as "use the default"', () => {
+    expect(parsePointValue('')).toBeNull();
+    expect(parsePointValue('  ')).toBeNull();
+    expect(parsePointValue(null)).toBeNull();
+  });
+
+  it('accepts whole numbers from 0 to the cap', () => {
+    expect(parsePointValue('0')).toBe(0);
+    expect(parsePointValue('15')).toBe(15);
+    expect(parsePointValue(String(MAX_POINTS_PER_AWARD))).toBe(MAX_POINTS_PER_AWARD);
+  });
+
+  it('rejects anything else with a message', () => {
+    for (const bad of ['-1', '2.5', 'abc', String(MAX_POINTS_PER_AWARD + 1)]) {
+      expect(parsePointValue(bad)).toHaveProperty('error');
+    }
   });
 });

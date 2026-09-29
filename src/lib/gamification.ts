@@ -4,19 +4,26 @@ import { getDb } from '@/db';
 import { lessonProgress, lessons, pointEvents, user, userBadges } from '@/db/schema';
 import { and, eq, inArray, desc, isNull, ne, or, sql } from 'drizzle-orm';
 import { loadCompletedCourseIds } from '@/lib/journeyState';
+import { getSiteSettingsQuery } from '@/lib/queries';
 import {
   BADGES_BY_ID,
-  POINTS,
   isStreakAlive,
   levelFromPoints,
   nextStreak,
   qualifyingBadgeIds,
   reachedStreakMilestone,
+  resolvePointValues,
   tokyoDateString,
   type LevelInfo,
+  type PointValues,
 } from '@/lib/points';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
+
+/** Points per action as currently configured (see resolvePointValues). */
+export async function getPointValues(): Promise<PointValues> {
+  return resolvePointValues(await getSiteSettingsQuery());
+}
 
 export type EarnedBadge = {
   id: string;
@@ -134,17 +141,20 @@ export async function recordLessonCompletion(
   const today = tokyoDateString();
   const streak = nextStreak(me.lastActivityDate, me.currentStreak, me.longestStreak, today);
 
-  const events: Array<{ type: 'LESSON_COMPLETE' | 'COURSE_COMPLETE' | 'STREAK_BONUS'; points: number }> = [
-    { type: 'LESSON_COMPLETE', points: POINTS.LESSON_COMPLETE },
+  const values = await getPointValues();
+  const candidates: Array<{ type: 'LESSON_COMPLETE' | 'COURSE_COMPLETE' | 'STREAK_BONUS'; points: number }> = [
+    { type: 'LESSON_COMPLETE', points: values.LESSON_COMPLETE },
   ];
 
   const courseCompleted = await isCourseComplete(userId, courseId);
   if (courseCompleted) {
-    events.push({ type: 'COURSE_COMPLETE', points: POINTS.COURSE_COMPLETE });
+    candidates.push({ type: 'COURSE_COMPLETE', points: values.COURSE_COMPLETE });
   }
   if (streak.advanced && reachedStreakMilestone(streak.currentStreak)) {
-    events.push({ type: 'STREAK_BONUS', points: POINTS.STREAK_MILESTONE });
+    candidates.push({ type: 'STREAK_BONUS', points: values.STREAK_MILESTONE });
   }
+  // An award the admin set to 0 is off: no ledger row for nothing.
+  const events = candidates.filter((e) => e.points > 0);
 
   const pointsAwarded = events.reduce((sum, e) => sum + e.points, 0);
   const previousTotal = me.totalPoints ?? 0;
@@ -216,7 +226,8 @@ export type GamificationSummary = {
  */
 export async function grantDailyLoginBonus(userId: string): Promise<number> {
   const today = tokyoDateString();
-  const points = POINTS.DAILY_LOGIN;
+  const points = (await getPointValues()).DAILY_LOGIN;
+  if (points <= 0) return 0;
 
   const claimed = await db()
     .update(user)

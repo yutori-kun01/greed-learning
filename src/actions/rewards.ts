@@ -1,11 +1,13 @@
 'use server';
 
 import { getDb } from '@/db';
-import { rewardClaims, rewards } from '@/db/schema';
+import { rewardClaims, rewards, siteSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireUser } from '@/lib/session';
 import { parseThreshold } from '@/lib/journey';
+import { parsePointValue } from '@/lib/points';
+import { DEFAULT_SITE_NAME } from '@/lib/brand';
 import { buildMemberRewards } from '@/lib/journeyState';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
@@ -111,4 +113,33 @@ export async function claimReward(rewardId: string): Promise<ClaimResult> {
 
   revalidatePath('/rewards');
   return { success: true, content: rows[0]?.content ?? null, url: rows[0]?.url ?? null };
+}
+
+const POINT_FIELDS = ['pointsDailyLogin', 'pointsLessonComplete', 'pointsCourseComplete', 'pointsStreakMilestone'] as const;
+
+/**
+ * Points per action. Changes apply to awards from now on; points already
+ * earned stay as they are.
+ */
+export async function updatePointSettings(formData: FormData): Promise<RewardResult> {
+  await requireAdmin();
+
+  const values: Partial<Record<(typeof POINT_FIELDS)[number], number | null>> = {};
+  for (const field of POINT_FIELDS) {
+    const parsed = parsePointValue(formData.get(field));
+    if (parsed !== null && typeof parsed === 'object') return { success: false, error: parsed.error };
+    values[field] = parsed;
+  }
+
+  const updatedAt = new Date().toISOString();
+  // The row may not exist yet on a fresh site. Its siteName column default
+  // predates the rebrand, so a first insert has to name the site itself.
+  await db()
+    .insert(siteSettings)
+    .values({ id: '1', siteName: DEFAULT_SITE_NAME, ...values, updatedAt })
+    .onConflictDoUpdate({ target: siteSettings.id, set: { ...values, updatedAt } });
+
+  revalidatePath('/admin/rewards');
+  revalidatePath('/rewards');
+  return { success: true };
 }
