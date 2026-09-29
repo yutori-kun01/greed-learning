@@ -3,6 +3,7 @@ import React, { useTransition, useState } from 'react';
 import { toggleLessonComplete } from '@/actions/progress';
 import RewardToast from '@/components/gamification/RewardToast';
 import type { Reward } from '@/lib/gamification';
+import type { Unlocked } from '@/lib/journeyState';
 
 export default function LessonClientUI({ 
   lessonId, 
@@ -18,6 +19,7 @@ export default function LessonClientUI({
   const [isPending, startTransition] = useTransition();
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
   const [reward, setReward] = useState<Reward | null>(null);
+  const [unlocked, setUnlocked] = useState<Unlocked | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleToggle = () => {
@@ -30,7 +32,10 @@ export default function LessonClientUI({
         const result = await toggleLessonComplete(lessonId, newState);
         // Only present the first time a lesson is completed; re-completing
         // awards nothing, so there is nothing to announce.
-        if (result.reward) setReward(result.reward);
+        if (result.reward) {
+          setReward(result.reward);
+          setUnlocked(result.unlocked);
+        }
       } catch (err) {
         setIsCompleted(!newState); // Revert on failure
         setError((err as Error).message || 'エラーが発生しました');
@@ -90,7 +95,7 @@ export default function LessonClientUI({
         </div>
       </div>
 
-      {reward && <RewardToast reward={reward} onDismiss={() => setReward(null)} />}
+      {reward && <RewardToast reward={reward} unlocked={unlocked} onDismiss={() => setReward(null)} />}
     </div>
   );
 }

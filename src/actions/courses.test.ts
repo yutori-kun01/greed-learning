@@ -24,7 +24,7 @@ describe('Courses Actions', () => {
     // No title
     formData.append('description', 'Course Desc');
     
-    await expect(createCourse(formData)).rejects.toThrow('タイトルは必須です');
+    await expect(createCourse(formData)).resolves.toEqual({ success: false, error: 'タイトルは必須です' });
   });
 
   it('should delete a course successfully', async () => {

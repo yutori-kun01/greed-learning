@@ -404,6 +404,78 @@ button, select, input { font: inherit; color: inherit; }
 
 .empty { text-align: center; color: var(--muted); padding: 48px 0; font-size: 13px; }
 
+/* ---------- タグ ---------- */
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag {
+  font-size: 10.5px;
+  color: var(--text-2);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+button.tag { cursor: pointer; font-family: inherit; }
+button.tag:hover { border-color: rgba(217, 180, 91, .4); color: var(--gold-2); }
+.tag.is-active {
+  background: var(--gold-dim);
+  border-color: rgba(217, 180, 91, .45);
+  color: var(--gold-2);
+}
+.tag-filter { display: flex; align-items: center; gap: 10px; margin: -8px 0 20px; flex-wrap: wrap; }
+.tag-filter .tags { gap: 6px; }
+.tag-filter .tag { font-size: 12px; padding: 4px 11px; }
+.tag-filter-label { font-size: 12px; color: var(--muted); }
+
+.tag-check { position: relative; cursor: pointer; }
+.tag-check input { position: absolute; opacity: 0; pointer-events: none; }
+.tag-check span {
+  display: inline-block;
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  transition: border-color .15s, color .15s, background .15s;
+}
+.tag-check input:checked + span {
+  background: var(--gold-dim);
+  border-color: rgba(217, 180, 91, .45);
+  color: var(--gold-2);
+  font-weight: 600;
+}
+.tag-check input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.course-search { width: 100%; max-width: none; margin-bottom: 14px; }
+
+/* ---------- ジャーニーでロック中の講座 ---------- */
+.card.is-locked { cursor: not-allowed; }
+.card.is-locked:hover { transform: none; border-color: var(--line); box-shadow: none; }
+.card.is-locked .thumb,
+.card.is-locked .card-title,
+.card.is-locked .card-desc { filter: grayscale(1); opacity: .45; }
+.lock-note {
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  background: var(--panel-2);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.lock-note b { color: var(--gold-2); font-size: 11px; letter-spacing: .04em; }
+.lock-note .is-met { color: var(--muted); text-decoration: line-through; }
+.unlock-badge {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 10.5px; font-weight: 700;
+  background: rgba(10, 18, 32, .8);
+  border: 1px solid rgba(217, 180, 91, .5);
+  color: var(--gold-2);
+}
+
 /* ---------- ページネーション ---------- */
 .pagination {
   display: flex;

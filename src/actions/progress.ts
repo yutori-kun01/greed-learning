@@ -5,8 +5,15 @@ import { lessonProgress, lessons, courses } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/session';
-import { canAccessCourse } from '@/lib/access';
 import { recordLessonCompletion } from '@/lib/gamification';
+import {
+  buildCourseJourneys,
+  buildMemberRewards,
+  canOpenCourse,
+  diffUnlocks,
+  getCourseJourneys,
+  type Unlocked,
+} from '@/lib/journeyState';
 
 const db = () => getDb(process.env.DB as unknown as D1Database);
 
@@ -32,7 +39,9 @@ export async function toggleLessonComplete(lessonId: string, isCompleted: boolea
   const course = courseRows[0];
   if (!course) throw new Error('講座が見つかりません');
 
-  const hasAccess = await canAccessCourse(
+  // Plan access and the journey: a course still locked behind another one
+  // cannot be progressed by posting its lesson ids directly.
+  const hasAccess = await canOpenCourse(
     process.env.DB as unknown as D1Database,
     user.id,
     course
@@ -48,6 +57,13 @@ export async function toggleLessonComplete(lessonId: string, isCompleted: boolea
     .limit(1);
 
   const wasCompleted = existing[0]?.isCompleted ?? false;
+  const firstCompletion = isCompleted && !wasCompleted;
+
+  // Snapshot of what is open before this completion, to tell the member
+  // afterwards what it opened up. Courses reuse the access check's load.
+  const before = firstCompletion
+    ? { courses: await getCourseJourneys(user.id), rewards: await buildMemberRewards(user.id) }
+    : null;
 
   if (existing[0]) {
     await db()
@@ -67,15 +83,19 @@ export async function toggleLessonComplete(lessonId: string, isCompleted: boolea
 
   // Points and streaks only move forward, and only the first time a given
   // lesson is completed — otherwise toggling the checkbox farms points.
-  const reward =
-    isCompleted && !wasCompleted
-      ? await recordLessonCompletion(user.id, lesson.courseId)
-      : null;
+  const reward = firstCompletion ? await recordLessonCompletion(user.id, lesson.courseId) : null;
+
+  let unlocked: Unlocked | null = null;
+  if (reward && before) {
+    const after = { courses: await buildCourseJourneys(user.id), rewards: await buildMemberRewards(user.id) };
+    unlocked = diffUnlocks(before, after);
+  }
 
   revalidatePath('/courses');
   revalidatePath('/dashboard');
   revalidatePath('/learning');
   revalidatePath(`/courses/${lesson.courseId}`);
+  revalidatePath('/rewards');
 
-  return { success: true, isCompleted, reward };
+  return { success: true, isCompleted, reward, unlocked };
 }

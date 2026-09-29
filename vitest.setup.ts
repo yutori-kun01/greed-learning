@@ -22,7 +22,9 @@ const createMockQueryBuilder = (resolvedValue: any = []) => {
     {
       get(target, prop) {
         if (prop === 'then') {
-          return undefined; // Not a promise itself until we resolve it
+          // Awaiting the builder at any point in the chain resolves it, as
+          // drizzle's own query builders do.
+          return (resolve: any, reject: any) => Promise.resolve(resolvedValue).then(resolve, reject);
         }
         return vi.fn().mockImplementation(() => {
           if (['limit', 'orderBy', 'where', 'values', 'set', 'from'].includes(prop as string)) {
@@ -34,8 +36,6 @@ const createMockQueryBuilder = (resolvedValue: any = []) => {
       },
     }
   );
-  // Special case: make it act as a promise for await
-  builder.then = (resolve: any) => resolve(resolvedValue);
   return builder;
 };
 

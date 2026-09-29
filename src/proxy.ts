@@ -17,7 +17,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * cookie.
  */
 
-const PROTECTED_PREFIXES = ['/dashboard', '/learning', '/bookmarks', '/admin', '/settings', '/resources', '/courses'];
+const PROTECTED_PREFIXES = ['/dashboard', '/learning', '/bookmarks', '/admin', '/settings', '/resources', '/courses', '/rewards'];
 
 function hasSessionCookie(request: NextRequest): boolean {
   // Better Auth prefixes the cookie with __Secure- when served over HTTPS.

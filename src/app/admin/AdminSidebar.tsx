@@ -11,6 +11,8 @@ export default function AdminSidebar({ siteName = DEFAULT_SITE_NAME, logoUrl }: 
     { href: '/admin', label: 'ダッシュボード' },
     { href: '/admin/courses', label: '講座管理' },
     { href: '/admin/categories', label: 'カテゴリ管理' },
+    { href: '/admin/tags', label: 'タグ管理' },
+    { href: '/admin/rewards', label: '特典・ポイント交換' },
     { href: '/admin/posts', label: '記事管理' },
     { href: '/admin/users', label: 'ユーザー管理' },
     { href: '/admin/plans', label: 'プラン管理' },

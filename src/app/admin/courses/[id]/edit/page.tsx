@@ -10,7 +10,7 @@ import LessonList from './LessonList';
 import CourseInfoForm from './CourseInfoForm';
 import ResourceForm from './ResourceForm';
 import ResourceList from './ResourceList';
-import { getCategories, getPlansForAdmin } from '@/lib/queries';
+import { getCategories, getCourseTagMap, getPlansForAdmin, getPrerequisiteIdsForAdmin, getTags } from '@/lib/queries';
 import { getCourseResourcesForAdmin } from '@/lib/queries';
 
 export default async function AdminCourseEditPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +28,12 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
   const plans = await getPlansForAdmin();
   const categories = await getCategories();
   const resources = await getCourseResourcesForAdmin(id);
+  const [tags, tagMap, prerequisiteIds] = await Promise.all([getTags(), getCourseTagMap(), getPrerequisiteIdsForAdmin(id)]);
+  const otherCourses = (await db
+    .select({ id: courses.id, number: courses.number, title: courses.title })
+    .from(courses)
+    .orderBy(asc(courses.createdAt)))
+    .filter((c: { id: string }) => c.id !== id);
 
   return (
     <div>
@@ -53,9 +59,16 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
               badge: course.badge,
               requiredPlanId: course.requiredPlanId,
               thumbnailUrl: course.thumbnailUrl,
+              tagIds: tagMap.get(id) ?? [],
+              prerequisiteIds,
+              unlockCompletedCourses: course.unlockCompletedCourses,
+              unlockPoints: course.unlockPoints,
+              isHidden: course.isHidden,
             }}
             plans={plans}
             categories={categories}
+            tags={tags}
+            otherCourses={otherCourses}
           />
         </div>
 

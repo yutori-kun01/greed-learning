@@ -11,7 +11,65 @@ export const POINTS = {
   COURSE_COMPLETE: 100,
   /** Awarded once when a streak reaches one of STREAK_MILESTONES. */
   STREAK_MILESTONE: 50,
+  /** Once per Tokyo calendar day, on the first visit to the member area. */
+  DAILY_LOGIN: 5,
 } as const;
+
+export type PointValues = {
+  DAILY_LOGIN: number;
+  LESSON_COMPLETE: number;
+  COURSE_COMPLETE: number;
+  STREAK_MILESTONE: number;
+};
+
+/** Upper bound for one award, so a typo cannot hand out millions. */
+export const MAX_POINTS_PER_AWARD = 10000;
+
+type PointSettings = {
+  pointsDailyLogin?: number | null;
+  pointsLessonComplete?: number | null;
+  pointsCourseComplete?: number | null;
+  pointsStreakMilestone?: number | null;
+} | null | undefined;
+
+function settingOr(value: number | null | undefined, fallback: number): number {
+  if (value === null || value === undefined || !Number.isFinite(value)) return fallback;
+  return Math.min(MAX_POINTS_PER_AWARD, Math.max(0, Math.floor(value)));
+}
+
+/**
+ * The points actually awarded: what the admin set in 特典・ポイント交換,
+ * falling back to POINTS for anything left unset. 0 turns an award off.
+ */
+export function resolvePointValues(settings: PointSettings): PointValues {
+  return {
+    DAILY_LOGIN: settingOr(settings?.pointsDailyLogin, POINTS.DAILY_LOGIN),
+    LESSON_COMPLETE: settingOr(settings?.pointsLessonComplete, POINTS.LESSON_COMPLETE),
+    COURSE_COMPLETE: settingOr(settings?.pointsCourseComplete, POINTS.COURSE_COMPLETE),
+    STREAK_MILESTONE: settingOr(settings?.pointsStreakMilestone, POINTS.STREAK_MILESTONE),
+  };
+}
+
+/**
+ * A point value from the settings form: blank means "use the default"
+ * (null), otherwise a whole number from 0 to MAX_POINTS_PER_AWARD.
+ */
+export function parsePointValue(raw: FormDataEntryValue | null): number | null | { error: string } {
+  if (typeof raw !== 'string' || raw.trim() === '') return null;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > MAX_POINTS_PER_AWARD) {
+    return { error: `ポイントは0〜${MAX_POINTS_PER_AWARD.toLocaleString()}の整数で入力してください` };
+  }
+  return n;
+}
+
+/** Member-facing name of each pointEvents.type. */
+export const POINT_EVENT_LABELS: Record<string, string> = {
+  LESSON_COMPLETE: 'レッスン完了',
+  COURSE_COMPLETE: '講座読了ボーナス',
+  STREAK_BONUS: '連続学習ボーナス',
+  DAILY_LOGIN: 'ログインボーナス',
+};
 
 export const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100] as const;
 

@@ -27,6 +27,10 @@ export const user = sqliteTable("user", {
   // Lifetime points. Never spent, so it only ever increases; pointEvents is
   // the ledger it is derived from.
   totalPoints: integer("totalPoints").default(0).notNull(),
+  // Tokyo calendar day (YYYY-MM-DD) the daily login bonus was last paid for.
+  // The award is a conditional update on this column, so it pays once a day
+  // however many requests race for it.
+  lastLoginBonusDate: text("lastLoginBonusDate"),
 
   // Subscription / membership
   planId: text("planId").references(() => plans.id),
@@ -102,9 +106,44 @@ export const courses = sqliteTable("courses", {
   // Set = only members on this plan (or with a matching enrollment) can access.
   requiredPlanId: text("requiredPlanId").references(() => plans.id, { onDelete: "set null" }),
 
+  // Customer journey (src/lib/journey.ts). On top of plan access, a course
+  // can wait for the member to finish other courses (coursePrerequisites),
+  // to finish a number of courses, or to reach a lifetime point total.
+  // A hidden course is not listed at all until those are met.
+  unlockCompletedCourses: integer("unlockCompletedCourses"),
+  unlockPoints: integer("unlockPoints"),
+  isHidden: integer("isHidden", { mode: "boolean" }).default(false).notNull(),
+
   createdAt: text("createdAt").notNull(),
   updatedAt: text("updatedAt").notNull(),
 });
+
+// courseId opens once the member has completed every lesson of each of its
+// requiredCourseIds.
+export const coursePrerequisites = sqliteTable("coursePrerequisites", {
+  id: text("id").primaryKey(),
+  courseId: text("courseId").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+  requiredCourseId: text("requiredCourseId").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+}, (t) => [
+  uniqueIndex("coursePrerequisites_courseId_requiredCourseId_unique").on(t.courseId, t.requiredCourseId),
+]);
+
+// Free-form labels, managed in /admin/tags. Unlike a category a course can
+// carry any number of them.
+export const tags = sqliteTable("tags", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  createdAt: text("createdAt").notNull(),
+});
+
+export const courseTags = sqliteTable("courseTags", {
+  id: text("id").primaryKey(),
+  courseId: text("courseId").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+  tagId: text("tagId").references(() => tags.id, { onDelete: "cascade" }).notNull(),
+}, (t) => [
+  uniqueIndex("courseTags_courseId_tagId_unique").on(t.courseId, t.tagId),
+  index("courseTags_tagId_idx").on(t.tagId),
+]);
 
 // Course categories, managed in /admin/categories. courses.categoryId holds
 // one of these ids; a course whose id matches nothing shows as 未分類.
@@ -270,7 +309,7 @@ export const pointEvents = sqliteTable('pointEvents', {
   id: text('id').primaryKey(),
   userId: text('userId').references(() => user.id, { onDelete: 'cascade' }).notNull(),
   type: text('type', {
-    enum: ['LESSON_COMPLETE', 'COURSE_COMPLETE', 'STREAK_BONUS'],
+    enum: ['LESSON_COMPLETE', 'COURSE_COMPLETE', 'STREAK_BONUS', 'DAILY_LOGIN'],
   }).notNull(),
   points: integer('points').notNull(),
   courseId: text('courseId'),
@@ -288,6 +327,35 @@ export const userBadges = sqliteTable('userBadges', {
 }, (t) => [
   // A badge is earned once.
   uniqueIndex('userBadges_userId_badgeId_unique').on(t.userId, t.badgeId),
+]);
+
+// Perks a member earns through the journey: by finishing enough courses, by
+// reaching a lifetime point total, or both. Points are never spent, so
+// "buying" one with points means reaching its price. `content` (a code, a
+// note) and `url` are only ever sent to a member who has claimed it.
+export const rewards = sqliteTable('rewards', {
+  id: text('id').primaryKey(),
+  icon: text('icon').default('🎁').notNull(),
+  title: text('title').notNull(),
+  description: text('description'),
+  content: text('content'),
+  url: text('url'),
+  requiredCompletedCourses: integer('requiredCompletedCourses'),
+  requiredPoints: integer('requiredPoints'),
+  // Not shown to members at all until they qualify.
+  isHidden: integer('isHidden', { mode: 'boolean' }).default(false).notNull(),
+  isActive: integer('isActive', { mode: 'boolean' }).default(true).notNull(),
+  sortOrder: integer('sortOrder').default(0).notNull(),
+  createdAt: text('createdAt').notNull(),
+});
+
+export const rewardClaims = sqliteTable('rewardClaims', {
+  id: text('id').primaryKey(),
+  userId: text('userId').references(() => user.id, { onDelete: 'cascade' }).notNull(),
+  rewardId: text('rewardId').references(() => rewards.id, { onDelete: 'cascade' }).notNull(),
+  claimedAt: text('claimedAt').notNull(),
+}, (t) => [
+  uniqueIndex('rewardClaims_userId_rewardId_unique').on(t.userId, t.rewardId),
 ]);
 
 // ========================
@@ -324,6 +392,13 @@ export const siteSettings = sqliteTable('siteSettings', {
   // When unset, RESEND_API_KEY / RESEND_FROM_EMAIL from the Worker env apply.
   resendApiKeyEnc: text('resendApiKeyEnc'),
   resendFromEmail: text('resendFromEmail'),
+
+  // Points awarded per action, editable from 特典・ポイント交換. Null means
+  // the default in src/lib/points.ts; 0 turns that award off.
+  pointsDailyLogin: integer('pointsDailyLogin'),
+  pointsLessonComplete: integer('pointsLessonComplete'),
+  pointsCourseComplete: integer('pointsCourseComplete'),
+  pointsStreakMilestone: integer('pointsStreakMilestone'),
 
   updatedAt: text('updatedAt').notNull(),
 });

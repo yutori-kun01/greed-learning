@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { Reward } from '@/lib/gamification';
+import type { Unlocked } from '@/lib/journeyState';
 
 /**
  * Shown once, right after a lesson is first completed. The award happens
@@ -9,18 +11,21 @@ import type { Reward } from '@/lib/gamification';
  */
 export default function RewardToast({
   reward,
+  unlocked,
   onDismiss,
 }: {
   reward: Reward;
+  unlocked?: Unlocked | null;
   onDismiss: () => void;
 }) {
+  const opened = (unlocked?.courses.length ?? 0) + (unlocked?.rewards.length ?? 0) > 0;
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    const hold = reward.newBadges.length > 0 || reward.leveledUp ? 7000 : 4000;
+    const hold = opened ? 10000 : reward.newBadges.length > 0 || reward.leveledUp ? 7000 : 4000;
     const timer = setTimeout(() => setLeaving(true), hold);
     return () => clearTimeout(timer);
-  }, [reward]);
+  }, [reward, opened]);
 
   useEffect(() => {
     if (!leaving) return;
@@ -89,6 +94,22 @@ export default function RewardToast({
       {reward.streakAdvanced && reward.currentStreak > 1 && (
         <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 8 }}>
           🔥 {reward.currentStreak}日連続
+        </div>
+      )}
+
+      {opened && unlocked && (
+        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 10 }}>
+          <div style={{ fontSize: 11, color: 'var(--gold-2)', fontWeight: 700, marginBottom: 6 }}>🔓 新しく開放されました</div>
+          {unlocked.courses.map((c) => (
+            <Link key={c.id} href={`/courses/${c.id}`} style={{ display: 'block', fontSize: 13, color: 'var(--text)', marginBottom: 4 }}>
+              📘 {c.title} →
+            </Link>
+          ))}
+          {unlocked.rewards.map((r) => (
+            <Link key={r.id} href="/rewards" style={{ display: 'block', fontSize: 13, color: 'var(--text)', marginBottom: 4 }}>
+              {r.icon} {r.title} →
+            </Link>
+          ))}
         </div>
       )}
 

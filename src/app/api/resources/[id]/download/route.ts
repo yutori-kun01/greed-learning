@@ -3,7 +3,7 @@ import { getDb } from '@/db';
 import { courseResources, courses } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { requireUser } from '@/lib/session';
-import { canAccessCourse } from '@/lib/access';
+import { canOpenCourse } from '@/lib/journeyState';
 import { getBucket } from '@/lib/storage';
 
 /**
@@ -47,7 +47,7 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const hasAccess = await canAccessCourse(process.env.DB as unknown as D1Database, userId, {
+  const hasAccess = await canOpenCourse(process.env.DB as unknown as D1Database, userId, {
     id: resource.courseId,
     requiredPlanId: resource.requiredPlanId,
   });
