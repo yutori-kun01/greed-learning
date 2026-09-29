@@ -12,8 +12,13 @@ import {
   siteSettings,
   user,
   categories,
+  tags,
+  courseTags,
+  coursePrerequisites,
+  rewards,
+  rewardClaims,
 } from '@/db/schema';
-import { eq, inArray, asc, ne, desc, and, isNotNull } from 'drizzle-orm';
+import { eq, inArray, asc, ne, desc, and, isNotNull, count } from 'drizzle-orm';
 import { requireAdmin, requireUser } from '@/lib/session';
 
 /**
@@ -110,7 +115,7 @@ export async function getCourseResourcesForAdmin(courseId: string) {
 
 /**
  * Callers must pass only course ids the member can actually access — see
- * getAccessibleCourseIds in lib/access.
+ * getOpenCourseIds in lib/journeyState.
  */
 export async function getResourcesForCourses(courseIds: string[]) {
   if (courseIds.length === 0) return [];
@@ -180,6 +185,51 @@ export const getCategories = cache(async () => {
     return [];
   }
 });
+
+/** Every tag, alphabetical. Not secret; used by members and admin. */
+export const getTags = cache(async () => {
+  try {
+    return await db().select({ id: tags.id, name: tags.name }).from(tags).orderBy(asc(tags.name));
+  } catch {
+    return [];
+  }
+});
+
+/** courseId -> tag ids. */
+export const getCourseTagMap = cache(async (): Promise<Map<string, string[]>> => {
+  const rows: Array<{ courseId: string; tagId: string }> = await db()
+    .select({ courseId: courseTags.courseId, tagId: courseTags.tagId })
+    .from(courseTags);
+  const map = new Map<string, string[]>();
+  for (const r of rows) {
+    const list = map.get(r.courseId) ?? [];
+    list.push(r.tagId);
+    map.set(r.courseId, list);
+  }
+  return map;
+});
+
+/** Admin: prerequisite course ids of one course. */
+export async function getPrerequisiteIdsForAdmin(courseId: string): Promise<string[]> {
+  await requireAdmin();
+  const rows = await db()
+    .select({ requiredCourseId: coursePrerequisites.requiredCourseId })
+    .from(coursePrerequisites)
+    .where(eq(coursePrerequisites.courseId, courseId));
+  return rows.map((r: { requiredCourseId: string }) => r.requiredCourseId);
+}
+
+/** Admin: every perk with how many members have claimed it. */
+export async function getRewardsForAdmin() {
+  await requireAdmin();
+  const rows = await db().select().from(rewards).orderBy(asc(rewards.sortOrder), asc(rewards.createdAt));
+  const claimCounts = await db()
+    .select({ rewardId: rewardClaims.rewardId, n: count() })
+    .from(rewardClaims)
+    .groupBy(rewardClaims.rewardId);
+  const byId = new Map(claimCounts.map((c: { rewardId: string; n: number }) => [c.rewardId, c.n]));
+  return rows.map((r: typeof rewards.$inferSelect) => ({ ...r, claimCount: byId.get(r.id) ?? 0 }));
+}
 
 export const getSiteSettingsQuery = cache(async () => {
   try {

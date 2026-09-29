@@ -3,6 +3,7 @@ import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateCourse } from '@/actions/courses';
 import ImagePicker from '@/components/ImagePicker';
+import { JourneyFields, TagFields } from '../../CourseExtraFields';
 
 const inputStyle: React.CSSProperties = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', marginTop: '6px', boxSizing: 'border-box' };
 const labelStyle: React.CSSProperties = { display: 'block', marginBottom: '16px' };
@@ -17,11 +18,24 @@ type Course = {
   badge: string | null;
   requiredPlanId: string | null;
   thumbnailUrl: string | null;
+  tagIds: string[];
+  prerequisiteIds: string[];
+  unlockCompletedCourses: number | null;
+  unlockPoints: number | null;
+  isHidden: boolean;
 };
 
 type Plan = { id: string; name: string };
 
-export default function CourseInfoForm({ course, plans = [], categories = [] }: { course: Course; plans?: Plan[]; categories?: { id: string; name: string }[] }) {
+type Props = {
+  course: Course;
+  plans?: Plan[];
+  categories?: { id: string; name: string }[];
+  tags?: { id: string; name: string }[];
+  otherCourses?: { id: string; number: string; title: string }[];
+};
+
+export default function CourseInfoForm({ course, plans = [], categories = [], tags = [], otherCourses = [] }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -32,7 +46,11 @@ export default function CourseInfoForm({ course, plans = [], categories = [] }: 
     setSaved(false);
     startTransition(async () => {
       try {
-        await updateCourse(course.id, formData);
+        const result = await updateCourse(course.id, formData);
+        if (!result.success) {
+          alert(result.error);
+          return;
+        }
         setSaved(true);
         router.refresh();
       } catch (err) {
@@ -78,6 +96,8 @@ export default function CourseInfoForm({ course, plans = [], categories = [] }: 
         </select>
       </label>
 
+      <TagFields tags={tags} selected={course.tagIds} />
+
       <label style={labelStyle}>
         <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>ステータス</span>
         <select name="status" style={inputStyle} defaultValue={course.status}>
@@ -101,6 +121,8 @@ export default function CourseInfoForm({ course, plans = [], categories = [] }: 
           ))}
         </select>
       </label>
+
+      <JourneyFields courses={otherCourses} value={course} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button type="submit" disabled={isPending} className="btn btn-gold">

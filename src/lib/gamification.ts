@@ -2,7 +2,8 @@ import 'server-only';
 
 import { getDb } from '@/db';
 import { lessonProgress, lessons, pointEvents, user, userBadges } from '@/db/schema';
-import { and, eq, inArray, desc } from 'drizzle-orm';
+import { and, eq, inArray, desc, isNull, ne, or, sql } from 'drizzle-orm';
+import { loadCompletedCourseIds } from '@/lib/journeyState';
 import {
   BADGES_BY_ID,
   POINTS,
@@ -38,27 +39,7 @@ export type Reward = {
 
 /** How many distinct courses the member has finished every lesson of. */
 async function countCompletedCourses(userId: string): Promise<number> {
-  const rows = await db()
-    .select({ courseId: lessons.courseId, lessonId: lessons.id, isCompleted: lessonProgress.isCompleted })
-    .from(lessons)
-    .leftJoin(
-      lessonProgress,
-      and(eq(lessonProgress.lessonId, lessons.id), eq(lessonProgress.userId, userId))
-    );
-
-  const totals = new Map<string, { total: number; done: number }>();
-  for (const row of rows as Array<{ courseId: string; isCompleted: boolean | null }>) {
-    const entry = totals.get(row.courseId) ?? { total: 0, done: 0 };
-    entry.total += 1;
-    if (row.isCompleted) entry.done += 1;
-    totals.set(row.courseId, entry);
-  }
-
-  let completed = 0;
-  for (const { total, done } of totals.values()) {
-    if (total > 0 && total === done) completed += 1;
-  }
-  return completed;
+  return (await loadCompletedCourseIds(userId)).size;
 }
 
 async function isCourseComplete(userId: string, courseId: string): Promise<boolean> {
@@ -185,7 +166,9 @@ export async function recordLessonCompletion(
   await db()
     .update(user)
     .set({
-      totalPoints,
+      // Increment rather than write the total read above: the daily login
+      // bonus can land between that read and this write.
+      totalPoints: sql`${user.totalPoints} + ${pointsAwarded}`,
       currentStreak: streak.currentStreak,
       longestStreak: streak.longestStreak,
       lastActivityDate: today,
@@ -222,7 +205,45 @@ export type GamificationSummary = {
   completedCourses: number;
   badges: EarnedBadge[];
   recentEvents: Array<{ type: string; points: number; createdAt: string }>;
+  /** Whether today's (Tokyo) login bonus has been paid. */
+  loginBonusToday: boolean;
 };
+
+/**
+ * Pays the daily login bonus if it has not been paid yet today (Tokyo day).
+ * Returns the points awarded, or 0. The claim is a single conditional
+ * UPDATE, so parallel requests on the same morning cannot both pay.
+ */
+export async function grantDailyLoginBonus(userId: string): Promise<number> {
+  const today = tokyoDateString();
+  const points = POINTS.DAILY_LOGIN;
+
+  const claimed = await db()
+    .update(user)
+    .set({
+      lastLoginBonusDate: today,
+      totalPoints: sql`${user.totalPoints} + ${points}`,
+    })
+    .where(
+      and(
+        eq(user.id, userId),
+        or(isNull(user.lastLoginBonusDate), ne(user.lastLoginBonusDate, today))
+      )
+    )
+    .returning({ id: user.id });
+  if (claimed.length === 0) return 0;
+
+  await db().insert(pointEvents).values({
+    id: crypto.randomUUID(),
+    userId,
+    type: 'DAILY_LOGIN',
+    points,
+    courseId: null,
+    lessonId: null,
+    createdAt: new Date().toISOString(),
+  });
+  return points;
+}
 
 export async function getGamificationSummary(userId: string): Promise<GamificationSummary> {
   const rows = await db()
@@ -231,6 +252,7 @@ export async function getGamificationSummary(userId: string): Promise<Gamificati
       currentStreak: user.currentStreak,
       longestStreak: user.longestStreak,
       lastActivityDate: user.lastActivityDate,
+      lastLoginBonusDate: user.lastLoginBonusDate,
     })
     .from(user)
     .where(eq(user.id, userId))
@@ -272,5 +294,6 @@ export async function getGamificationSummary(userId: string): Promise<Gamificati
     completedCourses: await countCompletedCourses(userId),
     badges,
     recentEvents,
+    loginBonusToday: me?.lastLoginBonusDate === tokyoDateString(),
   };
 }

@@ -4,10 +4,23 @@ import React, { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCourse } from '@/actions/courses'
 import ImagePicker from '@/components/ImagePicker';
+import { JourneyFields, TagFields } from '../CourseExtraFields';
 
 type Plan = { id: string; name: string };
 
-export default function NewCourseForm({ plans, categories }: { plans: Plan[]; categories: { id: string; name: string }[] }) {
+type Option = { id: string; name: string };
+
+export default function NewCourseForm({
+  plans,
+  categories,
+  tags,
+  courses,
+}: {
+  plans: Plan[];
+  categories: Option[];
+  tags: Option[];
+  courses: { id: string; number: string; title: string }[];
+}) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -20,7 +33,11 @@ export default function NewCourseForm({ plans, categories }: { plans: Plan[]; ca
 
     startTransition(async () => {
       try {
-        await createCourse(formData)
+        const result = await createCourse(formData)
+        if (!result.success) {
+          alert(result.error)
+          return
+        }
         router.push('/admin/courses')
       } catch (err) {
         alert('エラーが発生しました: ' + (err as Error).message)
@@ -69,6 +86,8 @@ export default function NewCourseForm({ plans, categories }: { plans: Plan[]; ca
             </select>
           </label>
 
+          <TagFields tags={tags} />
+
           <label style={labelStyle}>
             <span style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600 }}>ステータス</span>
             <select name="status" style={inputStyle}>
@@ -91,6 +110,8 @@ export default function NewCourseForm({ plans, categories }: { plans: Plan[]; ca
               ))}
             </select>
           </label>
+
+          <JourneyFields courses={courses} />
 
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
             <Link href="/admin/courses" className="btn btn-ghost">キャンセル</Link>

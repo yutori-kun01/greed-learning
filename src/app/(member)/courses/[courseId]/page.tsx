@@ -8,7 +8,9 @@ import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import Icon from '@/components/Icon';
 import { canAccessCourse } from '@/lib/access';
-import { getMyBookmarkedCourseIds } from '@/lib/queries';
+import { getCourseTagMap, getMyBookmarkedCourseIds, getTags } from '@/lib/queries';
+import { getCourseJourney } from '@/lib/journeyState';
+import { describeRequirement } from '@/lib/journey';
 import BookmarkButton from '@/components/BookmarkButton';
 import CoverArt from '@/components/CoverArt';
 import { lessonThumbnail } from '@/lib/thumbnails';
@@ -29,6 +31,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   const courseList = await db.select().from(courses).where(eq(courses.id, courseId)).limit(1);
   if (courseList.length === 0) return notFound();
   const course = courseList[0];
+
+  const journey = await getCourseJourney(userId, courseId);
+  // A hidden course does not exist as far as the member can tell — checked
+  // before the plan gate, whose panel would otherwise show its title.
+  if (journey.hidden) return notFound();
 
   const hasAccess = await canAccessCourse(process.env.DB as unknown as D1Database, userId, course);
   if (!hasAccess) {
@@ -59,6 +66,39 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
     );
   }
 
+  if (!journey.unlocked) {
+    return (
+      <div>
+        <div className="section-title">
+          <Link href="/courses" style={{ color: 'inherit', textDecoration: 'none', marginRight: '8px' }}>
+            ← 戻る
+          </Link>
+          <span style={{ opacity: 0.5 }}>/</span>
+          <span style={{ marginLeft: '8px' }}>{course.title}</span>
+        </div>
+
+        <div className="panel" style={{ textAlign: 'center', padding: '48px 24px' }}>
+          <div style={{ fontSize: 32, marginBottom: 16 }}>🔒</div>
+          <h1 style={{ fontSize: 20, marginBottom: 8, color: 'var(--text)' }}>{course.title}</h1>
+          <p style={{ color: 'var(--muted)', marginBottom: 20 }}>この講座は、次の条件を満たすと開放されます。</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto 24px', display: 'inline-flex', flexDirection: 'column', gap: 8, textAlign: 'left' }}>
+            {journey.requirements.map((r) => (
+              <li key={describeRequirement(r)} style={{ fontSize: 14, color: r.met ? 'var(--muted)' : 'var(--text)', textDecoration: r.met ? 'line-through' : 'none' }}>
+                {r.met ? '✅' : '⬜'}{' '}
+                {r.kind === 'course' ? (
+                  <Link href={`/courses/${r.courseId}`} style={{ color: 'inherit' }}>{describeRequirement(r)}</Link>
+                ) : describeRequirement(r)}
+              </li>
+            ))}
+          </ul>
+          <div>
+            <Link href="/courses" className="btn btn-gold">講座一覧へ</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Get lessons
   const courseLessons = await db.select().from(lessons).where(eq(lessons.courseId, courseId)).orderBy(asc(lessons.sortOrder));
   
@@ -72,6 +112,9 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   const progressPercent = totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100);
 
   const bookmarkedIds = await getMyBookmarkedCourseIds();
+  const [allTags, tagMap] = await Promise.all([getTags(), getCourseTagMap()]);
+  const courseTagIds = new Set(tagMap.get(courseId) ?? []);
+  const courseTags = allTags.filter((t: { id: string }) => courseTagIds.has(t.id));
 
   return (
     <div>
@@ -92,9 +135,18 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
           <h1 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--text)' }}>{course.title}</h1>
           <BookmarkButton courseId={courseId} initialBookmarked={bookmarkedIds.has(courseId)} size={36} variant="plain" />
         </div>
-        <p style={{ color: 'var(--muted)', marginBottom: '24px', lineHeight: 1.6 }}>
+        <p style={{ color: 'var(--muted)', marginBottom: courseTags.length ? '12px' : '24px', lineHeight: 1.6 }}>
           {course.description || "説明はありません。"}
         </p>
+        {courseTags.length > 0 && (
+          <div className="tags" style={{ marginBottom: 24 }}>
+            {courseTags.map((t: { id: string; name: string }) => (
+              <Link key={t.id} href={`/courses?tag=${encodeURIComponent(t.id)}`} className="tag" style={{ textDecoration: 'none' }}>
+                #{t.name}
+              </Link>
+            ))}
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
           <div style={{ flex: 1 }}>

@@ -1,7 +1,7 @@
 import { getDb } from '@/db';
 import { courses } from '@/db/schema';
 import { requireUser } from '@/lib/session';
-import { getAccessibleCourseIds } from '@/lib/access';
+import { getOpenCourseIds } from '@/lib/journeyState';
 import { getResourcesForCourses } from '@/lib/queries';
 import ResourcesClientUI, { type ResourceCard } from './ResourcesClientUI';
 
@@ -14,7 +14,7 @@ export default async function ResourcesPage() {
     .select({ id: courses.id, requiredPlanId: courses.requiredPlanId })
     .from(courses);
 
-  const accessibleIds = await getAccessibleCourseIds(d1, me.id, allCourses);
+  const accessibleIds = await getOpenCourseIds(d1, me.id, allCourses);
   const resources = await getResourcesForCourses([...accessibleIds]);
 
   // Only what the card needs. The file location stays on the server — members

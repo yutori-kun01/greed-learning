@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { getDb } from '@/db';
 import { courses, lessonProgress, lessons } from '@/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
-import { getAccessibleCourseIds } from '@/lib/access';
+import { getOpenCourseIds } from '@/lib/journeyState';
 
 export type CourseProgress = {
   id: string;
@@ -52,7 +52,9 @@ export const getCourseProgressOverview = cache(
       .where(eq(courses.status, 'PUBLISHED'))
       .orderBy(courses.createdAt);
 
-    const accessibleIds = await getAccessibleCourseIds(d1, userId, published);
+    // Courses still locked by the journey are left out: they are not "next"
+    // until they open, and the course list already shows them greyed out.
+    const accessibleIds = await getOpenCourseIds(d1, userId, published);
     const visible = published.filter((c: { id: string }) => accessibleIds.has(c.id));
 
     const lessonRows: Array<{ id: string; courseId: string }> = visible.length

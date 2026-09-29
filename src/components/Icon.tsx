@@ -20,6 +20,8 @@ const ICONS: Record<string, string> = {
   next: '<path d="m8 5 5 5-5 5"/>',
   trash: '<path d="M4.5 6h11"/><path d="M8 6V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6"/><path d="M6 6l.6 9.2a1 1 0 0 0 1 .8h4.8a1 1 0 0 0 1-.8L14 6"/><path d="M8.5 9v4M11.5 9v4"/>',
   settings: '<circle cx="10" cy="10" r="2.6"/><path d="M10 2.8v2m0 10.4v2M2.8 10h2m10.4 0h2M4.9 4.9l1.4 1.4m7.4 7.4 1.4 1.4M4.9 15.1l1.4-1.4m7.4-7.4 1.4-1.4"/>',
+  star: '<path d="m10 3 2.1 4.4 4.8.6-3.5 3.3.9 4.7L10 13.7 5.7 16l.9-4.7L3.1 8l4.8-.6z"/>',
+  tag: '<path d="M3.5 10.2V4.5a1 1 0 0 1 1-1h5.7l6.3 6.3a1 1 0 0 1 0 1.4l-5.3 5.3a1 1 0 0 1-1.4 0z"/><circle cx="7" cy="7" r="1.2"/>',
   lock: '<rect x="4.5" y="9" width="11" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/>',
   'chevron-right': '<path d="m7.5 5 5 5-5 5"/>'
 };

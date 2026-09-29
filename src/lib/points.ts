@@ -11,7 +11,17 @@ export const POINTS = {
   COURSE_COMPLETE: 100,
   /** Awarded once when a streak reaches one of STREAK_MILESTONES. */
   STREAK_MILESTONE: 50,
+  /** Once per Tokyo calendar day, on the first visit to the member area. */
+  DAILY_LOGIN: 5,
 } as const;
+
+/** Member-facing name of each pointEvents.type. */
+export const POINT_EVENT_LABELS: Record<string, string> = {
+  LESSON_COMPLETE: 'レッスン完了',
+  COURSE_COMPLETE: '講座読了ボーナス',
+  STREAK_BONUS: '連続学習ボーナス',
+  DAILY_LOGIN: 'ログインボーナス',
+};
 
 export const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100] as const;
 

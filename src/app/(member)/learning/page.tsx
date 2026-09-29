@@ -3,7 +3,7 @@ import { getDb } from '@/db';
 import { courses, lessonProgress, lessons } from '@/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 import { requireUser } from '@/lib/session';
-import { getAccessibleCourseIds } from '@/lib/access';
+import { getOpenCourseIds } from '@/lib/journeyState';
 import CoverArt from '@/components/CoverArt';
 
 export default async function LearningPage() {
@@ -51,7 +51,7 @@ export default async function LearningPage() {
     .where(inArray(courses.id, startedCourseIds));
 
   // A course the member has since lost access to should not stay on the page.
-  const accessibleIds = await getAccessibleCourseIds(d1, me.id, startedCourses);
+  const accessibleIds = await getOpenCourseIds(d1, me.id, startedCourses);
   const visible = startedCourses.filter((c: { id: string }) => accessibleIds.has(c.id));
 
   const courseLessons = visible.length

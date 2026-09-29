@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import React from 'react'
-import { getCategories, getCoursesForAdmin } from '@/lib/queries'
+import { getCategories, getCourseTagMap, getCoursesForAdmin, getTags } from '@/lib/queries'
+import { getDb } from '@/db'
+import { coursePrerequisites } from '@/db/schema'
 import DeleteCourseButton from './DeleteCourseButton'
 
 export default async function AdminCoursesPage() {
@@ -9,6 +11,12 @@ export default async function AdminCoursesPage() {
 
   const courses = await getCoursesForAdmin()
   const categoryName = new Map((await getCategories()).map((c: { id: string; name: string }) => [c.id, c.name]))
+  const tagName = new Map<string, string>((await getTags()).map((t: { id: string; name: string }) => [t.id, t.name]))
+  const tagMap = await getCourseTagMap()
+  const prereqRows = await getDb(process.env.DB as unknown as D1Database)
+    .select({ courseId: coursePrerequisites.courseId })
+    .from(coursePrerequisites)
+  const hasPrereq = new Set(prereqRows.map((r: { courseId: string }) => r.courseId))
 
   return (
     <div>
@@ -37,7 +45,20 @@ export default async function AdminCoursesPage() {
             ) : courses.map((course: any) => (
               <tr key={course.id}>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{course.number}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{course.title}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+                  {course.title}
+                  {(() => {
+                    const names = (tagMap.get(course.id) ?? []).map((id) => tagName.get(id)).filter((n): n is string => Boolean(n))
+                    const gated = hasPrereq.has(course.id) || course.unlockCompletedCourses || course.unlockPoints
+                    if (names.length === 0 && !gated) return null
+                    return (
+                      <div className="tags" style={{ marginTop: 6, fontWeight: 400 }}>
+                        {gated && <span className="tag" style={{ color: 'var(--gold-2)' }}>{course.isHidden ? '👻 隠し講座' : '🔒 解放条件あり'}</span>}
+                        {names.map((n) => <span key={n} className="tag">#{n}</span>)}
+                      </div>
+                    )
+                  })()}
+                </td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{(course.categoryId && categoryName.get(course.categoryId)) || '未分類'}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{course.lessonCount || 0}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>

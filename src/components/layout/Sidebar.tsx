@@ -11,6 +11,7 @@ type SidebarProps = {
   logoUrl?: string | null;
   currentStreak: number;
   longestStreak: number;
+  totalPoints: number;
 };
 
 const NAV = [
@@ -19,11 +20,12 @@ const NAV = [
   { href: '/learning', icon: 'play', label: '学習中の講座' },
   { href: '/bookmarks', icon: 'bookmark', label: 'ブックマーク' },
   { href: '/resources', icon: 'gift', label: 'リソース・特典' },
+  { href: '/rewards', icon: 'star', label: '特典・ポイント' },
   { href: '/support', icon: 'life', label: 'サポート' },
   { href: '/settings', icon: 'settings', label: '設定' },
 ] as const;
 
-export default function Sidebar({ siteName = DEFAULT_SITE_NAME, logoUrl, currentStreak, longestStreak }: SidebarProps) {
+export default function Sidebar({ siteName = DEFAULT_SITE_NAME, logoUrl, currentStreak, longestStreak, totalPoints }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
 
@@ -64,6 +66,11 @@ export default function Sidebar({ siteName = DEFAULT_SITE_NAME, logoUrl, current
           <p className="side-card-value">{currentStreak}<span>日</span></p>
           <p className="side-card-sub">ベスト記録 {longestStreak} 日</p>
         </section>
+        <Link href="/rewards" className="side-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+          <p className="side-card-label">累計ポイント</p>
+          <p className="side-card-value">{totalPoints.toLocaleString()}<span>pt</span></p>
+          <p className="side-card-sub">特典・ポイント交換を見る →</p>
+        </Link>
       </div>
     </aside>
   );
