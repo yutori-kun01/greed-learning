@@ -18,4 +18,8 @@ describe('isSignupAllowed', () => {
     expect(isSignupAllowed('owner@example.com', env, noPass)).toBe(true);
     expect(isSignupAllowed('stranger@example.com', env, noPass)).toBe(false);
   });
+  it('lets a verified Akinai hub buyer in without a passcode', () => {
+    expect(isSignupAllowed('buyer@example.com', {}, { hasValidPasscodePass: false, isAkinaiBuyer: true })).toBe(true);
+    expect(isSignupAllowed('buyer@example.com', {}, { hasValidPasscodePass: false, isAkinaiBuyer: false })).toBe(false);
+  });
 });

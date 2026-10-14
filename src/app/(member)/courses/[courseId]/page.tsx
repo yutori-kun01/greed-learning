@@ -62,9 +62,20 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
           <div style={{ fontSize: 32, marginBottom: 16 }}>🔒</div>
           <h1 style={{ fontSize: 20, marginBottom: 8, color: 'var(--text)' }}>{course.title}</h1>
           <p style={{ color: 'var(--muted)', marginBottom: 24 }}>
-            {requiredPlan ? `この講座は「${requiredPlan.name}」会員限定です。` : 'この講座は現在のプランではご視聴いただけません。'}
+            {requiredPlan
+              ? `この講座は「${requiredPlan.name}」会員限定です。`
+              : course.akinaiProductIds
+                ? 'この講座はご購入者さま限定です。ご購入時と同じメールアドレスでログインすると視聴できます。'
+                : 'この講座は現在のプランではご視聴いただけません。'}
           </p>
-          <Link href="/settings?tab=plan" className="btn btn-gold">プランを確認する</Link>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {course.purchaseUrl && /^https:\/\//.test(course.purchaseUrl) && (
+              <a href={course.purchaseUrl} className="btn btn-gold" target="_blank" rel="noopener noreferrer">購入ページへ</a>
+            )}
+            {(requiredPlan || !course.akinaiProductIds) && (
+              <Link href="/settings?tab=plan" className={course.purchaseUrl ? 'btn' : 'btn btn-gold'}>プランを確認する</Link>
+            )}
+          </div>
         </div>
       </div>
     );

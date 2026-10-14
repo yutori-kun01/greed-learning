@@ -12,7 +12,7 @@ import {
   user,
 } from '@/db/schema';
 import { and, asc, eq } from 'drizzle-orm';
-import { canAccessCourse, getAccessibleCourseIds } from '@/lib/access';
+import { canAccessCourse, getAccessibleCourseIds, type CourseAccessInfo } from '@/lib/access';
 import { optionalUser } from '@/lib/session';
 import {
   OPEN,
@@ -157,7 +157,7 @@ export async function canPreviewUnpublished(): Promise<boolean> {
 export async function canOpenCourse(
   d1: D1Database,
   userId: string,
-  course: { id: string; requiredPlanId: string | null }
+  course: CourseAccessInfo
 ): Promise<boolean> {
   const journey = await getCourseJourney(userId, course.id);
   if (!journey.published && !(await canPreviewUnpublished())) return false;
@@ -169,7 +169,7 @@ export async function canOpenCourse(
 export async function getOpenCourseIds(
   d1: D1Database,
   userId: string,
-  list: Array<{ id: string; requiredPlanId: string | null }>
+  list: CourseAccessInfo[]
 ): Promise<Set<string>> {
   const accessible = await getAccessibleCourseIds(d1, userId, list);
   const journeys = await getCourseJourneys(userId);

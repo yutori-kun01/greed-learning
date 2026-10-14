@@ -36,6 +36,7 @@ export async function GET(
       fileName: courseResources.fileName,
       courseId: courseResources.courseId,
       requiredPlanId: courses.requiredPlanId,
+      akinaiProductIds: courses.akinaiProductIds,
     })
     .from(courseResources)
     .innerJoin(courses, eq(courses.id, courseResources.courseId))
@@ -50,6 +51,7 @@ export async function GET(
   const hasAccess = await canOpenCourse(process.env.DB as unknown as D1Database, userId, {
     id: resource.courseId,
     requiredPlanId: resource.requiredPlanId,
+    akinaiProductIds: resource.akinaiProductIds,
   });
   if (!hasAccess) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

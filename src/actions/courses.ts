@@ -20,6 +20,21 @@ function journeyFields(formData: FormData) {
   };
 }
 
+/**
+ * Akinai hub product ids and the purchase link for a course sold there.
+ * Products are stored as a JSON array, or null when the course is not sold.
+ * Returns {} (no change) when the form did not include the store section.
+ */
+function storeFields(formData: FormData): { akinaiProductIds?: string | null; purchaseUrl?: string | null } | { error: string } {
+  // The section is only rendered while Akinai hub is connected; without it the
+  // form says nothing about these columns, so leave them as they are.
+  if (formData.get('akinaiFields') !== '1') return {};
+  const products = idList(formData, 'akinaiProductIds').filter((id) => id.length <= 100);
+  const url = String(formData.get('purchaseUrl') ?? '').trim();
+  if (url && !/^https:\/\/[^\s]+$/.test(url)) return { error: '購入ページのURLは https:// から入力してください' };
+  return { akinaiProductIds: products.length ? JSON.stringify(products) : null, purchaseUrl: url || null };
+}
+
 function idList(formData: FormData, name: string): string[] {
   return [...new Set(formData.getAll(name).filter((v): v is string => typeof v === 'string' && v !== ''))];
 }
@@ -84,6 +99,8 @@ export async function createCourse(formData: FormData): Promise<CourseResult> {
 
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const store = storeFields(formData);
+  if ('error' in store) return { success: false, error: store.error };
 
   // A new course cannot be anyone's prerequisite yet, so no cycle is possible.
   const prerequisiteIds = await validPrerequisites(id, formData);
@@ -99,6 +116,7 @@ export async function createCourse(formData: FormData): Promise<CourseResult> {
     badge,
     requiredPlanId,
     thumbnailUrl,
+    ...store,
     ...journeyFields(formData),
     createdAt: now,
     updatedAt: now,
@@ -122,6 +140,8 @@ export async function updateCourse(id: string, formData: FormData): Promise<Cour
   const thumbnailUrl = normalizeImageUrl(formData.get('thumbnailUrl'));
 
   const now = new Date().toISOString();
+  const store = storeFields(formData);
+  if ('error' in store) return { success: false, error: store.error };
 
   const prerequisiteIds = await validPrerequisites(id, formData);
   if (!Array.isArray(prerequisiteIds)) return { success: false, error: prerequisiteIds.error };
@@ -136,6 +156,7 @@ export async function updateCourse(id: string, formData: FormData): Promise<Cour
       badge,
       requiredPlanId,
       thumbnailUrl,
+      ...store,
       ...journeyFields(formData),
       updatedAt: now,
     })

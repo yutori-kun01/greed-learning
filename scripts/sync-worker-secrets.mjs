@@ -27,6 +27,9 @@ const SECRET_NAMES = [
   'RESEND_FROM_EMAIL',
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
+  'AKINAI_ISSUER',
+  'AKINAI_CLIENT_ID',
+  'AKINAI_CLIENT_SECRET',
   // Without this nobody becomes admin on a fresh deployment (see DEPLOY.md).
   'BOOTSTRAP_ADMIN_EMAIL',
   // Cloudflare Turnstile (bot check on sign-in / sign-up). The site key is

@@ -3,16 +3,24 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db";
 import { APIError } from "better-auth/api";
 import { sendEmail } from "@/lib/email";
-import { captcha } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
-import { siteSettings } from "@/db/schema";
+import { captcha, genericOAuth } from "better-auth/plugins";
+import { and, eq } from "drizzle-orm";
+import { akinaiGrants, siteSettings } from "@/db/schema";
 import { isSignupAllowed } from "@/lib/signupPolicy";
 import { SIGNUP_PASS_COOKIE, readCookie, verifySignupPass } from "@/lib/signupPass";
+import { akinaiConfig, syncEntitlements, type Entitlement } from "@/lib/akinai";
+
+async function hasAnyGrant(d1: D1Database, email: string) {
+  const rows = await getDb(d1).select({ orderId: akinaiGrants.orderId }).from(akinaiGrants)
+    .where(and(eq(akinaiGrants.email, email.trim().toLowerCase()), eq(akinaiGrants.status, "ACTIVE"))).limit(1);
+  return rows.length > 0;
+}
 
 const emailIsConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
 
 export function getAuth(d1: D1Database) {
   const db = getDb(d1);
+  const akinai = akinaiConfig();
   const auth = betterAuth({
     database: drizzleAdapter(db, { provider: "sqlite" }),
     secret: process.env.BETTER_AUTH_SECRET,
@@ -50,9 +58,48 @@ export function getAuth(d1: D1Database) {
     // Cloudflare Turnstile on sign-in, sign-up and password-reset requests.
     // Registered only once the secret is configured, so local development
     // and a first deploy without Turnstile keys still work.
-    plugins: process.env.TURNSTILE_SECRET_KEY
-      ? [captcha({ provider: "cloudflare-turnstile", secretKey: process.env.TURNSTILE_SECRET_KEY })]
-      : [],
+    plugins: [
+      ...(process.env.TURNSTILE_SECRET_KEY
+        ? [captcha({ provider: "cloudflare-turnstile", secretKey: process.env.TURNSTILE_SECRET_KEY })]
+        : []),
+      // "Akinai hubでログイン": the store verifies the buyer's email with a
+      // one-time code and tells us what they bought. Registered only once
+      // AKINAI_ISSUER / AKINAI_CLIENT_ID / AKINAI_CLIENT_SECRET are set.
+      ...(akinai
+        ? [genericOAuth({
+            config: [{
+              providerId: "akinai",
+              name: "Akinai hub",
+              discoveryUrl: `${akinai.issuer}/.well-known/openid-configuration`,
+              clientId: akinai.clientId,
+              clientSecret: akinai.clientSecret,
+              scopes: ["openid", "email", "profile", "entitlements"],
+              pkce: true,
+              requireIdTokenVerification: true,
+              // Every sign-in refreshes this member's purchases from the
+              // entitlements claim, so a lost webhook heals at next login.
+              async getUserInfo(tokens) {
+                const res = await fetch(`${akinai.issuer}/api/oidc/userinfo`, {
+                  headers: { Authorization: `Bearer ${tokens.accessToken}` },
+                });
+                if (!res.ok) return null;
+                const info = (await res.json()) as { sub?: string; email?: string; email_verified?: boolean; name?: string; entitlements?: Entitlement[] };
+                if (!info.sub || !info.email || info.email_verified !== true) return null;
+                await syncEntitlements(d1, info.email, Array.isArray(info.entitlements) ? info.entitlements : []);
+                return { id: info.sub, email: info.email, emailVerified: true, name: info.name || info.email.split("@")[0] };
+              },
+            }],
+          })]
+        : []),
+    ],
+    account: {
+      accountLinking: {
+        // Akinai hub only issues a login after the buyer proves the address
+        // with a code, so an existing member with the same email is linked
+        // instead of being refused.
+        trustedProviders: akinai ? ["akinai"] : [],
+      },
+    },
     rateLimit: {
       enabled: true,
       // Memory storage doesn't survive across Workers isolates; back it
@@ -127,10 +174,17 @@ export function getAuth(d1: D1Database) {
               settings[0]?.signupPasscode
             );
 
+            // A buyer arriving through "Akinai hubでログイン" has paid for at
+            // least one product, which is the invitation. Checked only on that
+            // provider's callback: a password signup typing a buyer's address
+            // must not ride on their purchase.
+            const viaAkinai = context?.path === "/callback/:id" && context?.params?.id === "akinai";
+            const isAkinaiBuyer = viaAkinai && !!akinai && (await hasAnyGrant(d1, newUser.email));
+
             if (!isSignupAllowed(
               newUser.email,
               { BOOTSTRAP_ADMIN_EMAIL: process.env.BOOTSTRAP_ADMIN_EMAIL },
-              { hasValidPasscodePass }
+              { hasValidPasscodePass, isAkinaiBuyer }
             )) {
               throw new APIError("FORBIDDEN", {
                 message: "登録にはパスコードが必要です。招待URLを開き、パスコードを入力してからアカウントを作成してください。",

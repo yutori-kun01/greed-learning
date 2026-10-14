@@ -23,6 +23,8 @@ type Course = {
   unlockCompletedCourses: number | null;
   unlockPoints: number | null;
   isHidden: boolean;
+  akinaiProductIds: string[];
+  purchaseUrl: string | null;
 };
 
 type Plan = { id: string; name: string };
@@ -33,9 +35,10 @@ type Props = {
   categories?: { id: string; name: string }[];
   tags?: { id: string; name: string }[];
   otherCourses?: { id: string; number: string; title: string }[];
+  akinaiProducts?: { id: string; name: string }[] | null;
 };
 
-export default function CourseInfoForm({ course, plans = [], categories = [], tags = [], otherCourses = [] }: Props) {
+export default function CourseInfoForm({ course, plans = [], categories = [], tags = [], otherCourses = [], akinaiProducts = null }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -121,6 +124,27 @@ export default function CourseInfoForm({ course, plans = [], categories = [], ta
           ))}
         </select>
       </label>
+
+      {akinaiProducts && (
+        <fieldset style={{ ...labelStyle, border: '1px solid var(--line)', borderRadius: 8, padding: '12px 14px' }}>
+          <legend style={{ fontSize: '13px', color: 'var(--text-2)', fontWeight: 600, padding: '0 6px' }}>Akinai hubで販売（購入者に開放）</legend>
+          <input type="hidden" name="akinaiFields" value="1" />
+          {akinaiProducts.length === 0 && course.akinaiProductIds.length === 0 && (
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>商品を取得できませんでした。Akinai hubの連携アプリ設定と接続情報を確認してください。</p>
+          )}
+          {[...akinaiProducts, ...course.akinaiProductIds.filter((id) => !akinaiProducts.some((p) => p.id === id)).map((id) => ({ id, name: `（取得できない商品 ${id.slice(0, 8)}…）` }))].map((p) => (
+            <label key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, marginTop: 6 }}>
+              <input type="checkbox" name="akinaiProductIds" value={p.id} defaultChecked={course.akinaiProductIds.includes(p.id)} />
+              {p.name}
+            </label>
+          ))}
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-2)' }}>購入ページのURL（ロック画面のボタン先）</span>
+            <input type="url" name="purchaseUrl" style={inputStyle} defaultValue={course.purchaseUrl ?? ''} placeholder="https://store.example.com/shop/store/course" />
+          </label>
+          <p style={{ fontSize: 12, color: 'var(--muted)', margin: '8px 0 0' }}>選んだ商品のどれかを購入した会員（ログイン中のメールアドレスで判定）にこの講座が開放されます。未選択なら販売しません。</p>
+        </fieldset>
+      )}
 
       <JourneyFields courses={otherCourses} value={course} />
 

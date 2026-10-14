@@ -178,6 +178,9 @@ jobs:
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          AKINAI_ISSUER: ${{ secrets.AKINAI_ISSUER }}
+          AKINAI_CLIENT_ID: ${{ secrets.AKINAI_CLIENT_ID }}
+          AKINAI_CLIENT_SECRET: ${{ secrets.AKINAI_CLIENT_SECRET }}
           BOOTSTRAP_ADMIN_EMAIL: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
           TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}

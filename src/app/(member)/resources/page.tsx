@@ -11,7 +11,7 @@ export default async function ResourcesPage() {
   const db = getDb(d1);
 
   const allCourses = await db
-    .select({ id: courses.id, requiredPlanId: courses.requiredPlanId })
+    .select({ id: courses.id, requiredPlanId: courses.requiredPlanId, akinaiProductIds: courses.akinaiProductIds })
     .from(courses);
 
   const accessibleIds = await getOpenCourseIds(d1, me.id, allCourses);

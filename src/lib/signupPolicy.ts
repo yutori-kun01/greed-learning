@@ -3,7 +3,8 @@
  *
  * Signup is closed unless one of these holds:
  * - the address is BOOTSTRAP_ADMIN_EMAIL (so the operator can always get in),
- * - the browser entered the current signup passcode (see signupPass.ts).
+ * - the browser entered the current signup passcode (see signupPass.ts),
+ * - the person signed in through Akinai hub and has bought something there.
  *
  * Email/password and Google signups both create users through the same hook,
  * so this covers both.
@@ -20,10 +21,10 @@ function normalize(email: string): string {
 export function isSignupAllowed(
   email: string,
   env: SignupEnv,
-  { hasValidPasscodePass }: { hasValidPasscodePass: boolean }
+  { hasValidPasscodePass, isAkinaiBuyer = false }: { hasValidPasscodePass: boolean; isAkinaiBuyer?: boolean }
 ): boolean {
   const candidate = normalize(email);
 
   if (env.BOOTSTRAP_ADMIN_EMAIL && candidate === normalize(env.BOOTSTRAP_ADMIN_EMAIL)) return true;
-  return hasValidPasscodePass;
+  return hasValidPasscodePass || isAkinaiBuyer;
 }

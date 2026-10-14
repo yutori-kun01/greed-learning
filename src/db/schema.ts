@@ -114,6 +114,12 @@ export const courses = sqliteTable("courses", {
   unlockPoints: integer("unlockPoints"),
   isHidden: integer("isHidden", { mode: "boolean" }).default(false).notNull(),
 
+  // Sold through Akinai hub (src/lib/akinai.ts): JSON array of its product ids.
+  // Any one of them, paid by the member's email, opens the course. null = not
+  // sold there. purchaseUrl is where the locked panel sends a member to buy.
+  akinaiProductIds: text("akinaiProductIds"),
+  purchaseUrl: text("purchaseUrl"),
+
   createdAt: text("createdAt").notNull(),
   updatedAt: text("updatedAt").notNull(),
 });
@@ -403,3 +409,18 @@ export const siteSettings = sqliteTable('siteSettings', {
   updatedAt: text('updatedAt').notNull(),
 });
 
+
+// Purchases made in Akinai hub, kept in step by its signed webhook and by the
+// entitlements claim each time a member signs in through it. One row per
+// order; status flips to REVOKED on refund/stop instead of being deleted, and
+// eventAt keeps a late, older delivery from undoing a newer one.
+export const akinaiGrants = sqliteTable('akinaiGrants', {
+  orderId: text('orderId').primaryKey(),
+  email: text('email').notNull(),
+  productId: text('productId').notNull(),
+  status: text('status', { enum: ['ACTIVE', 'REVOKED'] }).notNull(),
+  eventAt: text('eventAt').notNull(),
+  updatedAt: text('updatedAt').notNull(),
+}, (t) => [
+  index('akinaiGrants_email_idx').on(t.email),
+]);

@@ -47,6 +47,7 @@ export const getCourseProgressOverview = cache(
         number: courses.number,
         thumbnailUrl: courses.thumbnailUrl,
         requiredPlanId: courses.requiredPlanId,
+        akinaiProductIds: courses.akinaiProductIds,
       })
       .from(courses)
       .where(eq(courses.status, 'PUBLISHED'))

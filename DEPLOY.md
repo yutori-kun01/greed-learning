@@ -109,6 +109,7 @@ Googleログインを使う場合は `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 | `RESEND_API_KEY` | 任意 | パスワード再設定メール等に使用。**管理画面の「サイト設定 → メール送信（Resend）」からも設定でき、そちらが優先されます**（APIキーは暗号化してDBに保存）。どちらも未設定の場合は送信されずログ出力のみ |
 | `RESEND_FROM_EMAIL` | 任意 | 例: `no-reply@your-domain.com`（Resend側でドメイン認証が必要） |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 任意 | Googleログインを使う場合 |
+| `AKINAI_ISSUER` / `AKINAI_CLIENT_ID` / `AKINAI_CLIENT_SECRET` | 任意 | Akinai hub（販売サイト）と連携する場合。手順は [docs/AKINAI-HUB.md](./docs/AKINAI-HUB.md) |
 | `BOOTSTRAP_ADMIN_EMAIL` | **必須（初回）** | 管理者にするメールアドレス。これが無いと誰も `/admin` に入れません（手順7） |
 | `TURNSTILE_SECRET_KEY` | 推奨 | Cloudflare Turnstile（ボット対策）のシークレットキー。設定するとログイン・登録・パスワード再設定・パスコード入力でボットチェックが必須になります。Variables の `TURNSTILE_SITE_KEY` と組で設定します |
 

@@ -46,6 +46,7 @@ export default async function LearningPage() {
       number: courses.number,
       thumbnailUrl: courses.thumbnailUrl,
       requiredPlanId: courses.requiredPlanId,
+      akinaiProductIds: courses.akinaiProductIds,
     })
     .from(courses)
     .where(inArray(courses.id, startedCourseIds));

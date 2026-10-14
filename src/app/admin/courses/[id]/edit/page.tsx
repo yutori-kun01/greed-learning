@@ -12,6 +12,7 @@ import ResourceForm from './ResourceForm';
 import ResourceList from './ResourceList';
 import { getCategories, getCourseTagMap, getPlansForAdmin, getPrerequisiteIdsForAdmin, getTags } from '@/lib/queries';
 import { getCourseResourcesForAdmin } from '@/lib/queries';
+import { akinaiConfig, fetchAkinaiProducts, parseProductIds } from '@/lib/akinai';
 
 export default async function AdminCourseEditPage({ params }: { params: Promise<{ id: string }> }) {
   // The layout's redirect streams in parallel with this page, so check here
@@ -29,6 +30,8 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
   const categories = await getCategories();
   const resources = await getCourseResourcesForAdmin(id);
   const [tags, tagMap, prerequisiteIds] = await Promise.all([getTags(), getCourseTagMap(), getPrerequisiteIdsForAdmin(id)]);
+  // null hides the store section entirely when Akinai hub is not connected.
+  const akinaiProducts = akinaiConfig() ? await fetchAkinaiProducts() : null;
   const otherCourses = (await db
     .select({ id: courses.id, number: courses.number, title: courses.title })
     .from(courses)
@@ -64,11 +67,14 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
               unlockCompletedCourses: course.unlockCompletedCourses,
               unlockPoints: course.unlockPoints,
               isHidden: course.isHidden,
+              akinaiProductIds: parseProductIds(course.akinaiProductIds),
+              purchaseUrl: course.purchaseUrl,
             }}
             plans={plans}
             categories={categories}
             tags={tags}
             otherCourses={otherCourses}
+            akinaiProducts={akinaiProducts}
           />
         </div>
 

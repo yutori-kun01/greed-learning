@@ -13,7 +13,7 @@ export async function toggleBookmark(courseId: string) {
   const user = await requireUser();
 
   const courseRows = await db()
-    .select({ id: courses.id, requiredPlanId: courses.requiredPlanId })
+    .select({ id: courses.id, requiredPlanId: courses.requiredPlanId, akinaiProductIds: courses.akinaiProductIds })
     .from(courses)
     .where(eq(courses.id, courseId))
     .limit(1);

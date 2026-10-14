@@ -11,14 +11,32 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [suspendedNotice, setSuspendedNotice] = useState(false);
+  const [akinaiEnabled, setAkinaiEnabled] = useState(false);
   const router = useRouter();
   const turnstile = useTurnstile();
 
   React.useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('error')) {
+      setError('Akinai hubでのログインを完了できませんでした。ご購入時のメールアドレスでお試しいただくか、サポートまでお問い合わせください。');
+    }
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('suspended') === '1') {
       setSuspendedNotice(true);
     }
+    fetch('/api/akinai/status')
+      .then((r) => r.json() as Promise<{ enabled?: boolean }>)
+      .then((d) => setAkinaiEnabled(!!d.enabled))
+      .catch(() => setAkinaiEnabled(false));
   }, []);
+
+  const handleAkinai = async () => {
+    setLoading(true);
+    setError('');
+    const res = await signIn.social({ provider: 'akinai', callbackURL: '/dashboard', errorCallbackURL: '/login?error=akinai' });
+    if (res?.error) {
+      setError(authErrorMessage(res.error, 'Akinai hubでのログインを開始できませんでした'));
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +70,15 @@ export default function LoginPage() {
 
         {suspendedNotice && <div className="auth-error">このアカウントは利用停止中です。心当たりがない場合はサポートまでお問い合わせください。</div>}
         {error && <div className="auth-error">{error}</div>}
+
+        {akinaiEnabled && (
+          <div className="auth-form" style={{ marginBottom: 20 }}>
+            <button type="button" className="btn btn-gold btn-block" onClick={handleAkinai} disabled={loading}>
+              Akinai hubでログイン（購入者の方）
+            </button>
+            <p className="auth-foot" style={{ marginTop: 8 }}>ご購入時のメールアドレスに届く認証コードでログインします。</p>
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="auth-form">
           <label className="auth-label">

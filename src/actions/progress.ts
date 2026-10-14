@@ -32,7 +32,7 @@ export async function toggleLessonComplete(lessonId: string, isCompleted: boolea
   if (!lesson) throw new Error('レッスンが見つかりません');
 
   const courseRows = await db()
-    .select({ id: courses.id, requiredPlanId: courses.requiredPlanId })
+    .select({ id: courses.id, requiredPlanId: courses.requiredPlanId, akinaiProductIds: courses.akinaiProductIds })
     .from(courses)
     .where(eq(courses.id, lesson.courseId))
     .limit(1);
