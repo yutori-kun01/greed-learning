@@ -18,7 +18,7 @@ const isDev = process.env.NODE_ENV === "development";
 // with inline `style` attributes throughout.
 const csp = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isDev ? " 'unsafe-eval'" : ""};
+  script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.youtube.com${isDev ? " 'unsafe-eval'" : ""};
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' data: https://fonts.gstatic.com;
   img-src 'self' blob: data: https:;

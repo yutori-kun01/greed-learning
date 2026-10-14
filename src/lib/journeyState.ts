@@ -159,10 +159,13 @@ export async function canOpenCourse(
   userId: string,
   course: { id: string; requiredPlanId: string | null }
 ): Promise<boolean> {
-  const journey = await getCourseJourney(userId, course.id);
+  // Independent lookups: ask D1 for both at once.
+  const [journey, accessible] = await Promise.all([
+    getCourseJourney(userId, course.id),
+    canAccessCourse(d1, userId, course),
+  ]);
   if (!journey.published && !(await canPreviewUnpublished())) return false;
-  if (!(await canAccessCourse(d1, userId, course))) return false;
-  return journey.unlocked;
+  return accessible && journey.unlocked;
 }
 
 /** Batch version of canOpenCourse. */

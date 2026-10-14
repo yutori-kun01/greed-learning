@@ -36,6 +36,7 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
   ]);
   if (courseList.length === 0) return notFound();
   const course = courseList[0];
+  const nextOrder = courseLessons.reduce((max: number, l: { sortOrder: number }) => Math.max(max, l.sortOrder + 1), 0);
   const otherCourses = allCourses.filter((c: { id: string }) => c.id !== id);
 
   return (
@@ -78,11 +79,11 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
         <div>
           <h2 className="section-title" style={{ marginTop: 0 }}>レッスン管理</h2>
           
-          <LessonList lessons={courseLessons} courseId={id} />
+          <LessonList lessons={courseLessons} courseId={id} nextOrder={nextOrder} />
 
           <div className="panel" style={{ marginTop: '24px' }}>
             <h2 className="panel-title">新規レッスン追加</h2>
-            <LessonForm courseId={id} nextOrder={courseLessons.reduce((max: number, l: { sortOrder: number }) => Math.max(max, l.sortOrder + 1), 0)} />
+            <LessonForm courseId={id} nextOrder={nextOrder} />
           </div>
 
           <h2 className="section-title" style={{ marginTop: 32 }}>コース特典・リソース</h2>

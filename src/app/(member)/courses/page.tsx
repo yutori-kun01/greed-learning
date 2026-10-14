@@ -1,8 +1,7 @@
 import { getDb } from '@/db';
 import { courses, lessons, lessonProgress } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { getAuth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { currentUser } from '@/lib/session';
 import { getAccessibleCourseIds } from '@/lib/access';
 import { getCategories, getCourseTagMap, getMyBookmarkedCourseIds, getTags } from '@/lib/queries';
 import { canPreviewUnpublished, getCourseJourneys, type CourseJourney } from '@/lib/journeyState';
@@ -13,21 +12,25 @@ const db = () => getDb(process.env.DB as unknown as D1Database);
 
 export default async function CoursesPage({ searchParams }: { searchParams: Promise<{ tag?: string | string[] }> }) {
   const { tag } = await searchParams;
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({ headers: reqHeaders });
-  const userId = session?.user?.id;
+  const userId = (await currentUser())?.id;
 
   // Members only ever see published courses; an admin previewing the member
-  // view also sees drafts, marked as such.
-  const preview = await canPreviewUnpublished();
-  const allCourses = (await db().select().from(courses).orderBy(courses.createdAt)).filter(
+  // view also sees drafts, marked as such. Everything below is independent,
+  // so it is fetched together rather than one D1 round trip at a time.
+  const [preview, courseRows, allLessons, userProgress, bookmarkedIds, journeys, tagMap, categories, tags] = await Promise.all([
+    canPreviewUnpublished(),
+    db().select().from(courses).orderBy(courses.createdAt),
+    db().select().from(lessons),
+    userId ? db().select().from(lessonProgress).where(eq(lessonProgress.userId, userId)) : Promise.resolve([]),
+    getMyBookmarkedCourseIds(),
+    userId ? getCourseJourneys(userId) : Promise.resolve(new Map<string, CourseJourney>()),
+    getCourseTagMap(),
+    getCategories(),
+    getTags(),
+  ]);
+  const allCourses = courseRows.filter(
     (c: typeof courses.$inferSelect) => preview || c.status === 'PUBLISHED'
   );
-  const allLessons = await db().select().from(lessons);
-  const userProgress = userId
-    ? await db().select().from(lessonProgress).where(eq(lessonProgress.userId, userId))
-    : [];
   const completedLessonIds = new Set(
     userProgress.filter((p: any) => p.isCompleted).map((p: any) => p.lessonId)
   );
@@ -35,9 +38,6 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   const accessibleIds = userId
     ? await getAccessibleCourseIds(process.env.DB as unknown as D1Database, userId, allCourses)
     : new Set<string>();
-  const bookmarkedIds = await getMyBookmarkedCourseIds();
-  const journeys = userId ? await getCourseJourneys(userId) : new Map<string, CourseJourney>();
-  const tagMap = await getCourseTagMap();
 
   // Formatting for the client UI. A hidden course the member has not opened
   // yet is left out entirely, so not even its title reaches the browser.
@@ -54,8 +54,11 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
       title: c.title,
       desc: c.description,
       progress,
-      lessons: c.lessonCount || 0,
-      minutes: c.totalDuration || 0,
+      // Counted from the lessons themselves: the stored lessonCount and
+      // totalDuration were never filled in for courses made before they were
+      // kept up to date.
+      lessons: courseLessons.length,
+      minutes: Math.round(courseLessons.reduce((sum: number, l: any) => sum + (l.duration || 0), 0) / 60),
       cat: c.categoryId || '',
       badge: c.status === 'PUBLISHED' ? c.badge || null : c.status === 'DRAFT' ? '下書き' : 'アーカイブ',
       thumbnailUrl: c.thumbnailUrl || null,
@@ -74,7 +77,6 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
     };
   });
 
-  const [categories, tags] = await Promise.all([getCategories(), getTags()]);
   const initialTags = (Array.isArray(tag) ? tag : tag ? [tag] : []).filter((id) => tags.some((t: { id: string }) => t.id === id));
   return <CoursesClientUI courses={formattedCourses} categories={categories} tags={tags} initialTags={initialTags} />;
 }
