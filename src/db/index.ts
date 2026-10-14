@@ -35,3 +35,19 @@ export function getDb(d1: D1Database) {
   // so it arrives undefined. Read it from the Cloudflare context instead.
   return drizzleD1(d1 ?? (getCloudflareContext().env as { DB: D1Database }).DB, { schema });
 }
+
+/**
+ * Runs several writes as one D1 batch: a single round trip, applied
+ * atomically. Saving a course used to await each insert/delete in turn, and
+ * every one of them paid the full Worker→D1 latency. The local SQLite
+ * fallback has no batch(), so there they simply run in order.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function runBatch(db: any, queries: any[]): Promise<void> {
+  if (queries.length === 0) return;
+  if (typeof db.batch === 'function') {
+    await db.batch(queries);
+    return;
+  }
+  for (const query of queries) await query;
+}

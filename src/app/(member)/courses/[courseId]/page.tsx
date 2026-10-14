@@ -211,7 +211,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
                   </div>
 
                   <span className="lesson-thumb">
-                    <CoverArt src={lessonThumbnail(lesson)} title={lesson.title} size="mini" />
+                    <CoverArt src={lessonThumbnail(lesson)} title={lesson.title} size="mini" variant={idx} number={String(idx + 1).padStart(2, '0')} />
                   </span>
                   
                   <div style={{ flex: 1 }}>

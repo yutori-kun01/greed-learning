@@ -7,7 +7,7 @@ import CoverArt from '@/components/CoverArt';
 
 type Category = { id: string; name: string };
 type Tag = { id: string; name: string };
-type SortKey = 'new' | 'progress' | 'remaining';
+type SortKey = 'new' | 'old' | 'curriculum' | 'progress' | 'remaining';
 
 const UNCATEGORIZED = '__none__';
 
@@ -92,6 +92,9 @@ export default function CoursesClientUI({
       // Courses arrive oldest first, so "new" is the reverse of that order.
       if (sort === 'progress') return b.c.progress - a.c.progress || b.index - a.index;
       if (sort === 'remaining') return a.c.progress - b.c.progress || b.index - a.index;
+      if (sort === 'old') return a.index - b.index;
+      // 受講順: the course number (00, 01, 02 …, compared as numbers), then age.
+      if (sort === 'curriculum') return byCourseNumber(a.c.number, b.c.number) || a.index - b.index;
       return b.index - a.index;
     })
     .map(({ c }) => c);
@@ -130,6 +133,8 @@ export default function CoursesClientUI({
         <label className="select">
           <select aria-label="並び替え" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
             <option value="new">新着順</option>
+            <option value="old">古い順</option>
+            <option value="curriculum">受講順（講座番号順）</option>
             <option value="progress">進捗が高い順</option>
             <option value="remaining">残りが多い順</option>
           </select>
@@ -210,6 +215,14 @@ export default function CoursesClientUI({
       )}
     </section>
   );
+}
+
+const collator = new Intl.Collator('ja', { numeric: true, sensitivity: 'base' });
+
+/** Orders course numbers the way a curriculum reads: 00, 01, 2, 10 … ; blank last. */
+function byCourseNumber(a: string, b: string): number {
+  if (!a.trim() || !b.trim()) return (a.trim() ? 0 : 1) - (b.trim() ? 0 : 1);
+  return collator.compare(a.trim(), b.trim());
 }
 
 function CardTags({ ids, tagName }: { ids: string[]; tagName: Map<string, string> }) {

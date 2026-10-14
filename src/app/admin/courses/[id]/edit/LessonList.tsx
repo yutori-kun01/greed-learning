@@ -15,7 +15,7 @@ export default function LessonList({ lessons, courseId }: { lessons: any[], cour
         <div key={lesson.id} className="panel" style={{ display: 'flex', alignItems: 'center', padding: '12px 16px' }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 'bold', color: 'var(--text)' }}>{lesson.title}</div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>順序: {lesson.sortOrder}</div>
+            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>表示順序: {lesson.sortOrder}{lesson.duration > 0 ? ` ・ ${Math.floor(lesson.duration / 60)}分${lesson.duration % 60 ? `${lesson.duration % 60}秒` : ''}` : ''}</div>
           </div>
           <button 
             onClick={async () => {

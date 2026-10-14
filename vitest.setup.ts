@@ -45,7 +45,11 @@ vi.mock('@/db', () => ({
     insert: vi.fn(() => createMockQueryBuilder({ success: true })),
     update: vi.fn(() => createMockQueryBuilder({ success: true })),
     delete: vi.fn(() => createMockQueryBuilder({ success: true })),
-  }))
+  })),
+  // The mock db has no batch(), so this mirrors the local-SQLite fallback.
+  runBatch: vi.fn(async (_db: unknown, queries: unknown[]) => {
+    for (const query of queries) await query;
+  }),
 }))
 
 // Mock Better Auth
