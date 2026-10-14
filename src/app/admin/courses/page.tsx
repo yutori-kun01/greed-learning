@@ -2,20 +2,30 @@ import Link from 'next/link'
 import React from 'react'
 import { getCategories, getCourseTagMap, getCoursesForAdmin, getTags } from '@/lib/queries'
 import { getDb } from '@/db'
-import { coursePrerequisites } from '@/db/schema'
+import { coursePrerequisites, lessons } from '@/db/schema'
+import { sql } from 'drizzle-orm'
 import DeleteCourseButton from './DeleteCourseButton'
 
 export default async function AdminCoursesPage() {
   const badgePublished = { background: 'rgba(111,208,160,.15)', color: '#6fd0a0', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
   const badgeDraft = { background: 'var(--line-2)', color: 'var(--muted)', padding: '2px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 600 }
 
-  const courses = await getCoursesForAdmin()
-  const categoryName = new Map((await getCategories()).map((c: { id: string; name: string }) => [c.id, c.name]))
-  const tagName = new Map<string, string>((await getTags()).map((t: { id: string; name: string }) => [t.id, t.name]))
-  const tagMap = await getCourseTagMap()
-  const prereqRows = await getDb(process.env.DB as unknown as D1Database)
-    .select({ courseId: coursePrerequisites.courseId })
-    .from(coursePrerequisites)
+  // Independent reads, fetched together: this is the page a course save
+  // lands on, and one-after-another round trips made saving feel slow.
+  const db = getDb(process.env.DB as unknown as D1Database)
+  const [courses, categories, tags, tagMap, prereqRows, lessonCounts] = await Promise.all([
+    getCoursesForAdmin(),
+    getCategories(),
+    getTags(),
+    getCourseTagMap(),
+    db.select({ courseId: coursePrerequisites.courseId }).from(coursePrerequisites),
+    // Counted from the lessons: the stored lessonCount was never filled in
+    // for courses made before it was kept up to date.
+    db.select({ courseId: lessons.courseId, count: sql<number>`COUNT(*)` }).from(lessons).groupBy(lessons.courseId),
+  ])
+  const categoryName = new Map(categories.map((c: { id: string; name: string }) => [c.id, c.name]))
+  const tagName = new Map<string, string>(tags.map((t: { id: string; name: string }) => [t.id, t.name]))
+  const lessonCount = new Map<string, number>(lessonCounts.map((r: { courseId: string; count: number }) => [r.courseId, Number(r.count)]))
   const hasPrereq = new Set(prereqRows.map((r: { courseId: string }) => r.courseId))
 
   return (
@@ -60,7 +70,7 @@ export default async function AdminCoursesPage() {
                   })()}
                 </td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{(course.categoryId && categoryName.get(course.categoryId)) || '未分類'}</td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{course.lessonCount || 0}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{lessonCount.get(course.id) ?? 0}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <span style={course.status === 'PUBLISHED' ? badgePublished : badgeDraft}>
                     {course.status}

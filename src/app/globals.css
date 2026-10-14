@@ -280,21 +280,20 @@ button, select, input { font: inherit; color: inherit; }
 /* ---------- ツールバー（フィルタ・並び替え） ---------- */
 .toolbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   margin-bottom: 22px;
 }
+/* Categories wrap onto further rows instead of scrolling sideways: the
+   scrollbar was hidden, so with many categories the rest were simply cut
+   off with no hint that they existed. */
 .chips {
   display: flex;
   gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 2px;
+  flex-wrap: wrap;
 }
-.chips::-webkit-scrollbar { display: none; }
 .chip {
   padding: 8px 14px;
   white-space: nowrap;

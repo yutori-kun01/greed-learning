@@ -54,8 +54,11 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
       title: c.title,
       desc: c.description,
       progress,
-      lessons: c.lessonCount || 0,
-      minutes: c.totalDuration || 0,
+      // Counted from the lessons themselves: the stored lessonCount and
+      // totalDuration were never filled in for courses made before they were
+      // kept up to date.
+      lessons: courseLessons.length,
+      minutes: Math.round(courseLessons.reduce((sum: number, l: any) => sum + (l.duration || 0), 0) / 60),
       cat: c.categoryId || '',
       badge: c.status === 'PUBLISHED' ? c.badge || null : c.status === 'DRAFT' ? '下書き' : 'アーカイブ',
       thumbnailUrl: c.thumbnailUrl || null,
