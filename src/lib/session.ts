@@ -12,7 +12,7 @@ export type SessionUser = {
 
 // A layout, the page inside it and any action it calls all ask for the
 // session; without this each one is a separate lookup against D1.
-const currentUser = cache(async (): Promise<SessionUser | null> => {
+export const currentUser = cache(async (): Promise<SessionUser | null> => {
   const reqHeaders = await headers();
   const auth = getAuth(process.env.DB as unknown as D1Database);
   const session = await auth.api.getSession({ headers: reqHeaders });

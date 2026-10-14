@@ -735,7 +735,14 @@ button.tag:hover { border-color: rgba(217, 180, 91, .4); color: var(--gold-2); }
   background: #fff; border-radius: 7px; padding: 3px;
   box-sizing: border-box; object-fit: contain;
 }
-.cover-art-mini { display: block; }
+.cover-art-mini { display: flex; align-items: center; justify-content: center; padding: 0; }
+.cover-art-number {
+  position: relative; z-index: 1;
+  font-size: 22px; font-weight: 800; line-height: 1;
+  letter-spacing: .02em;
+  text-shadow: 0 1px 8px rgba(0,0,0,.35);
+}
+.mini-thumb .cover-art-number, .next-thumb .cover-art-number { font-size: 13px; }
 .mini-thumb, .next-thumb { position: relative; display: block; flex: none; }
 .thumb:has(.cover-art)::after { display: none; }
 .thumb .badge { z-index: 1; }

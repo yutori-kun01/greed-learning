@@ -23,7 +23,7 @@ const csp = `
   font-src 'self' data: https://fonts.gstatic.com;
   img-src 'self' blob: data: https:;
   media-src 'self' https:;
-  frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://challenges.cloudflare.com;
+  frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.loom.com https://challenges.cloudflare.com;
   connect-src 'self' https://challenges.cloudflare.com;
   object-src 'none';
   base-uri 'self';

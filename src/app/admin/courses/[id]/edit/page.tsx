@@ -20,20 +20,23 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
   const { id } = await params;
   const db = getDb(process.env.DB as unknown as D1Database);
 
-  const courseList = await db.select().from(courses).where(eq(courses.id, id)).limit(1);
+  // Independent reads, issued together: one after another each paid its own
+  // D1 round trip, which made the editor slow to open and to refresh after
+  // every save.
+  const [courseList, courseLessons, plans, categories, resources, tags, tagMap, prerequisiteIds, allCourses] = await Promise.all([
+    db.select().from(courses).where(eq(courses.id, id)).limit(1),
+    db.select().from(lessons).where(eq(lessons.courseId, id)).orderBy(asc(lessons.sortOrder)),
+    getPlansForAdmin(),
+    getCategories(),
+    getCourseResourcesForAdmin(id),
+    getTags(),
+    getCourseTagMap(),
+    getPrerequisiteIdsForAdmin(id),
+    db.select({ id: courses.id, number: courses.number, title: courses.title }).from(courses).orderBy(asc(courses.createdAt)),
+  ]);
   if (courseList.length === 0) return notFound();
   const course = courseList[0];
-
-  const courseLessons = await db.select().from(lessons).where(eq(lessons.courseId, id)).orderBy(asc(lessons.sortOrder));
-  const plans = await getPlansForAdmin();
-  const categories = await getCategories();
-  const resources = await getCourseResourcesForAdmin(id);
-  const [tags, tagMap, prerequisiteIds] = await Promise.all([getTags(), getCourseTagMap(), getPrerequisiteIdsForAdmin(id)]);
-  const otherCourses = (await db
-    .select({ id: courses.id, number: courses.number, title: courses.title })
-    .from(courses)
-    .orderBy(asc(courses.createdAt)))
-    .filter((c: { id: string }) => c.id !== id);
+  const otherCourses = allCourses.filter((c: { id: string }) => c.id !== id);
 
   return (
     <div>
@@ -79,7 +82,7 @@ export default async function AdminCourseEditPage({ params }: { params: Promise<
 
           <div className="panel" style={{ marginTop: '24px' }}>
             <h2 className="panel-title">新規レッスン追加</h2>
-            <LessonForm courseId={id} />
+            <LessonForm courseId={id} nextOrder={courseLessons.reduce((max: number, l: { sortOrder: number }) => Math.max(max, l.sortOrder + 1), 0)} />
           </div>
 
           <h2 className="section-title" style={{ marginTop: 32 }}>コース特典・リソース</h2>

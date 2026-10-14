@@ -1,6 +1,6 @@
 'use server';
 
-import { getDb } from '@/db';
+import { getDb, runBatch } from '@/db';
 import { coursePrerequisites, courseTags, courses, tags } from '@/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -32,32 +32,45 @@ async function validPrerequisites(courseId: string, formData: FormData): Promise
   const requested = idList(formData, 'prerequisiteIds').filter((id) => id !== courseId);
   if (requested.length === 0) return [];
 
-  const existing = await db().select({ id: courses.id }).from(courses).where(inArray(courses.id, requested));
+  const [existing, edges] = await Promise.all([
+    db().select({ id: courses.id }).from(courses).where(inArray(courses.id, requested)),
+    db()
+      .select({ courseId: coursePrerequisites.courseId, requiredCourseId: coursePrerequisites.requiredCourseId })
+      .from(coursePrerequisites),
+  ]);
   const ids = existing.map((c: { id: string }) => c.id);
-
-  const edges = await db()
-    .select({ courseId: coursePrerequisites.courseId, requiredCourseId: coursePrerequisites.requiredCourseId })
-    .from(coursePrerequisites);
   if (wouldCreateCycle(edges, courseId, ids)) {
     return { error: '前提講座が循環しています（この講座を前提にしている講座を、この講座の前提にはできません）' };
   }
   return ids;
 }
 
-/** Replaces the course's tags and prerequisites with what the form holds. */
-async function saveRelations(courseId: string, tagIds: string[], prerequisiteIds: string[]) {
-  await db().delete(courseTags).where(eq(courseTags.courseId, courseId));
-  if (tagIds.length > 0) {
-    const known = await db().select({ id: tags.id }).from(tags).where(inArray(tags.id, tagIds));
-    for (const t of known as Array<{ id: string }>) {
-      await db().insert(courseTags).values({ id: crypto.randomUUID(), courseId, tagId: t.id });
-    }
-  }
+/** The tag ids from the form that still exist. */
+async function validTags(formData: FormData): Promise<string[]> {
+  const requested = idList(formData, 'tagIds');
+  if (requested.length === 0) return [];
+  const known = await db().select({ id: tags.id }).from(tags).where(inArray(tags.id, requested));
+  return known.map((t: { id: string }) => t.id);
+}
 
-  await db().delete(coursePrerequisites).where(eq(coursePrerequisites.courseId, courseId));
-  for (const requiredCourseId of prerequisiteIds) {
-    await db().insert(coursePrerequisites).values({ id: crypto.randomUUID(), courseId, requiredCourseId });
-  }
+/** Checks the form's tags and prerequisites together (one round trip, not two). */
+async function validRelations(courseId: string, formData: FormData) {
+  const [tagIds, prerequisiteIds] = await Promise.all([validTags(formData), validPrerequisites(courseId, formData)]);
+  return { tagIds, prerequisiteIds };
+}
+
+/** Writes that replace the course's tags and prerequisites with what the form holds. */
+function relationWrites(d: ReturnType<typeof db>, courseId: string, tagIds: string[], prerequisiteIds: string[]) {
+  // One statement per row: still a single batch, and it stays clear of D1's
+  // bound-parameter limit however many tags a course gets.
+  return [
+    d.delete(courseTags).where(eq(courseTags.courseId, courseId)),
+    ...tagIds.map((tagId) => d.insert(courseTags).values({ id: crypto.randomUUID(), courseId, tagId })),
+    d.delete(coursePrerequisites).where(eq(coursePrerequisites.courseId, courseId)),
+    ...prerequisiteIds.map((requiredCourseId) =>
+      d.insert(coursePrerequisites).values({ id: crypto.randomUUID(), courseId, requiredCourseId })
+    ),
+  ];
 }
 
 function refresh(courseId: string) {
@@ -86,10 +99,12 @@ export async function createCourse(formData: FormData): Promise<CourseResult> {
   const now = new Date().toISOString();
 
   // A new course cannot be anyone's prerequisite yet, so no cycle is possible.
-  const prerequisiteIds = await validPrerequisites(id, formData);
+  const { tagIds, prerequisiteIds } = await validRelations(id, formData);
   if (!Array.isArray(prerequisiteIds)) return { success: false, error: prerequisiteIds.error };
 
-  await db().insert(courses).values({
+  // The course row and its relations go to D1 in one batch.
+  const d = db();
+  await runBatch(d, [d.insert(courses).values({
     id,
     number,
     title,
@@ -102,8 +117,7 @@ export async function createCourse(formData: FormData): Promise<CourseResult> {
     ...journeyFields(formData),
     createdAt: now,
     updatedAt: now,
-  });
-  await saveRelations(id, idList(formData, 'tagIds'), prerequisiteIds);
+  }), ...relationWrites(d, id, tagIds, prerequisiteIds)]);
 
   refresh(id);
   return { success: true, courseId: id };
@@ -123,10 +137,11 @@ export async function updateCourse(id: string, formData: FormData): Promise<Cour
 
   const now = new Date().toISOString();
 
-  const prerequisiteIds = await validPrerequisites(id, formData);
+  const { tagIds, prerequisiteIds } = await validRelations(id, formData);
   if (!Array.isArray(prerequisiteIds)) return { success: false, error: prerequisiteIds.error };
 
-  await db().update(courses)
+  const d = db();
+  await runBatch(d, [d.update(courses)
     .set({
       number,
       title,
@@ -139,8 +154,7 @@ export async function updateCourse(id: string, formData: FormData): Promise<Cour
       ...journeyFields(formData),
       updatedAt: now,
     })
-    .where(eq(courses.id, id));
-  await saveRelations(id, idList(formData, 'tagIds'), prerequisiteIds);
+    .where(eq(courses.id, id)), ...relationWrites(d, id, tagIds, prerequisiteIds)]);
 
   refresh(id);
   return { success: true, courseId: id };
