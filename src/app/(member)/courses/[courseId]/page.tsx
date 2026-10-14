@@ -4,8 +4,7 @@ import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { courses, lessons, lessonProgress, plans } from '@/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
-import { getAuth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { currentUser } from '@/lib/session';
 import Icon from '@/components/Icon';
 import { canAccessCourse } from '@/lib/access';
 import { getCourseTagMap, getMyBookmarkedCourseIds, getTags } from '@/lib/queries';
@@ -18,10 +17,8 @@ import { lessonThumbnail } from '@/lib/thumbnails';
 export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = await params;
   
-  const reqHeaders = await headers();
-  const auth = getAuth(process.env.DB as unknown as D1Database);
-  const session = await auth.api.getSession({ headers: reqHeaders });
-  const userId = session?.user?.id;
+  // Reuses the layout's session lookup instead of asking D1 again.
+  const userId = (await currentUser())?.id;
   
   if (!userId) return notFound();
 
@@ -36,12 +33,14 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
   const previewing = course.status !== 'PUBLISHED';
   if (previewing && !(await canPreviewUnpublished())) return notFound();
 
-  const journey = await getCourseJourney(userId, courseId);
+  const [journey, hasAccess] = await Promise.all([
+    getCourseJourney(userId, courseId),
+    canAccessCourse(process.env.DB as unknown as D1Database, userId, course),
+  ]);
   // A hidden course does not exist as far as the member can tell — checked
   // before the plan gate, whose panel would otherwise show its title.
   if (journey.hidden) return notFound();
 
-  const hasAccess = await canAccessCourse(process.env.DB as unknown as D1Database, userId, course);
   if (!hasAccess) {
     const planResult = course.requiredPlanId
       ? await db.select().from(plans).where(eq(plans.id, course.requiredPlanId)).limit(1)
