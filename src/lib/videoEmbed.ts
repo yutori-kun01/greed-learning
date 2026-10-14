@@ -30,7 +30,9 @@ export function videoEmbed(videoUrl: string | null | undefined): VideoEmbed | nu
   const host = url.hostname.replace(/^www\./, '');
 
   const youtube = youtubeVideoId(url.href);
-  if (youtube) return { provider: 'youtube', src: `https://www.youtube-nocookie.com/embed/${youtube}` };
+  // enablejsapi lets the lesson page follow playback (for the 50% rule);
+  // playsinline keeps iPhones from forcing fullscreen.
+  if (youtube) return { provider: 'youtube', src: `https://www.youtube-nocookie.com/embed/${youtube}?enablejsapi=1&playsinline=1&rel=0` };
 
   if (host === 'loom.com') {
     // /share/<id>, /embed/<id> and /v/<id> all name the same recording.

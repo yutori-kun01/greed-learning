@@ -5,6 +5,7 @@ import { createLesson, lookupVideoDuration, updateLesson } from '@/actions/lesso
 import ImagePicker from '@/components/ImagePicker';
 import { videoEmbed } from '@/lib/videoEmbed';
 import { youtubeVideoId } from '@/lib/thumbnails';
+import { loadYoutubeApi, type YTGlobal, type YTPlayer } from '@/lib/youtubeApi';
 
 export type EditableLesson = {
   id: string;
@@ -192,27 +193,6 @@ export default function LessonForm({
       </div>
     </form>
   );
-}
-
-type YTPlayer = { getDuration(): number; destroy(): void };
-type YTGlobal = { Player: new (el: HTMLElement, opts: object) => YTPlayer };
-
-let youtubeApi: Promise<YTGlobal> | null = null;
-
-function loadYoutubeApi(): Promise<YTGlobal> {
-  const w = window as unknown as { YT?: YTGlobal; onYouTubeIframeAPIReady?: () => void };
-  if (w.YT?.Player) return Promise.resolve(w.YT);
-  youtubeApi ??= new Promise((resolve, reject) => {
-    w.onYouTubeIframeAPIReady = () => resolve(w.YT!);
-    const script = document.createElement('script');
-    script.src = 'https://www.youtube.com/iframe_api';
-    script.onerror = () => {
-      youtubeApi = null;
-      reject(new Error('YouTube API failed to load'));
-    };
-    document.head.appendChild(script);
-  });
-  return youtubeApi;
 }
 
 /** Asks an off-screen YouTube player for the video's length. */

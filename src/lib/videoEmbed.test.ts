@@ -13,8 +13,8 @@ describe('videoEmbed', () => {
   });
 
   it('turns YouTube watch and short links into the embed player', () => {
-    expect(videoEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10')?.src).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
-    expect(videoEmbed('https://youtu.be/dQw4w9WgXcQ')?.src).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+    expect(videoEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10')?.src).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1&playsinline=1&rel=0');
+    expect(videoEmbed('https://youtu.be/dQw4w9WgXcQ')?.src).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1&playsinline=1&rel=0');
   });
 
   it('handles public and unlisted Vimeo links', () => {

@@ -1,4 +1,5 @@
 import { videoEmbed } from './videoEmbed';
+import { youtubeVideoId } from './thumbnails';
 
 /**
  * Looks up how long a lesson video is, so admins do not have to type it in.
@@ -55,7 +56,8 @@ export async function fetchVideoDuration(videoUrl: string | null | undefined): P
     if (embed.provider === 'vimeo') {
       return parseOembedDuration(await getJson(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(videoUrl!.trim())}`));
     }
-    const id = embed.src.split('/').pop()!;
+    const id = youtubeVideoId(videoUrl);
+    if (!id) return null;
     const res = await fetch(`https://www.youtube.com/watch?v=${id}&hl=en`, {
       signal: AbortSignal.timeout(TIMEOUT_MS),
       headers: { 'Accept-Language': 'en', Cookie: 'CONSENT=YES+1' },
