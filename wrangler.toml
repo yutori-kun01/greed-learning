@@ -21,6 +21,13 @@ keep_names = false
 directory = ".open-next/assets"
 binding = "ASSETS"
 
+# Smart Placement: run the Worker next to D1 instead of next to the visitor.
+# A member page makes a dozen or so D1 queries, many of them one after
+# another, so every one of them paying a cross-region round trip added up
+# to seconds per page.
+[placement]
+mode = "smart"
+
 # Workers Logs — lets `npx wrangler tail` and the dashboard show runtime
 # errors, which is the only way to debug a deployed Worker.
 [observability]

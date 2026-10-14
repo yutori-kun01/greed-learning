@@ -8,9 +8,10 @@ import CoverArt from '@/components/CoverArt';
 
 export default async function DashboardPage() {
   const me = await requireUser();
-  const summary = await getGamificationSummary(me.id);
-
-  const overview = await getCourseProgressOverview(me.id);
+  const [summary, overview] = await Promise.all([
+    getGamificationSummary(me.id),
+    getCourseProgressOverview(me.id),
+  ]);
   const inProgress = overview.inProgress.slice(0, 3);
   const nextUp = overview.notStarted.slice(0, 3);
 
