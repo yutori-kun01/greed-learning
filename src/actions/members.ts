@@ -1,7 +1,7 @@
 'use server';
 
 import { getDb } from '@/db';
-import { courses, enrollments, plans, user } from '@/db/schema';
+import { courses, enrollments, memberPlans, plans, user } from '@/db/schema';
 import { and, asc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/session';
@@ -20,8 +20,12 @@ export type MemberAccess = {
   courses: Array<{ id: string; number: string; title: string; requiredPlanId: string | null }>;
   enrolledCourseIds: string[];
   plans: Array<{ id: string; name: string }>;
+  /** Plans granted by hand from this screen. Any number of them. */
+  grantedPlanIds: string[];
+  /** The Stripe subscription's plan (read-only here; Stripe owns it). */
   planId: string | null;
   subscriptionStatus: string;
+  hasStripeSubscription: boolean;
   role: 'ADMIN' | 'MEMBER';
 };
 
@@ -32,6 +36,7 @@ export async function getMemberAccess(userId: string): Promise<MemberAccess> {
     .select({
       planId: user.planId,
       subscriptionStatus: user.subscriptionStatus,
+      stripeSubscriptionId: user.stripeSubscriptionId,
       role: user.role,
     })
     .from(user)
@@ -59,12 +64,19 @@ export async function getMemberAccess(userId: string): Promise<MemberAccess> {
     .from(plans)
     .orderBy(asc(plans.sortOrder));
 
+  const granted = await db()
+    .select({ planId: memberPlans.planId })
+    .from(memberPlans)
+    .where(eq(memberPlans.userId, userId));
+
   return {
     courses: allCourses,
     enrolledCourseIds: enrolled.map((e: { courseId: string }) => e.courseId),
     plans: allPlans,
+    grantedPlanIds: granted.map((g: { planId: string }) => g.planId),
     planId: target.planId,
     subscriptionStatus: target.subscriptionStatus,
+    hasStripeSubscription: Boolean(target.stripeSubscriptionId),
     role: target.role,
   };
 }
@@ -107,27 +119,34 @@ export async function revokeCourseAccess(userId: string, courseId: string) {
 }
 
 /**
- * Sets the plan locally without touching Stripe — for comped accounts and
- * support fixes. A member who is actually paying keeps whatever the next
- * Stripe webhook says, so this is not a way to change what someone is billed.
+ * Grants a plan by hand without touching Stripe — for comped accounts,
+ * bundles and support fixes. A member can hold several; each one opens the
+ * courses gated on it. Stored apart from the Stripe plan (user.planId), so
+ * Stripe webhooks never undo it and it never changes what anyone is billed.
  */
-export async function setMemberPlan(userId: string, planId: string | null) {
+export async function grantMemberPlan(userId: string, planId: string) {
   await requireAdmin();
 
-  if (planId) {
-    const [plan] = await db().select({ id: plans.id }).from(plans).where(eq(plans.id, planId)).limit(1);
-    if (!plan) throw new Error('プランが見つかりません');
-  }
+  const [plan] = await db().select({ id: plans.id }).from(plans).where(eq(plans.id, planId)).limit(1);
+  if (!plan) throw new Error('プランが見つかりません');
+  const [target] = await db().select({ id: user.id }).from(user).where(eq(user.id, userId)).limit(1);
+  if (!target) throw new Error('ユーザーが見つかりません');
 
   await db()
-    .update(user)
-    .set({
-      planId,
-      // Granting a plan by hand has to grant access too, or the plan shows on
-      // the account while every gated course stays locked.
-      subscriptionStatus: planId ? 'ACTIVE' : 'NONE',
-    })
-    .where(eq(user.id, userId));
+    .insert(memberPlans)
+    .values({ id: crypto.randomUUID(), userId, planId, grantedAt: new Date().toISOString() })
+    .onConflictDoNothing({ target: [memberPlans.userId, memberPlans.planId] });
+
+  revalidatePath('/admin/users');
+  return { success: true };
+}
+
+export async function revokeMemberPlan(userId: string, planId: string) {
+  await requireAdmin();
+
+  await db()
+    .delete(memberPlans)
+    .where(and(eq(memberPlans.userId, userId), eq(memberPlans.planId, planId)));
 
   revalidatePath('/admin/users');
   return { success: true };

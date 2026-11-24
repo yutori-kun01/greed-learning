@@ -25,18 +25,22 @@ export default function MemberSettingsForm({
   user,
   plans = [],
   currentPlan = null,
+  grantedPlans = [],
   subscriptionStatus = 'NONE',
   initialTab = 'profile',
 }: {
   user: any;
   plans?: Plan[];
   currentPlan?: Plan | null;
+  /** Plans the operator granted by hand. No billing, any number of them. */
+  grantedPlans?: Array<{ id: string; name: string }>;
   subscriptionStatus?: string;
   initialTab?: string;
 }) {
   const { theme, setTheme } = useTheme();
   // Nothing to show until the site sells a plan (or the member already has one).
-  const showPlanTab = plans.length > 0 || currentPlan !== null;
+  const showPlanTab = plans.length > 0 || currentPlan !== null || grantedPlans.length > 0;
+  const grantedPlanIds = new Set(grantedPlans.map((p) => p.id));
   const [activeTab, setActiveTab] = useState(initialTab === 'plan' && !showPlanTab ? 'profile' : initialTab);
   const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -259,6 +263,14 @@ export default function MemberSettingsForm({
         <div className="panel">
           <h2 className="panel-title">会員プラン</h2>
 
+          {grantedPlans.length > 0 && (
+            <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'var(--gold-dim)', border: '1px solid rgba(217,180,91,.3)' }}>
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>運営から付与されたプラン</p>
+              <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--gold-2)' }}>{grantedPlans.map((p) => p.name).join('、')}</p>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>お支払いは不要です。</p>
+            </div>
+          )}
+
           {currentPlan && subscriptionStatus === 'ACTIVE' ? (
             <div style={{ marginBottom: 24, padding: 16, borderRadius: 8, background: 'var(--gold-dim)', border: '1px solid rgba(217,180,91,.3)' }}>
               <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>現在のプラン</p>
@@ -283,12 +295,12 @@ export default function MemberSettingsForm({
                 <button type="submit" className="btn btn-gold">お支払い方法を更新</button>
               </form>
             </div>
-          ) : (
+          ) : grantedPlans.length > 0 ? null : (
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>現在ご契約中のプランはありません。{plans.length > 0 && '以下から選択してください。'}</p>
           )}
 
           {plans.length === 0 ? (
-            currentPlan ? null : <p style={{ fontSize: 13, color: 'var(--muted)' }}>現在ご利用可能なプランはありません。</p>
+            currentPlan || grantedPlans.length > 0 ? null : <p style={{ fontSize: 13, color: 'var(--muted)' }}>現在ご利用可能なプランはありません。</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
               {plans.map(plan => {
@@ -302,6 +314,8 @@ export default function MemberSettingsForm({
                     </p>
                     {isCurrent ? (
                       <button type="button" className="btn btn-ghost btn-block" disabled>契約中</button>
+                    ) : grantedPlanIds.has(plan.id) ? (
+                      <button type="button" className="btn btn-ghost btn-block" disabled>付与済み</button>
                     ) : (
                       <form action={createSubscriptionCheckoutSession.bind(null, plan.id)}>
                         <button type="submit" className="btn btn-gold btn-block">このプランに登録</button>

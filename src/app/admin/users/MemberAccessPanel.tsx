@@ -5,7 +5,8 @@ import {
   getMemberAccess,
   grantCourseAccess,
   revokeCourseAccess,
-  setMemberPlan,
+  grantMemberPlan,
+  revokeMemberPlan,
   setMemberRole,
   type MemberAccess,
 } from '@/actions/members';
@@ -20,14 +21,36 @@ const selectStyle: React.CSSProperties = {
   width: '100%',
 };
 
+const listStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  maxHeight: 220,
+  overflowY: 'auto',
+  border: '1px solid var(--line)',
+  borderRadius: 6,
+  padding: 8,
+};
+
+const rowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 13,
+  padding: '6px 4px',
+};
+
 export default function MemberAccessPanel({
   userId,
   userName,
   onRoleChange,
+  onGrantedPlansChange,
 }: {
   userId: string;
   userName: string;
   onRoleChange?: (role: 'ADMIN' | 'MEMBER') => void;
+  /** Names of the plans now granted by hand, after a checkbox changes. */
+  onGrantedPlansChange?: (planNames: string[]) => void;
 }) {
   const [access, setAccess] = useState<MemberAccess | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,29 +92,56 @@ export default function MemberAccessPanel({
   }
 
   const enrolled = new Set(access.enrolledCourseIds);
+  const grantedPlans = new Set(access.grantedPlanIds);
+  const paidPlanName =
+    access.hasStripeSubscription && access.planId
+      ? access.plans.find((p) => p.id === access.planId)?.name ?? null
+      : null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {error && <p style={{ color: '#ef4444', fontSize: 12, margin: 0 }}>{error}</p>}
 
       <div>
-        <label style={{ display: 'block', fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>
-          プラン（手動設定）
-        </label>
-        <select
-          style={selectStyle}
-          value={access.planId ?? ''}
-          disabled={isPending}
-          onChange={(e) => run(() => setMemberPlan(userId, e.target.value || null))}
-        >
-          <option value="">未契約</option>
-          {access.plans.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+          プラン（手動付与・{grantedPlans.size} 件）
+        </div>
+        {paidPlanName && (
+          <p style={{ fontSize: 12, color: 'var(--text)', margin: '0 0 8px' }}>
+            Stripe契約中：{paidPlanName}（{access.subscriptionStatus}）
+          </p>
+        )}
+        <div style={listStyle}>
+          {access.plans.length === 0 ? (
+            <span style={{ fontSize: 12, color: 'var(--muted)', padding: 4 }}>プランがまだありません。</span>
+          ) : (
+            access.plans.map((plan) => {
+              const granted = grantedPlans.has(plan.id);
+              return (
+                <label key={plan.id} style={{ ...rowStyle, cursor: isPending ? 'default' : 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={granted}
+                    disabled={isPending}
+                    onChange={() =>
+                      run(async () => {
+                        await (granted ? revokeMemberPlan(userId, plan.id) : grantMemberPlan(userId, plan.id));
+                        const next = new Set(grantedPlans);
+                        if (granted) next.delete(plan.id);
+                        else next.add(plan.id);
+                        onGrantedPlansChange?.(access.plans.filter((p) => next.has(p.id)).map((p) => p.name));
+                      })
+                    }
+                  />
+                  <span style={{ color: 'var(--text)' }}>{plan.name}</span>
+                </label>
+              );
+            })
+          )}
+        </div>
         <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6, lineHeight: 1.6 }}>
-          Stripeの課金は変更されません。無料招待やサポート対応で使ってください。
-          実際に課金中の会員は、次回のStripe通知で上書きされます。
+          複数選択できます。チェックしたプランの講座がすべて閲覧可能になります。
+          Stripeの課金は変更されず、Stripeの通知で上書きされることもありません。
         </p>
       </div>
 
@@ -124,35 +174,14 @@ export default function MemberAccessPanel({
         <p style={{ fontSize: 11, color: 'var(--muted)', margin: '0 0 10px', lineHeight: 1.6 }}>
           プラン条件を満たしていなくても、ここで開放した講座は閲覧できます。
         </p>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            maxHeight: 220,
-            overflowY: 'auto',
-            border: '1px solid var(--line)',
-            borderRadius: 6,
-            padding: 8,
-          }}
-        >
+        <div style={listStyle}>
           {access.courses.length === 0 ? (
             <span style={{ fontSize: 12, color: 'var(--muted)', padding: 4 }}>講座がまだありません。</span>
           ) : (
             access.courses.map((course) => {
               const granted = enrolled.has(course.id);
               return (
-                <label
-                  key={course.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    fontSize: 13,
-                    padding: '6px 4px',
-                    cursor: isPending ? 'default' : 'pointer',
-                  }}
-                >
+                <label key={course.id} style={{ ...rowStyle, cursor: isPending ? 'default' : 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={granted}

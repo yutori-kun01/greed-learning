@@ -14,7 +14,8 @@ function chain(result: unknown) {
   return builder;
 }
 
-// Each query in access.ts runs in a fixed order, so queue one result per call.
+// Each query in access.ts runs in a fixed order — user row, manually granted
+// plans (memberPlans), then enrollments — so queue one result per call.
 function mockQueries(...results: unknown[]) {
   const select = vi.fn();
   for (const result of results) select.mockReturnValueOnce(chain(result));
@@ -38,14 +39,14 @@ describe('canAccessCourse', () => {
   });
 
   it('allows a member whose active plan matches the course', async () => {
-    mockQueries([activeOnPlan]);
+    mockQueries([activeOnPlan], []);
     await expect(
       canAccessCourse(D1, 'u1', { id: 'c1', requiredPlanId: 'plan-pro' })
     ).resolves.toBe(true);
   });
 
   it('denies a member on a different plan with no enrollment', async () => {
-    mockQueries([{ ...activeOnPlan, planId: 'plan-basic' }], []);
+    mockQueries([{ ...activeOnPlan, planId: 'plan-basic' }], [], []);
     await expect(
       canAccessCourse(D1, 'u1', { id: 'c1', requiredPlanId: 'plan-pro' })
     ).resolves.toBe(false);
@@ -54,28 +55,45 @@ describe('canAccessCourse', () => {
   // The regression that matters most: cancelling must actually revoke access,
   // even though planId still points at the plan the member used to be on.
   it('denies a cancelled member still carrying the matching planId', async () => {
-    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'CANCELED' }], []);
+    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'CANCELED' }], [], []);
     await expect(
       canAccessCourse(D1, 'u1', { id: 'c1', requiredPlanId: 'plan-pro' })
     ).resolves.toBe(false);
   });
 
   it('denies a member whose payment is past due', async () => {
-    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'PAST_DUE' }], []);
+    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'PAST_DUE' }], [], []);
     await expect(
       canAccessCourse(D1, 'u1', { id: 'c1', requiredPlanId: 'plan-pro' })
     ).resolves.toBe(false);
   });
 
   it('allows an explicit enrollment to override the plan requirement', async () => {
-    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'NONE', planId: null }], [{ courseId: 'c1' }]);
+    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'NONE', planId: null }], [], [{ courseId: 'c1' }]);
     await expect(
       canAccessCourse(D1, 'u1', { id: 'c1', requiredPlanId: 'plan-pro' })
     ).resolves.toBe(true);
   });
 
+  it('allows a member granted the plan by hand, with no subscription', async () => {
+    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'NONE', planId: null }], [{ planId: 'plan-pro' }]);
+    await expect(
+      canAccessCourse(D1, 'u1', { id: 'c1', requiredPlanId: 'plan-pro' })
+    ).resolves.toBe(true);
+  });
+
+  it('honours every plan granted by hand, not just one', async () => {
+    mockQueries(
+      [{ ...activeOnPlan, subscriptionStatus: 'NONE', planId: null }],
+      [{ planId: 'plan-basic' }, { planId: 'plan-elite' }]
+    );
+    await expect(
+      canAccessCourse(D1, 'u1', { id: 'c1', requiredPlanId: 'plan-elite' })
+    ).resolves.toBe(true);
+  });
+
   it('denies a user row that no longer exists', async () => {
-    mockQueries([], []);
+    mockQueries([], [], []);
     await expect(
       canAccessCourse(D1, 'u1', { id: 'c1', requiredPlanId: 'plan-pro' })
     ).resolves.toBe(false);
@@ -92,7 +110,7 @@ describe('getAccessibleCourseIds', () => {
   });
 
   it('includes gated courses only where the plan matches or an enrollment exists', async () => {
-    mockQueries([activeOnPlan], [{ courseId: 'granted' }]);
+    mockQueries([activeOnPlan], [], [{ courseId: 'granted' }]);
 
     const ids = await getAccessibleCourseIds(D1, 'u1', [
       { id: 'open', requiredPlanId: null },
@@ -105,8 +123,32 @@ describe('getAccessibleCourseIds', () => {
     expect(ids.has('other-plan')).toBe(false);
   });
 
+  it('combines a paid plan with several plans granted by hand', async () => {
+    mockQueries([activeOnPlan], [{ planId: 'plan-elite' }, { planId: 'plan-vip' }], []);
+
+    const ids = await getAccessibleCourseIds(D1, 'u1', [
+      { id: 'pro', requiredPlanId: 'plan-pro' },
+      { id: 'elite', requiredPlanId: 'plan-elite' },
+      { id: 'vip', requiredPlanId: 'plan-vip' },
+      { id: 'other', requiredPlanId: 'plan-other' },
+    ]);
+
+    expect(ids).toEqual(new Set(['pro', 'elite', 'vip']));
+  });
+
+  it('keeps a manual grant even when the paid subscription is cancelled', async () => {
+    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'CANCELED' }], [{ planId: 'plan-elite' }], []);
+
+    const ids = await getAccessibleCourseIds(D1, 'u1', [
+      { id: 'pro', requiredPlanId: 'plan-pro' },
+      { id: 'elite', requiredPlanId: 'plan-elite' },
+    ]);
+
+    expect(ids).toEqual(new Set(['elite']));
+  });
+
   it('excludes gated courses for a cancelled member', async () => {
-    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'CANCELED' }], []);
+    mockQueries([{ ...activeOnPlan, subscriptionStatus: 'CANCELED' }], [], []);
 
     const ids = await getAccessibleCourseIds(D1, 'u1', [
       { id: 'open', requiredPlanId: null },
