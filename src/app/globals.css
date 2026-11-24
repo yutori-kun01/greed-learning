@@ -578,6 +578,11 @@ button.tag:hover { border-color: rgba(217, 180, 91, .4); color: var(--gold-2); }
 .next-title { font-size: 12px; font-weight: 700; }
 .next-desc { font-size: 10.5px; color: var(--muted); margin-bottom: 6px; }
 
+/* Phone-only navigation pieces (shown in the max-width: 680px block below). */
+.menu-btn, .tabbar, .drawer-tools, .drawer-backdrop { display: none; }
+.side-drawer { display: contents; }
+.nav-item-admin { margin-top: auto; border-top: 1px solid var(--line); }
+
 /* ---------- レスポンシブ ---------- */
 @media (max-width: 1240px) {
   .content { grid-template-columns: minmax(0, 1fr); }
@@ -609,13 +614,76 @@ button.tag:hover { border-color: rgba(217, 180, 91, .4); color: var(--gold-2); }
   .search { flex: 1; max-width: none; width: auto; }
   .user-text { display: none; }
   .select { margin-left: auto; }
-  /* The menu scrolled sideways as one strip, so on a phone only the first
-     item showed and nothing hinted at the rest. Logo on its own row, then
-     the menu wrapping onto as many rows as it needs. */
-  .sidebar { flex-direction: column; align-items: stretch; overflow-x: visible; gap: 10px; padding: 12px 14px; }
-  .nav { flex-wrap: wrap; gap: 6px; }
-  .nav-item { padding: 7px 10px; font-size: 12px; gap: 6px; margin-top: 0 !important; border-top: 0 !important; }
-  .nav-item i { width: 14px; height: 14px; }
+
+  /* Phone layout. The whole menu used to sit above every page in wrapped
+     rows, followed by the page header — together about half the first
+     screen, so a lesson's video only appeared after scrolling. Now: a slim
+     sticky header (logo + menu button), the full menu as a drop-down drawer,
+     and a bottom tab bar for the pages members use most. */
+  .sidebar {
+    position: sticky; top: 0; z-index: 30;
+    height: auto;
+    flex-direction: column; align-items: stretch;
+    overflow: visible;
+    gap: 0;
+    padding: 8px 14px;
+  }
+  .brand { padding: 0; min-height: 40px; }
+  .brand-text { overflow: hidden; text-overflow: ellipsis; }
+  .menu-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: none;
+    margin-left: auto;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .menu-btn i { width: 20px !important; height: 20px !important; }
+  .side-drawer { display: none; }
+  .sidebar.is-open .side-drawer {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 12px 0 16px;
+    max-height: calc(100dvh - 56px - 64px);
+    overflow-y: auto;
+  }
+  .nav { flex-direction: column; flex-wrap: nowrap; gap: 2px; }
+  .nav-item { padding: 12px; font-size: 14px; white-space: normal; }
+  .nav-item-admin { margin-top: 6px; }
+  .side-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 0; }
+  .side-card { padding: 12px; }
+  .side-card-value { font-size: 22px; }
+  .drawer-tools { display: flex; align-items: center; gap: 10px; }
+  .drawer-tools-label { font-size: 12px; color: var(--muted); }
+  .drawer-logout { margin-left: auto; }
+  .drawer-backdrop { display: block; position: fixed; inset: 0; z-index: 25; background: rgba(0, 0, 0, .5); }
+
+  .topbar { display: none; }
+
+  .tabbar {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 8px 0 7px;
+    font-size: 10.5px;
+    color: var(--muted);
+    background: none; border: 0;
+    cursor: pointer;
+  }
+  .tab i { width: 22px !important; height: 22px !important; }
+  .tab.is-active { color: var(--gold-2); }
+  .main { padding-bottom: calc(62px + env(safe-area-inset-bottom)); }
+  .content { padding: 14px; }
+
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .stat-grid > .card { padding: 16px 10px !important; }
 }
 
 /* ============================================================
