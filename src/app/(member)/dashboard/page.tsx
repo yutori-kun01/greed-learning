@@ -28,7 +28,7 @@ export default async function DashboardPage() {
 
       <LevelCard summary={summary} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
+      <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
         <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
           <div style={{ fontSize: '28px', color: 'var(--gold-2)', fontWeight: 'bold' }}>{summary.completedLessons}</div>
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>完了したレッスン</div>

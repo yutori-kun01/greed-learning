@@ -178,7 +178,8 @@ export default function CoursesClientUI({
                 {c.locked ? (
                   <span
                     className="badge"
-                    style={{ position: 'absolute', top: 8, right: 8, left: 'auto', background: 'rgba(0,0,0,.55)', color: '#fff' }}
+                    // Bottom-left: the cover's logo sits top-right and the status badge top-left.
+                    style={{ position: 'absolute', top: 'auto', bottom: 8, left: 8, right: 'auto', background: 'rgba(0,0,0,.55)', color: '#fff' }}
                   >
                     🔒 会員限定
                   </span>

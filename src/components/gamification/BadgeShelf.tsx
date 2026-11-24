@@ -20,7 +20,8 @@ export default function BadgeShelf({ earned }: { earned: EarnedBadge[] }) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+          // 120px: two badges side by side on the narrowest phones.
+          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
           gap: 12,
         }}
       >

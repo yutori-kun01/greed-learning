@@ -23,7 +23,10 @@ const ICONS: Record<string, string> = {
   star: '<path d="m10 3 2.1 4.4 4.8.6-3.5 3.3.9 4.7L10 13.7 5.7 16l.9-4.7L3.1 8l4.8-.6z"/>',
   tag: '<path d="M3.5 10.2V4.5a1 1 0 0 1 1-1h5.7l6.3 6.3a1 1 0 0 1 0 1.4l-5.3 5.3a1 1 0 0 1-1.4 0z"/><circle cx="7" cy="7" r="1.2"/>',
   lock: '<rect x="4.5" y="9" width="11" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/>',
-  'chevron-right': '<path d="m7.5 5 5 5-5 5"/>'
+  'chevron-right': '<path d="m7.5 5 5 5-5 5"/>',
+  menu: '<path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/>',
+  close: '<path d="m5 5 10 10M15 5 5 15"/>',
+  logout: '<path d="M8 4.5H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3"/><path d="M12 6.5 15.5 10 12 13.5M15.5 10H8"/>'
 };
 
 export default function Icon({ name, className = '' }: { name: string; className?: string }) {

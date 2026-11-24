@@ -31,7 +31,7 @@ export default function BookmarksClientUI({ courses }: { courses: BookmarkedCour
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <h1 className="section-title">ブックマーク</h1>
-      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
         {items.map(c => (
           <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div className="thumb" style={{ aspectRatio: '2.2/1', background: 'var(--panel-2)', position: 'relative' }}>
