@@ -8,6 +8,7 @@ import {
   bookmarks,
   courseResources,
   courses,
+  memberPlans,
   plans,
   siteSettings,
   user,
@@ -153,7 +154,14 @@ export async function getUsers() {
 
   const users = await db().select().from(user).orderBy(desc(user.createdAt));
   const allPlans = await db().select({ id: plans.id, name: plans.name }).from(plans);
-  const planById = new Map(allPlans.map((p: { id: string; name: string }) => [p.id, p.name]));
+  const planById = new Map<string, string>(allPlans.map((p: { id: string; name: string }) => [p.id, p.name]));
+  const grants = await db().select({ userId: memberPlans.userId, planId: memberPlans.planId }).from(memberPlans);
+  const grantedNamesByUser = new Map<string, string[]>();
+  for (const g of grants as Array<{ userId: string; planId: string }>) {
+    const name = planById.get(g.planId);
+    if (!name) continue;
+    grantedNamesByUser.set(g.userId, [...(grantedNamesByUser.get(g.userId) ?? []), name]);
+  }
 
   return users.map((u: Record<string, unknown>) => ({
     id: u.id as string,
@@ -166,6 +174,7 @@ export async function getUsers() {
     planId: (u.planId as string | null) ?? null,
     planName: u.planId ? planById.get(u.planId as string) || null : null,
     subscriptionStatus: u.subscriptionStatus as string,
+    grantedPlanNames: grantedNamesByUser.get(u.id as string) ?? [],
     noteId: (u.noteId as string | null) ?? null,
     totalPoints: (u.totalPoints as number) ?? 0,
     currentStreak: (u.currentStreak as number) ?? 0,

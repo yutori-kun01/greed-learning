@@ -120,6 +120,13 @@
       "when": 1790657237014,
       "tag": "0016_point_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1795492363782,
+      "tag": "0017_member_plans",
+      "breakpoints": true
     }
   ]
 }

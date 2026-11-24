@@ -1,7 +1,7 @@
 'use server';
 
 import { getDb } from '@/db';
-import { plans, user, courses } from '@/db/schema';
+import { plans, user, courses, memberPlans } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/session';
@@ -106,6 +106,11 @@ export async function deletePlan(id: string) {
   const members = await db().select({ id: user.id }).from(user).where(eq(user.planId, id)).limit(1);
   if (members[0]) {
     throw new Error('このプランを契約している会員がいるため削除できません。「無効化」してください（既存会員の契約は維持されます）。');
+  }
+
+  const granted = await db().select({ id: memberPlans.id }).from(memberPlans).where(eq(memberPlans.planId, id)).limit(1);
+  if (granted[0]) {
+    throw new Error('このプランを手動で付与されている会員がいるため削除できません。会員管理で付与を外すか、「無効化」してください。');
   }
 
   const gatedCourses = await db()

@@ -13,7 +13,16 @@ type AdminUser = {
   lastActivityDate: string | null
   planName: string | null
   subscriptionStatus: string
+  grantedPlanNames: string[]
   noteId: string | null
+}
+
+/** Every plan the member holds: the Stripe one (with its status) and the ones granted by hand. */
+function planSummary(u: AdminUser): string | null {
+  const parts: string[] = [];
+  if (u.planName) parts.push(`${u.planName}（${u.subscriptionStatus}）`);
+  for (const name of u.grantedPlanNames) parts.push(`${name}（手動）`);
+  return parts.length > 0 ? parts.join('、') : null;
 }
 
 const inputStyle = { display: 'block', width: '100%', background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px 14px', color: 'var(--text)', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const }
@@ -102,7 +111,7 @@ export default function AdminUsersClientUI({ users: initialUsers }: { users: Adm
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <span style={badges[u.role]}>{u.role}</span>
                 </td>
-                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{u.planName || '-'}</td>
+                <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>{planSummary(u) || '-'}</td>
                 <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', fontSize: '13px' }}>
                   <span style={statusBadges[u.status]}>{u.status === 'ACTIVE' ? 'ACTIVE' : '停止中'}</span>
                 </td>
@@ -157,7 +166,7 @@ export default function AdminUsersClientUI({ users: initialUsers }: { users: Adm
               <div><span style={{ color: 'var(--muted)' }}>メール：</span><span style={{ color: 'var(--text)' }}>{detailUser.email}</span></div>
               <div><span style={{ color: 'var(--muted)' }}>ロール：</span><span style={badges[detailUser.role]}>{detailUser.role}</span></div>
               <div><span style={{ color: 'var(--muted)' }}>ステータス：</span><span style={statusBadges[detailUser.status]}>{detailUser.status === 'ACTIVE' ? 'ACTIVE' : '停止中'}</span></div>
-              <div><span style={{ color: 'var(--muted)' }}>プラン：</span><span style={{ color: 'var(--text)' }}>{detailUser.planName || '未契約'} {detailUser.planName && `(${detailUser.subscriptionStatus})`}</span></div>
+              <div><span style={{ color: 'var(--muted)' }}>プラン：</span><span style={{ color: 'var(--text)' }}>{planSummary(detailUser) || '未契約'}</span></div>
               <div><span style={{ color: 'var(--muted)' }}>note ID：</span><span style={{ color: 'var(--text)' }}>{detailUser.noteId || '未設定'}</span></div>
               <div><span style={{ color: 'var(--muted)' }}>登録日：</span><span style={{ color: 'var(--text)' }}>{formatDate(detailUser.createdAt)}</span></div>
               <div><span style={{ color: 'var(--muted)' }}>最終学習日：</span><span style={{ color: 'var(--text)' }}>{formatDate(detailUser.lastActivityDate)}</span></div>
@@ -171,6 +180,10 @@ export default function AdminUsersClientUI({ users: initialUsers }: { users: Adm
                 onRoleChange={(role) => {
                   setUsers(prev => prev.map(x => x.id === detailUser.id ? { ...x, role } : x))
                   setDetailUser(prev => prev && { ...prev, role })
+                }}
+                onGrantedPlansChange={(grantedPlanNames) => {
+                  setUsers(prev => prev.map(x => x.id === detailUser.id ? { ...x, grantedPlanNames } : x))
+                  setDetailUser(prev => prev && { ...prev, grantedPlanNames })
                 }}
               />
             </div>

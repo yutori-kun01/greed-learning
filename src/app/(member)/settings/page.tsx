@@ -3,8 +3,8 @@ import MemberSettingsForm from './MemberSettingsForm';
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
 import { getDb } from '@/db';
-import { user as userTable, plans } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { user as userTable, plans, memberPlans } from '@/db/schema';
+import { asc, eq } from 'drizzle-orm';
 import { getActivePlans } from '@/lib/queries';
 
 export default async function MemberSettingsPage({
@@ -32,11 +32,19 @@ export default async function MemberSettingsPage({
     currentPlan = planResult[0] || null;
   }
 
+  const grantedPlans = await db
+    .select({ id: plans.id, name: plans.name })
+    .from(memberPlans)
+    .innerJoin(plans, eq(memberPlans.planId, plans.id))
+    .where(eq(memberPlans.userId, session.user.id))
+    .orderBy(asc(plans.sortOrder));
+
   return (
     <MemberSettingsForm
       user={me}
       plans={activePlans}
       currentPlan={currentPlan}
+      grantedPlans={grantedPlans}
       subscriptionStatus={me?.subscriptionStatus || 'NONE'}
       initialTab={tab === 'plan' ? 'plan' : 'profile'}
     />

@@ -240,6 +240,20 @@ export const enrollments = sqliteTable("enrollments", {
   uniqueIndex("enrollments_userId_courseId_unique").on(t.userId, t.courseId),
 ]);
 
+// Plans an operator granted by hand from the member screen (comped accounts,
+// support, bundles). A member can hold any number of these. Kept apart from
+// user.planId, which belongs to the Stripe subscription and is rewritten by
+// every Stripe webhook — so a manual grant is never overwritten by billing.
+export const memberPlans = sqliteTable("memberPlans", {
+  id: text("id").primaryKey(),
+  userId: text("userId").references(() => user.id, { onDelete: "cascade" }).notNull(),
+  planId: text("planId").references(() => plans.id, { onDelete: "cascade" }).notNull(),
+  grantedAt: text("grantedAt").notNull(),
+}, (t) => [
+  uniqueIndex("memberPlans_userId_planId_unique").on(t.userId, t.planId),
+  index("memberPlans_planId_idx").on(t.planId),
+]);
+
 export const lessonProgress = sqliteTable("lessonProgress", {
   id: text("id").primaryKey(),
   userId: text("userId").references(() => user.id, { onDelete: "cascade" }).notNull(),
